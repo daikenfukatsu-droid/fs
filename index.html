@@ -610,10 +610,7 @@ const E_WIN_RATE_KEY = 'fs-e-win-rate-v1';
 let eWinRate = 0.10; // E案件の最終受注率（初期値10%）
 
 function loadWinRates() {
-  try { const r = localStorage.getItem(WIN_RATES_KEY); customWinRates = r ? JSON.parse(r) : {}; }
-  catch(e) { customWinRates = {}; }
-  try { const r = localStorage.getItem(E_WIN_RATE_KEY); eWinRate = r !== null ? parseFloat(r) : 0.10; }
-  catch(e) { eWinRate = 0.10; }
+  // データは fetchFromSheets() で取得するため no-op
 }
 function getWinRate(stage, product) {
   if (stage === 'E') return 0;
@@ -753,26 +750,35 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchFromSheets();
 });
 // ============================================================
-//  スプレッドシート（Apps Script Web App）からデータ取得
-//  Apps Script をデプロイしたら GAS_URL を設定してください
+//  スプレッドシート（Apps Script Web App）との双方向同期
 // ============================================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzi6SLnPh6qKmjXpfQcIpaSpCe_pAfnmA58Wgr2U9b-ALPAgnMJ7gBdw-db-O9FDI5t/exec';
 
-async function fetchFromSheets() {
-  const btn = document.getElementById('fetchBtn');
+// GAS への書き込み（no-cors POST → fire and forget）
+async function gasPost(action, data) {
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify({ action, ...data }),
+    });
+    return { ok: true };
+  } catch (e) {
+    console.error('GAS POST error:', e);
+    return { ok: false, error: e.message };
+  }
+}
+
+// GAS からデータ取得（パイプライン＋スナップショット＋受注率）
+async function fetchFromSheets(silent = false) {
+  const btn  = document.getElementById('fetchBtn');
   const icon = document.getElementById('fetchBtnIcon');
   const status = document.getElementById('fileStatus');
 
-  if (!GAS_URL || GAS_URL.includes('YOUR_GAS')) {
-    status.textContent = '⚠️ GAS_URLが未設定です';
-    status.style.color = '#dc2626';
-    return;
-  }
-
-  btn.disabled = true;
-  icon.textContent = '⏳';
-  status.textContent = 'スプレッドシートからデータ取得中...';
-  status.style.color = '#0284c7';
+  if (btn) btn.disabled = true;
+  if (icon) icon.textContent = '⏳';
+  if (!silent) { status.textContent = 'データ取得中...'; status.style.color = '#0284c7'; }
 
   try {
     const res = await fetch(GAS_URL);
@@ -780,22 +786,39 @@ async function fetchFromSheets() {
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || '取得失敗');
 
-    const allRows = json.data.map(row => normalizeRow(row)).filter(r => r);
+    // パイプライン
+    const allRows = (json.data || []).map(row => normalizeRow(row)).filter(r => r);
     pipeline  = allRows.filter(r => r.stage !== '失注');
     lostDeals = allRows.filter(r => r.stage === '失注');
 
+    // スナップショット
+    if (json.snapshots) {
+      snapshots = json.snapshots;
+      migrateSnapshotNames();
+    }
+
+    // 受注率
+    if (json.winRates) {
+      customWinRates = json.winRates.customWinRates || {};
+      eWinRate = json.winRates.eWinRate !== undefined ? json.winRates.eWinRate : 0.10;
+    }
+
     const updatedAt = json.updatedAt ? new Date(json.updatedAt).toLocaleString('ja-JP') : '';
-    status.textContent = `✅ ${pipeline.length}件 取得完了（スプシ更新: ${updatedAt}）`;
-    status.style.color = '#059669';
+    if (!silent) {
+      status.textContent = `✅ ${pipeline.length}件（スプシ更新: ${updatedAt}）`;
+      status.style.color = '#059669';
+    }
     render();
   } catch (err) {
-    status.textContent = `❌ 取得エラー: ${err.message}`;
-    status.style.color = '#dc2626';
+    if (!silent) { status.textContent = `❌ 取得エラー: ${err.message}`; status.style.color = '#dc2626'; }
   } finally {
-    btn.disabled = false;
-    icon.textContent = '🔄';
+    if (btn) btn.disabled = false;
+    if (icon) icon.textContent = '🔄';
   }
 }
+
+// 5分ごとに自動更新（全メンバーが常に最新を参照）
+setInterval(() => fetchFromSheets(true), 5 * 60 * 1000);
 
 const DATA_NAME_MAP = {
   // HubSpot読み込み形式（名姓順）→ 内部形式（姓名順）
@@ -814,6 +837,11 @@ function normalizeRow(row, hubspotId = null) {
     }
     return null;
   };
+  // 取引IDをrow内から自動取得（GASからのデータ対応）
+  if (!hubspotId) {
+    const idVal = find('取引ID','hubspotId','deal_id','id');
+    if (idVal) hubspotId = String(idVal).trim() || null;
+  }
   const company = String(find('取引名','案件名','会社名') || '').trim();
   const rawMember = String(find('取引担当者','担当者','FS','営業','氏名','メンバー') || '').trim();
   const dateRaw = find('クローズ日','受注予定月','予定月','年月','クロージング','close','決済月') || '';
@@ -1303,22 +1331,18 @@ function applyWinRates() {
     });
   });
   customWinRates = newRates;
-  try { localStorage.setItem(WIN_RATES_KEY, JSON.stringify(customWinRates)); }
-  catch(e) { alert('保存失敗: ' + e.message); return; }
   const eEl = document.getElementById('wr-e-rate');
-  if (eEl) {
-    eWinRate = parseFloat(eEl.value) / 100;
-    try { localStorage.setItem(E_WIN_RATE_KEY, String(eWinRate)); } catch(e) {}
-  }
+  if (eEl) eWinRate = parseFloat(eEl.value) / 100;
   closeWinRatesModal();
   render();
+  // GAS に保存（バックグラウンド）
+  gasPost('saveWinRates', { winRates: { customWinRates, eWinRate } });
 }
 function resetWinRates() {
   if (!confirm('全ての勝率をデフォルト値に戻しますか？')) return;
   customWinRates = {};
   eWinRate = 0.10;
-  localStorage.removeItem(WIN_RATES_KEY);
-  localStorage.removeItem(E_WIN_RATE_KEY);
+  gasPost('saveWinRates', { winRates: { customWinRates: {}, eWinRate: 0.10 } });
   renderWinRatesTable();
 }
 
@@ -1553,38 +1577,39 @@ function migrateSnapshotNames() {
 }
 
 function loadSnapshots() {
-  try {
-    const raw = localStorage.getItem(SNAP_KEY);
-    snapshots = raw ? JSON.parse(raw) : [];
-  } catch (e) { snapshots = []; }
-  migrateSnapshotNames(); // 旧形式の名前を自動変換
+  // データは fetchFromSheets() で取得するため no-op
+  snapshots = [];
 }
 function persistSnapshots() {
-  try { localStorage.setItem(SNAP_KEY, JSON.stringify(snapshots)); }
-  catch (e) { alert('スナップショット保存失敗: ' + e.message); }
+  // データは fetchFromSheets() で取得するため no-op（後方互換のため残す）
 }
-function saveSnapshot() {
+async function saveSnapshot() {
   if (pipeline.length === 0) { alert('保存するデータがありません'); return; }
   const now = new Date();
   const ts = now.toISOString();
   const dateStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  snapshots.push({ id: ts, dateStr, label: dateStr, pipeline: pipeline.slice(), lostDeals: lostDeals.slice() });
-  persistSnapshots();
+  const snap = { id: ts, dateStr, label: dateStr, pipeline: pipeline.slice(), lostDeals: lostDeals.slice() };
+  // ローカルに即時反映
+  snapshots.push(snap);
   renderSnapshots();
+  // GAS に保存（バックグラウンド）
+  await gasPost('saveSnapshot', { snapshot: snap });
 }
 function deleteSnapshot(id) {
-  requirePassword(() => {
+  requirePassword(async () => {
     snapshots = snapshots.filter(s => s.id !== id);
     if (snapshotView && snapshotView.id === id) snapshotView = null;
-    persistSnapshots();
     render();
+    await gasPost('deleteSnapshot', { id });
   });
 }
 function clearAllSnapshots() {
   if (snapshots.length === 0) return;
-  requirePassword(() => {
+  requirePassword(async () => {
     if (!confirm(`${snapshots.length}件のスナップショットを全て削除しますか？`)) return;
-    snapshots = []; snapshotView = null; persistSnapshots(); render();
+    const ids = snapshots.map(s => s.id);
+    snapshots = []; snapshotView = null; render();
+    for (const id of ids) { await gasPost('deleteSnapshot', { id }); }
   });
 }
 
