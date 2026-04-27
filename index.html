@@ -12,12 +12,25 @@
   .kpi-card { transition: transform 0.2s; }
   .kpi-card:hover { transform: translateY(-2px); }
   .progress-bar { transition: width 0.6s ease-in-out; }
+  :root {
+    --c-primary: #0284c7;
+    --c-primary-light: #e0f2fe;
+    --c-primary-dark: #0369a1;
+    --c-achieve: #10b981;
+    --c-achieve-light: #d1fae5;
+  }
   .drop-zone { border: 2px dashed #cbd5e1; transition: all 0.2s; }
-  .drop-zone.dragover { border-color: #3b82f6; background-color: #eff6ff; }
+  .drop-zone.dragover { border-color: var(--c-primary); background-color: var(--c-primary-light); }
   .status-chip { font-size: 0.7rem; padding: 2px 8px; border-radius: 9999px; font-weight: 600; }
-  .stage-e { color: #2563eb; } .stage-d { color: #059669; } .stage-c { color: #d97706; }
-  .stage-cp { color: #ea580c; } .stage-b { color: #dc2626; } .stage-a { color: #9333ea; } .stage-s { color: #16a34a; }
-  .tab-active { background-color: #2563eb; color: white; }
+  /* ステージ色: E-A = 青の濃淡、S = エメラルド */
+  .stage-e  { color: #94a3b8; }
+  .stage-d  { color: #7dd3fc; }
+  .stage-c  { color: #38bdf8; }
+  .stage-cp { color: #0ea5e9; }
+  .stage-b  { color: #0284c7; }
+  .stage-a  { color: #0369a1; }
+  .stage-s  { color: #10b981; }
+  .tab-active { background-color: var(--c-primary); color: white; }
   .tab-inactive { background-color: white; color: #475569; border: 1px solid #e2e8f0; }
   .tab-inactive:hover { background-color: #f1f5f9; }
 </style>
@@ -27,24 +40,173 @@
 
   <!-- Header -->
   <div class="mb-6">
-    <h1 class="text-2xl font-bold text-slate-800">FS売上積載ダッシュボード</h1>
-    <p class="text-sm text-slate-500 mt-1">FY2026（2026/04 - 2027/03）の売上目標に対する積載状況</p>
-    <div class="mt-2 text-xs text-slate-600 bg-white rounded-lg p-3 space-y-2">
-      <div class="flex gap-4 flex-wrap">
-        <span class="font-semibold">積載基準:</span>
-        <span>実施（<span class="stage-d font-bold">D</span>+<span class="stage-c font-bold">C</span>+<span class="stage-cp font-bold">C+</span>+<span class="stage-b font-bold">B</span>+<span class="stage-a font-bold">A</span>）= 売上目標 × <b>5倍</b></span>
-        <span>ヨミ（<span class="stage-c font-bold">C</span>+<span class="stage-cp font-bold">C+</span>+<span class="stage-b font-bold">B</span>+<span class="stage-a font-bold">A</span>）= 売上目標 × <b>3倍</b></span>
-        <span>受注実績（<span class="stage-s font-bold">S</span>）= 売上目標達成</span>
+    <div class="rounded-xl px-6 py-4 mb-3 flex items-center justify-between" style="background-color:#0284c7">
+      <div>
+        <h1 class="text-xl font-bold text-white">FS売上積載ダッシュボード</h1>
+        <p class="text-indigo-200 text-xs mt-0.5">FY2026（2026/04 - 2027/03）の売上目標に対する積載状況</p>
       </div>
-      <div class="flex gap-3 flex-wrap text-slate-500 text-[11px]">
-        <span><b class="stage-e">E</b>: 実施予定</span><span><b class="stage-d">D</b>: 実施済</span>
-        <span><b class="stage-c">C</b>: 2ヶ月以内検討（ヨミ）</span><span><b class="stage-cp">C+</b>: 見積提出済</span>
-        <span><b class="stage-b">B</b>: 一択＋サービス決定＋稟議握れ</span><span><b class="stage-a">A</b>: クラウドサイン締結中</span><span><b class="stage-s">S</b>: 受注</span>
-      </div>
-      <div class="flex gap-3 flex-wrap text-slate-500 text-[11px]">
-        <span class="font-semibold text-slate-600">概算金額:</span>
-        <span>新卒 <b>¥700,000</b></span><span>中途 <b>¥360,000</b></span><span>セット <b>¥700,000</b></span>
-        <span class="text-slate-400">｜ E案件は積載に含めない</span>
+    </div>
+    <div class="text-xs text-slate-600 bg-white rounded-lg p-3">
+      <!-- 折りたたみルール一覧 -->
+      <div>
+        <button onclick="toggleRules()" class="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 text-[11px] font-semibold">
+          <span id="rulesArrow">▶</span> 詳細ルール一覧（全12項目）
+        </button>
+        <div id="rulesPanel" class="hidden mt-3 space-y-4 text-[11px] text-slate-600">
+
+          <!-- 1 -->
+          <div>
+            <p class="font-bold text-slate-700 mb-1">1. ステージ定義</p>
+            <table class="w-full border-collapse text-[11px]">
+              <thead><tr class="bg-slate-50"><th class="border border-slate-200 px-2 py-1 text-left">ステージ</th><th class="border border-slate-200 px-2 py-1 text-left">意味</th></tr></thead>
+              <tbody>
+                <tr><td class="border border-slate-200 px-2 py-1"><b class="stage-e">E</b></td><td class="border border-slate-200 px-2 py-1">実施予定（アポ済み・商談未実施）</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1"><b class="stage-d">D</b></td><td class="border border-slate-200 px-2 py-1">実施済（商談実施済み）</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1"><b class="stage-c">C</b></td><td class="border border-slate-200 px-2 py-1">2ヶ月以内検討（ヨミ）</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1"><b class="stage-cp">C+</b></td><td class="border border-slate-200 px-2 py-1">見積提出済</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1"><b class="stage-b">B</b></td><td class="border border-slate-200 px-2 py-1">一択＋サービス決定＋稟議握れ</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1"><b class="stage-a">A</b></td><td class="border border-slate-200 px-2 py-1">クラウドサイン締結中</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1"><b class="stage-s">S</b></td><td class="border border-slate-200 px-2 py-1">受注</td></tr>
+              </tbody>
+            </table>
+            <p class="text-slate-400 mt-1">※「失注」案件はKPI/グラフ/テーブルから除外。スナップショット比較の軌跡追跡には反映。</p>
+          </div>
+
+          <!-- 2 -->
+          <div>
+            <p class="font-bold text-slate-700 mb-1">2. 積載基準</p>
+            <table class="w-full border-collapse text-[11px]">
+              <thead><tr class="bg-slate-50"><th class="border border-slate-200 px-2 py-1 text-left">種別</th><th class="border border-slate-200 px-2 py-1 text-left">対象</th><th class="border border-slate-200 px-2 py-1 text-left">基準</th></tr></thead>
+              <tbody>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold" style="color:#0284c7">実施積載</td><td class="border border-slate-200 px-2 py-1">D+C+C++B+A</td><td class="border border-slate-200 px-2 py-1">目標 × <b>5倍</b></td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold text-emerald-600">ヨミ積載</td><td class="border border-slate-200 px-2 py-1">C+C++B+A</td><td class="border border-slate-200 px-2 py-1">目標 × <b>3倍</b></td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold text-emerald-700">受注実績</td><td class="border border-slate-200 px-2 py-1">S</td><td class="border border-slate-200 px-2 py-1">目標達成</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold" style="color:#94a3b8">E案件</td><td class="border border-slate-200 px-2 py-1">E</td><td class="border border-slate-200 px-2 py-1 text-slate-400">積載に含めない（件数・金額は表示）</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 3 -->
+          <div>
+            <p class="font-bold text-slate-700 mb-1">3. 概算金額（金額未入力時の自動補完）</p>
+            <div class="flex gap-4 flex-wrap">
+              <span>新卒 <b>¥700,000</b></span><span>中途 <b>¥360,000</b></span><span>新卒・中途 <b>¥700,000</b></span><span>不明 <b>¥360,000</b></span>
+            </div>
+            <p class="text-slate-400 mt-1">全ステージ（E含む）に適用。概算は <b>*</b> マーク付きで表示。</p>
+          </div>
+
+          <!-- 4 -->
+          <div>
+            <p class="font-bold text-slate-700 mb-1">4. 検討サービス判定ルール</p>
+            <ul class="space-y-0.5 text-slate-500 list-disc list-inside">
+              <li>「セット」または「新卒・中途」の記載あり → <b>新卒・中途</b></li>
+              <li>新卒・中途の両方が確認できる → <b>新卒・中途</b></li>
+              <li>新卒のみ確認 → <b>新卒</b></li>
+              <li>中途のみ確認 → <b>中途</b></li>
+            </ul>
+          </div>
+
+          <!-- 5 -->
+          <div>
+            <p class="font-bold text-slate-700 mb-1">5. 着地予想モデル（デフォルト勝率）</p>
+            <table class="border-collapse text-[11px]">
+              <thead><tr class="bg-slate-50"><th class="border border-slate-200 px-2 py-1">ステージ</th><th class="border border-slate-200 px-2 py-1">勝率</th></tr></thead>
+              <tbody>
+                <tr><td class="border border-slate-200 px-2 py-1"><b class="stage-d">D</b></td><td class="border border-slate-200 px-2 py-1">10%</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1"><b class="stage-c">C</b></td><td class="border border-slate-200 px-2 py-1">20%</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1"><b class="stage-cp">C+</b></td><td class="border border-slate-200 px-2 py-1">47%</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1"><b class="stage-b">B</b></td><td class="border border-slate-200 px-2 py-1">80%</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1"><b class="stage-a">A</b></td><td class="border border-slate-200 px-2 py-1">98%</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1"><b class="stage-s">S</b></td><td class="border border-slate-200 px-2 py-1">100%</td></tr>
+              </tbody>
+            </table>
+            <p class="text-slate-400 mt-1">検討サービス別（新卒/中途/新卒・中途）に個別設定可能。⚙️ボタンから変更・ブラウザ保存。</p>
+          </div>
+
+          <!-- 6 -->
+          <div>
+            <p class="font-bold text-slate-700 mb-1">6. 時間減衰（D / C / C+）</p>
+            <p class="text-slate-500">残営業日が少ないほど期待値が下がる。</p>
+            <div class="mt-1 px-3 py-2 rounded bg-slate-50 font-mono">
+              期待値 = 金額 × 勝率 × 残営業日比率<br>
+              残営業日比率 = 残営業日数 ÷ 月の総営業日数
+            </div>
+            <p class="text-slate-400 mt-1">土日は営業日から除外。</p>
+          </div>
+
+          <!-- 7 -->
+          <div>
+            <p class="font-bold text-slate-700 mb-1">7. 滞留減衰（D / C / C+ / B）</p>
+            <p class="text-slate-500">スナップショット間で同じステージに留まり続けた回数に応じて期待値を下げる。</p>
+            <div class="mt-1 px-3 py-2 rounded bg-slate-50 font-mono">
+              滞留係数 = max(0.4,  1 − 0.12 × 滞留回数)
+            </div>
+            <ul class="mt-1 space-y-0.5 text-slate-500 list-disc list-inside">
+              <li>1回留まるごとに −12%</li>
+              <li>最低40%が下限</li>
+              <li>スナップショットが蓄積されるほど自動で精度向上</li>
+            </ul>
+          </div>
+
+          <!-- 8 -->
+          <div>
+            <p class="font-bold text-slate-700 mb-1">8. E案件の着地予想</p>
+            <div class="mt-1 px-3 py-2 rounded bg-slate-50 font-mono">
+              E期待値 = 金額 × E最終受注率 × 残営業日比率
+            </div>
+            <ul class="mt-1 space-y-0.5 text-slate-500 list-disc list-inside">
+              <li>E最終受注率：初期値 <b>10%</b>（⚙️から手動変更可）</li>
+              <li>BASE着地予想には含めない → <b>E込み最大着地</b> として別表示</li>
+              <li>将来：リードソース別設定を追加予定（オーガニック約20%、テレアポ約5%）</li>
+            </ul>
+          </div>
+
+          <!-- 9 -->
+          <div>
+            <p class="font-bold text-slate-700 mb-1">9. 達成可能性バッジ</p>
+            <table class="border-collapse text-[11px]">
+              <thead><tr class="bg-slate-50"><th class="border border-slate-200 px-2 py-1">バッジ</th><th class="border border-slate-200 px-2 py-1">条件</th></tr></thead>
+              <tbody>
+                <tr><td class="border border-slate-200 px-2 py-1">✅ 確定圏</td><td class="border border-slate-200 px-2 py-1">BASE着地予想 ≥ 目標100%</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1">📋 E次第で達成可能</td><td class="border border-slate-200 px-2 py-1">E込み着地 ≥ 目標100%</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1">⚠️ 積み増し必要</td><td class="border border-slate-200 px-2 py-1">E込みでも100%未達</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 10 -->
+          <div>
+            <p class="font-bold text-slate-700 mb-1">10. スナップショット</p>
+            <ul class="space-y-0.5 text-slate-500 list-disc list-inside">
+              <li>現在のパイプライン状態を手動保存して経過追跡</li>
+              <li>削除にはパスワード保護（4文字以上）</li>
+              <li>スナップショット選択中はグラフ・表・カレンダー全てがそのデータに切り替わる</li>
+              <li>案件数カウントは <b>Eを除く</b>（D〜Sのみ）</li>
+            </ul>
+          </div>
+
+          <!-- 11 -->
+          <div>
+            <p class="font-bold text-slate-700 mb-1">11. ステージEカレンダー</p>
+            <ul class="space-y-0.5 text-slate-500 list-disc list-inside">
+              <li>G列「FS初回アポ実施日」を実施日として使用</li>
+              <li>アポ実施日が未設定の場合はクローズ予定月の欄外に「未設定」として表示</li>
+              <li>1日最大 <b>3件</b> 表示、超える場合は「＋N件」ボタンで全展開</li>
+              <li>スナップショット閲覧中はそのデータに連動</li>
+            </ul>
+          </div>
+
+          <!-- 12 -->
+          <div>
+            <p class="font-bold text-slate-700 mb-1">12. 将来実装予定（未着手）</p>
+            <ul class="space-y-0.5 text-slate-500 list-disc list-inside">
+              <li>スナップショット10件以上蓄積後：担当者別・検討サービス別の勝率を自動学習</li>
+              <li>リードソース別E案件受注率の個別設定UI</li>
+              <li>当月実施→翌月以降クローズのタイミング補正モデル</li>
+            </ul>
+          </div>
+
+        </div>
       </div>
     </div>
   </div>
@@ -57,8 +219,8 @@
         <p class="text-xs text-slate-500 mt-1">HubSpotからエクスポートしたExcel/CSV（A:取引名, B:取引ステージ, C:取引担当者, H:クローズ日, I:金額）</p>
       </div>
       <div class="flex gap-2">
-        <button onclick="reloadInitial()" class="px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100">初期データ再読込</button>
-        <button onclick="clearData()" class="px-3 py-1.5 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100">データクリア</button>
+        <button onclick="reloadInitial()" class="px-3 py-1.5 text-xs bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200">初期データ再読込</button>
+        <button onclick="clearData()" class="px-3 py-1.5 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600">データクリア</button>
       </div>
     </div>
     <div id="dropZone" class="drop-zone rounded-lg p-6 text-center cursor-pointer" onclick="document.getElementById('fileInput').click()">
@@ -87,10 +249,14 @@
         <h3 class="font-semibold text-slate-700 text-sm">📸 スナップショット（経過追跡）</h3>
         <p class="text-xs text-slate-500 mt-0.5">現在の状態を保存して、積載率の推移を確認できます</p>
       </div>
-      <div class="flex gap-2">
-        <input type="text" id="snapLabel" placeholder="ラベル（任意）" class="px-2 py-1 text-xs border rounded w-40" />
-        <button onclick="saveSnapshot()" class="px-3 py-1.5 text-xs bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 font-semibold">📸 現在を保存</button>
+      <div class="flex gap-2 flex-wrap items-center">
+        <select id="snapMemberFilter" onchange="setSnapMember(this.value)" class="px-2 py-1 text-xs border rounded">
+          <option value="">全体</option>
+        </select>
+        <button onclick="saveSnapshot()" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold" style="background:#0284c7">📸 現在を保存</button>
+        <button id="compareBtn" onclick="doCompare()" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold hidden" style="background:#7c3aed">📊 比較する</button>
         <button onclick="clearAllSnapshots()" class="px-3 py-1.5 text-xs bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200">全削除</button>
+        <button onclick="openPassSetupModal()" class="px-3 py-1.5 text-xs bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200" title="削除パスワードを設定・変更">🔑</button>
       </div>
     </div>
     <div id="snapshotSection">
@@ -103,8 +269,8 @@
           <table class="min-w-full text-xs">
             <thead class="bg-slate-50 text-slate-600">
               <tr>
+                <th class="px-2 py-2 text-center w-8">比較</th>
                 <th class="px-2 py-2 text-left">日時</th>
-                <th class="px-2 py-2 text-left">ラベル</th>
                 <th class="px-2 py-2 text-right">案件数</th>
                 <th class="px-2 py-2 text-right">目標</th>
                 <th class="px-2 py-2 text-right">実施積載</th>
@@ -121,7 +287,7 @@
   </div>
 
   <!-- KPI Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
     <div class="kpi-card bg-white rounded-xl shadow-sm p-5">
       <p class="text-xs text-slate-500">売上目標 <span id="periodLabel" class="text-slate-400"></span></p>
       <p id="kpi-target" class="text-2xl font-bold text-slate-800 mt-1">¥0</p>
@@ -137,25 +303,48 @@
       </div>
       <div class="w-full bg-slate-100 rounded-full h-2 mt-1"><div id="kpi-s-bar" class="progress-bar h-2 rounded-full bg-emerald-500" style="width: 0%"></div></div>
     </div>
-    <div class="kpi-card bg-white rounded-xl shadow-sm p-5 border-l-4 border-blue-500">
+    <div class="kpi-card bg-white rounded-xl shadow-sm p-5 border-l-4" style="border-color:#0284c7">
       <p class="text-xs text-slate-500">実施積載（D+C+C++B+A）</p>
       <p id="kpi-jisshi-amount" class="text-xl font-bold text-slate-800 mt-1">¥0</p>
       <p id="kpi-jisshi-need" class="text-xs text-slate-400">必要: ¥0</p>
       <div class="flex items-center justify-between mt-2">
-        <span id="kpi-jisshi-rate" class="text-lg font-bold text-blue-600">0%</span>
+        <span id="kpi-jisshi-rate" class="text-lg font-bold" style="color:#0284c7">0%</span>
         <span id="kpi-jisshi-count" class="text-xs text-slate-500">0件</span>
       </div>
-      <div class="w-full bg-slate-100 rounded-full h-2 mt-1"><div id="kpi-jisshi-bar" class="progress-bar h-2 rounded-full bg-blue-500" style="width: 0%"></div></div>
+      <div class="w-full bg-slate-100 rounded-full h-2 mt-1"><div id="kpi-jisshi-bar" class="progress-bar h-2 rounded-full" style="width:0%;background:#0284c7"></div></div>
     </div>
-    <div class="kpi-card bg-white rounded-xl shadow-sm p-5 border-l-4 border-amber-500">
+    <div class="kpi-card bg-white rounded-xl shadow-sm p-5 border-l-4 border-emerald-400">
       <p class="text-xs text-slate-500">ヨミ積載（C+C++B+A）</p>
       <p id="kpi-yomi-amount" class="text-xl font-bold text-slate-800 mt-1">¥0</p>
       <p id="kpi-yomi-need" class="text-xs text-slate-400">必要: ¥0</p>
       <div class="flex items-center justify-between mt-2">
-        <span id="kpi-yomi-rate" class="text-lg font-bold text-amber-600">0%</span>
+        <span id="kpi-yomi-rate" class="text-lg font-bold text-emerald-600">0%</span>
         <span id="kpi-yomi-count" class="text-xs text-slate-500">0件</span>
       </div>
-      <div class="w-full bg-slate-100 rounded-full h-2 mt-1"><div id="kpi-yomi-bar" class="progress-bar h-2 rounded-full bg-amber-500" style="width: 0%"></div></div>
+      <div class="w-full bg-slate-100 rounded-full h-2 mt-1"><div id="kpi-yomi-bar" class="progress-bar h-2 rounded-full bg-emerald-400" style="width:0%"></div></div>
+    </div>
+    <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 border-violet-400">
+      <div class="flex items-center justify-between mb-1">
+        <p class="text-xs text-slate-500">🎯 売上着地予想</p>
+        <button onclick="openWinRatesModal()" class="text-slate-400 hover:text-violet-600 text-sm leading-none" title="勝率を設定">⚙️</button>
+      </div>
+      <!-- BASE (D以上) -->
+      <div class="flex items-baseline gap-1.5">
+        <p id="kpi-land-amount" class="text-lg font-bold text-slate-800">¥0</p>
+        <span id="kpi-land-rate" class="text-sm font-bold text-violet-600">0%</span>
+      </div>
+      <p class="text-xs text-slate-400">D以上の確定パイプ</p>
+      <div class="w-full bg-slate-100 rounded-full h-1.5 mt-1"><div id="kpi-land-bar" class="progress-bar h-1.5 rounded-full bg-violet-400" style="width:0%"></div></div>
+      <!-- E込み -->
+      <div class="border-t border-slate-100 mt-2 pt-2">
+        <div class="flex items-baseline gap-1.5">
+          <p id="kpi-lande-amount" class="text-base font-bold text-slate-700">¥0</p>
+          <span id="kpi-lande-rate" class="text-sm font-bold text-violet-500">0%</span>
+        </div>
+        <p class="text-xs text-slate-400">E込み最大着地 <span id="kpi-land-ratio" class="text-slate-300"></span></p>
+      </div>
+      <!-- 達成可能性バッジ -->
+      <div id="kpi-achieve-badge" class="mt-2 text-center text-xs font-bold px-2 py-1 rounded-lg"></div>
     </div>
   </div>
 
@@ -163,50 +352,62 @@
   <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
     <h3 class="font-semibold text-slate-700 mb-3 text-sm">ステージ別 件数・金額</h3>
     <div class="grid grid-cols-2 md:grid-cols-7 gap-3 text-sm">
-      <div class="border-l-4 border-blue-400 pl-2"><div class="text-xs text-slate-500"><span class="stage-e font-bold">E</span> 実施予定</div><div id="cnt-e" class="font-semibold">0件 / ¥0</div></div>
-      <div class="border-l-4 border-emerald-400 pl-2"><div class="text-xs text-slate-500"><span class="stage-d font-bold">D</span> 実施済</div><div id="cnt-d" class="font-semibold">0件 / ¥0</div></div>
-      <div class="border-l-4 border-amber-400 pl-2"><div class="text-xs text-slate-500"><span class="stage-c font-bold">C</span> ヨミ</div><div id="cnt-c" class="font-semibold">0件 / ¥0</div></div>
-      <div class="border-l-4 border-orange-500 pl-2"><div class="text-xs text-slate-500"><span class="stage-cp font-bold">C+</span> 見積提出</div><div id="cnt-cp" class="font-semibold">0件 / ¥0</div></div>
-      <div class="border-l-4 border-red-500 pl-2"><div class="text-xs text-slate-500"><span class="stage-b font-bold">B</span> 稟議握り</div><div id="cnt-b" class="font-semibold">0件 / ¥0</div></div>
-      <div class="border-l-4 border-purple-500 pl-2"><div class="text-xs text-slate-500"><span class="stage-a font-bold">A</span> 契約締結中</div><div id="cnt-a" class="font-semibold">0件 / ¥0</div></div>
-      <div class="border-l-4 border-green-600 pl-2"><div class="text-xs text-slate-500"><span class="stage-s font-bold">S</span> 受注</div><div id="cnt-s" class="font-semibold">0件 / ¥0</div></div>
+      <div class="border-l-4 pl-2" style="border-color:#94a3b8"><div class="text-xs text-slate-500"><span class="stage-e font-bold">E</span> 実施予定</div><div id="cnt-e" class="font-semibold">0件 / ¥0</div></div>
+      <div class="border-l-4 pl-2" style="border-color:#7dd3fc"><div class="text-xs text-slate-500"><span class="stage-d font-bold">D</span> 実施済</div><div id="cnt-d" class="font-semibold">0件 / ¥0</div></div>
+      <div class="border-l-4 pl-2" style="border-color:#38bdf8"><div class="text-xs text-slate-500"><span class="stage-c font-bold">C</span> ヨミ</div><div id="cnt-c" class="font-semibold">0件 / ¥0</div></div>
+      <div class="border-l-4 pl-2" style="border-color:#0ea5e9"><div class="text-xs text-slate-500"><span class="stage-cp font-bold">C+</span> 見積提出</div><div id="cnt-cp" class="font-semibold">0件 / ¥0</div></div>
+      <div class="border-l-4 pl-2" style="border-color:#0284c7"><div class="text-xs text-slate-500"><span class="stage-b font-bold">B</span> 稟議握り</div><div id="cnt-b" class="font-semibold">0件 / ¥0</div></div>
+      <div class="border-l-4 pl-2" style="border-color:#0369a1"><div class="text-xs text-slate-500"><span class="stage-a font-bold">A</span> 契約締結中</div><div id="cnt-a" class="font-semibold">0件 / ¥0</div></div>
+      <div class="border-l-4 pl-2" style="border-color:#10b981"><div class="text-xs text-slate-500"><span class="stage-s font-bold">S</span> 受注</div><div id="cnt-s" class="font-semibold">0件 / ¥0</div></div>
     </div>
   </div>
 
   <!-- Charts -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
     <div class="bg-white rounded-xl shadow-sm p-5">
-      <h3 class="font-semibold text-slate-700 mb-3">FSメンバー別 実施積載率（目標×5）</h3>
-      <canvas id="jisshiChart" height="300"></canvas>
+      <h3 class="font-semibold text-slate-700 mb-3 text-sm">FSメンバー別 実施積載率（目標×5）</h3>
+      <canvas id="jisshiChart" height="320"></canvas>
     </div>
     <div class="bg-white rounded-xl shadow-sm p-5">
-      <h3 class="font-semibold text-slate-700 mb-3">FSメンバー別 ヨミ積載率（目標×3）</h3>
-      <canvas id="yomiChart" height="300"></canvas>
+      <h3 class="font-semibold text-slate-700 mb-3 text-sm">FSメンバー別 ヨミ積載率（目標×3）</h3>
+      <canvas id="yomiChart" height="320"></canvas>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-5">
+      <h3 class="font-semibold text-slate-700 mb-3 text-sm">FSメンバー別 売上着地予想（達成予想%）</h3>
+      <canvas id="landingChart" height="320"></canvas>
     </div>
   </div>
 
   <!-- Member Detail Table -->
   <div class="bg-white rounded-xl shadow-sm p-5">
     <h3 class="font-semibold text-slate-700 mb-3">FSメンバー別 詳細</h3>
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-sm">
-        <thead class="bg-slate-50 text-slate-600 text-xs">
+    <div>
+      <table class="w-full text-xs">
+        <thead class="bg-slate-50 text-slate-600">
           <tr>
-            <th class="px-2 py-2 text-left" rowspan="2">担当者</th>
-            <th class="px-2 py-2 text-right" rowspan="2">売上目標</th>
-            <th class="px-2 py-2 text-center bg-blue-50 text-blue-700" colspan="4">実施基準：目標×5</th>
-            <th class="px-2 py-2 text-center bg-amber-50 text-amber-700" colspan="4">ヨミ基準：目標×3</th>
-            <th class="px-2 py-2 text-center" rowspan="2">総合ステータス</th>
+            <th class="px-1 py-2 text-left" rowspan="2">担当者</th>
+            <th class="px-1 py-2 text-right" rowspan="2">売上目標</th>
+            <th class="px-1 py-2 text-center" style="background:#e0f2fe;color:#0284c7" colspan="5">実施基準：目標×5</th>
+            <th class="px-1 py-2 text-center" style="background:#d1fae5;color:#059669" colspan="5">ヨミ基準：目標×3</th>
+            <th class="px-1 py-2 text-center bg-violet-50 text-violet-700" colspan="2">着地予想</th>
           </tr>
           <tr>
-            <th class="px-2 py-2 text-right bg-blue-50">必要額</th><th class="px-2 py-2 text-right bg-blue-50">積載額</th>
-            <th class="px-2 py-2 text-right bg-blue-50">件数</th><th class="px-2 py-2 text-right bg-blue-50">充足率</th>
-            <th class="px-2 py-2 text-right bg-amber-50">必要額</th><th class="px-2 py-2 text-right bg-amber-50">積載額</th>
-            <th class="px-2 py-2 text-right bg-amber-50">件数</th><th class="px-2 py-2 text-right bg-amber-50">充足率</th>
+            <th class="px-1 py-2 text-right" style="background:#e0f2fe">必要額</th>
+            <th class="px-1 py-2 text-right" style="background:#e0f2fe">必要件数</th>
+            <th class="px-1 py-2 text-right" style="background:#e0f2fe">積載額</th>
+            <th class="px-1 py-2 text-right" style="background:#e0f2fe">件数</th>
+            <th class="px-1 py-2 text-right" style="background:#e0f2fe">充足率</th>
+            <th class="px-1 py-2 text-right" style="background:#d1fae5">必要額</th>
+            <th class="px-1 py-2 text-right" style="background:#d1fae5">必要件数</th>
+            <th class="px-1 py-2 text-right" style="background:#d1fae5">積載額</th>
+            <th class="px-1 py-2 text-right" style="background:#d1fae5">件数</th>
+            <th class="px-1 py-2 text-right" style="background:#d1fae5">充足率</th>
+            <th class="px-1 py-2 text-right bg-violet-50">予想額</th>
+            <th class="px-1 py-2 text-right bg-violet-50">達成予想</th>
           </tr>
         </thead>
         <tbody id="memberTable"></tbody>
-        <tfoot class="bg-slate-100 font-semibold text-sm"><tr id="totalRow"></tr></tfoot>
+        <tfoot class="bg-slate-100 font-semibold text-xs"><tr id="totalRow"></tr></tfoot>
       </table>
     </div>
   </div>
@@ -218,7 +419,7 @@
       <div class="flex gap-2 items-center text-xs">
         <label>担当者: <select id="dealFilterMember" onchange="renderDealList()" class="ml-1 border rounded px-2 py-1"><option value="">全員</option></select></label>
         <label>ステージ: <select id="dealFilterStage" onchange="renderDealList()" class="ml-1 border rounded px-2 py-1">
-          <option value="">全て</option><option value="D">D</option><option value="C">C</option><option value="C+">C+</option><option value="B">B</option><option value="A">A</option><option value="S">S</option>
+          <option value="">全て</option><option value="E">E</option><option value="D">D</option><option value="C">C</option><option value="C+">C+</option><option value="B">B</option><option value="A">A</option><option value="S">S</option>
         </select></label>
       </div>
     </div>
@@ -228,7 +429,7 @@
           <tr>
             <th class="px-2 py-2 text-left">企業名</th><th class="px-2 py-2 text-left">担当者</th>
             <th class="px-2 py-2 text-center">ステージ</th><th class="px-2 py-2 text-center">月</th>
-            <th class="px-2 py-2 text-center">商品</th><th class="px-2 py-2 text-right">金額</th>
+            <th class="px-2 py-2 text-center">検討サービス</th><th class="px-2 py-2 text-right">金額</th>
           </tr>
         </thead>
         <tbody id="dealList"></tbody>
@@ -236,12 +437,133 @@
     </div>
   </div>
 
-  <p class="text-xs text-slate-400 mt-4 text-center">データは本ブラウザ内のみで処理されます（サーバー送信なし）</p>
+  <!-- E Stage Calendar -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mt-6">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+      <div>
+        <h3 class="font-semibold text-slate-700 text-sm">📅 ステージE 実施予定カレンダー</h3>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="eCalTotalBadge" class="text-xs font-semibold px-3 py-1 rounded-full" style="background:#dbeafe;color:#0284c7"></span>
+        <select id="eCalMemberFilter" onchange="setECalMember(this.value)" class="px-2 py-1 text-xs border rounded">
+          <option value="">全員</option>
+        </select>
+      </div>
+    </div>
+    <!-- Snapshot indicator -->
+    <div id="eCalSnapBanner" class="hidden mb-3 px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2" style="background:#fef3c7;color:#92400e">
+      <span>📂</span><span id="eCalSnapLabel"></span>
+    </div>
+    <!-- Month Navigation -->
+    <div class="flex items-center justify-center gap-4 mb-4">
+      <button onclick="eCalPrevMonth()" class="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 font-bold">‹</button>
+      <span id="eCalMonthLabel" class="text-sm font-bold text-slate-700 w-28 text-center"></span>
+      <button onclick="eCalNextMonth()" class="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 font-bold">›</button>
+    </div>
+    <div id="eCalendar"></div>
+    <!-- E deals without date -->
+    <div id="eCalNoDaySection" class="hidden mt-4">
+      <p class="text-xs font-semibold text-slate-500 mb-2">📌 アポ実施日未設定のE案件（クローズ予定月：この月）</p>
+      <div id="eCalNoDayList" class="flex flex-wrap gap-2"></div>
+    </div>
+  </div>
+
+  <p class="text-xs text-slate-400 mt-4 mb-2 text-center">データは本ブラウザ内のみで処理されます（サーバー送信なし）</p>
+
+</div>
+
+<!-- 削除パスワード確認モーダル -->
+<div id="passModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-xl p-6 w-80">
+    <h3 class="font-semibold text-slate-800 mb-1">🔑 削除パスワード</h3>
+    <p class="text-xs text-slate-500 mb-3">削除を実行するにはパスワードを入力してください</p>
+    <input type="password" id="passInput" class="w-full border rounded px-3 py-2 text-sm mb-1" placeholder="パスワード"
+      onkeydown="if(event.key==='Enter')confirmDelete()" />
+    <p id="passError" class="text-xs text-red-500 mb-3 hidden">パスワードが違います</p>
+    <div class="flex gap-2 justify-end">
+      <button onclick="closePassModal()" class="px-3 py-1.5 text-xs bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200">キャンセル</button>
+      <button onclick="confirmDelete()" class="px-3 py-1.5 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold">削除する</button>
+
+    </div>
+  </div>
+</div>
+
+<!-- 勝率設定モーダル -->
+<div id="winRatesModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-xl p-6 w-auto max-w-2xl max-h-screen overflow-y-auto">
+    <h3 class="font-semibold text-slate-800 mb-1">⚙️ 着地予想 勝率設定</h3>
+    <p class="text-xs text-slate-500 mb-3">ステージ×検討サービスごとの勝率（%）を入力してください。※ 変更はブラウザに保存されます。</p>
+    <!-- E案件設定 -->
+    <div class="mb-4 p-3 bg-violet-50 rounded-lg border border-violet-100">
+      <div class="flex items-center gap-3">
+        <span class="text-xs font-semibold text-slate-700 whitespace-nowrap">E案件 最終受注率</span>
+        <div class="flex items-center gap-1">
+          <input type="number" id="wr-e-rate" min="0" max="100" step="0.1" value="10"
+            class="w-14 border rounded px-1 py-0.5 text-right text-xs border-violet-300 bg-white" />
+          <span class="text-xs text-slate-500">%</span>
+        </div>
+        <span class="text-xs text-slate-400">E → 最終的にSになる確率（初期値10%）</span>
+      </div>
+      <p class="text-xs text-slate-400 mt-1">残営業日比率×この確率で期待値を算出。スナップショット学習で将来自動補正。</p>
+    </div>
+    <div id="winRatesTableWrap" class="mb-4 overflow-x-auto"></div>
+    <div class="mt-3 p-3 bg-violet-50 rounded-lg text-xs text-slate-600">
+      <b class="text-violet-700">📌 滞留減衰について</b><br>
+      D/C/C+/B は、スナップショット間で同じステージに留まった回数に応じて期待値が下がります。<br>
+      減衰率: 1回あたり −12%、最低40%まで（スナップショットが溜まるほど自動で精度向上）
+    </div>
+    <div class="flex gap-2 justify-between mt-4">
+      <button onclick="resetWinRates()" class="px-3 py-1.5 text-xs bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200">デフォルトに戻す</button>
+      <div class="flex gap-2">
+        <button onclick="closeWinRatesModal()" class="px-3 py-1.5 text-xs bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200">キャンセル</button>
+        <button onclick="applyWinRates()" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold" style="background:#0284c7">保存して反映</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- スナップショット比較モーダル -->
+<div id="compareModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 py-6 overflow-y-auto">
+  <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl mx-4">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 sticky top-0 bg-white rounded-t-xl z-10">
+      <div>
+        <h3 class="font-semibold text-slate-800">📊 スナップショット比較</h3>
+        <p id="compareModalSubtitle" class="text-xs text-slate-500 mt-0.5"></p>
+      </div>
+      <button onclick="closeCompareModal()" class="text-slate-400 hover:text-slate-700 text-xl leading-none font-bold">✕</button>
+    </div>
+    <div id="compareModalBody" class="p-5"></div>
+  </div>
+</div>
+
+<!-- パスワード設定モーダル -->
+<div id="passSetupModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-xl p-6 w-80">
+    <h3 class="font-semibold text-slate-800 mb-1">🔑 削除パスワード設定</h3>
+    <p class="text-xs text-slate-500 mb-3">スナップショットの削除を保護するパスワードを設定します（4文字以上）</p>
+    <input type="password" id="passSetupInput" class="w-full border rounded px-3 py-2 text-sm mb-2" placeholder="パスワード（4文字以上）" />
+    <input type="password" id="passSetupConfirm" class="w-full border rounded px-3 py-2 text-sm mb-1" placeholder="確認用（もう一度）"
+      onkeydown="if(event.key==='Enter')savePassword()" />
+    <p id="passSetupError" class="text-xs text-red-500 mb-3 h-4"></p>
+    <div class="flex gap-2 justify-end">
+      <button onclick="closePassSetupModal()" class="px-3 py-1.5 text-xs bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200">キャンセル</button>
+      <button onclick="savePassword()" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold" style="background:#0284c7">設定する</button>
+    </div>
+  </div>
 </div>
 
 <script>
+// ===== ルール一覧トグル =====
+function toggleRules() {
+  const panel = document.getElementById('rulesPanel');
+  const arrow = document.getElementById('rulesArrow');
+  const isHidden = panel.classList.contains('hidden');
+  panel.classList.toggle('hidden', !isHidden);
+  arrow.textContent = isHidden ? '▼' : '▶';
+}
+
 // ===== 定数 =====
-const MEMBERS = ['悠太 藤森','日向子 林','翔世 久保田','良輝 平井','勇亮 梶山','陸 深澤','未来 廣澤','学 山口','柚基 髙橋','杏海 大野','恵 秋山'];
+const MEMBERS = ['藤森 悠太','林 日向子','久保田 翔世','平井 良輝','梶山 勇亮','深澤 陸','廣澤 未来','山口 学','髙橋 柚基','大野 杏海','秋山 恵'];
 const FY_MONTHS = ['2026/04','2026/05','2026/06','2026/07','2026/08','2026/09','2026/10','2026/11','2026/12','2027/01','2027/02','2027/03'];
 const QUARTERS = {
   'Q1': {label:'Q1（4-6月）', months:['2026/04','2026/05','2026/06']},
@@ -256,39 +578,180 @@ const HALVES = {
 
 // ===== 目標データ（未設定月は0。05/06は確定値）=====
 const _TARGETS_BASE = {
-  '2026/04': {'悠太 藤森':4000000,'日向子 林':3000000,'翔世 久保田':3000000,'良輝 平井':4000000,'勇亮 梶山':3000000,'陸 深澤':2500000,'未来 廣澤':2000000,'学 山口':3000000,'柚基 髙橋':1000000,'杏海 大野':0,'恵 秋山':0},
-  '2026/05': {'悠太 藤森':4000000,'日向子 林':3500000,'翔世 久保田':3500000,'良輝 平井':4000000,'勇亮 梶山':3500000,'陸 深澤':2500000,'未来 廣澤':2500000,'学 山口':3500000,'柚基 髙橋':1500000,'杏海 大野':0,'恵 秋山':1000000},
-  '2026/06': {'悠太 藤森':4000000,'日向子 林':3000000,'翔世 久保田':3000000,'良輝 平井':4000000,'勇亮 梶山':3500000,'陸 深澤':2500000,'未来 廣澤':2000000,'学 山口':3000000,'柚基 髙橋':2000000,'杏海 大野':1000000,'恵 秋山':1000000},
-  '2026/07': {'悠太 藤森':4000000,'日向子 林':3000000,'翔世 久保田':3000000,'良輝 平井':4000000,'勇亮 梶山':3000000,'陸 深澤':2500000,'未来 廣澤':2000000,'学 山口':3000000,'柚基 髙橋':1000000,'杏海 大野':1000000,'恵 秋山':1000000},
-  '2026/08': {'悠太 藤森':3500000,'日向子 林':3500000,'翔世 久保田':3500000,'良輝 平井':3500000,'勇亮 梶山':3500000,'陸 深澤':3000000,'未来 廣澤':2500000,'学 山口':3500000,'柚基 髙橋':1500000,'杏海 大野':1500000,'恵 秋山':1500000},
-  '2026/09': {'悠太 藤森':3500000,'日向子 林':3500000,'翔世 久保田':3500000,'良輝 平井':3500000,'勇亮 梶山':3500000,'陸 深澤':2500000,'未来 廣澤':2500000,'学 山口':3500000,'柚基 髙橋':2500000,'杏海 大野':2500000,'恵 秋山':2500000},
-  '2026/10': {'悠太 藤森':4000000,'日向子 林':3000000,'翔世 久保田':3000000,'良輝 平井':4000000,'勇亮 梶山':3500000,'陸 深澤':2500000,'未来 廣澤':2500000,'学 山口':3500000,'柚基 髙橋':2500000,'杏海 大野':2500000,'恵 秋山':2500000},
-  '2026/11': {'悠太 藤森':4000000,'日向子 林':3500000,'翔世 久保田':3500000,'良輝 平井':4000000,'勇亮 梶山':3500000,'陸 深澤':2500000,'未来 廣澤':2500000,'学 山口':3500000,'柚基 髙橋':3000000,'杏海 大野':2500000,'恵 秋山':2500000},
-  '2026/12': {'悠太 藤森':4000000,'日向子 林':3000000,'翔世 久保田':3500000,'良輝 平井':4000000,'勇亮 梶山':3500000,'陸 深澤':3000000,'未来 廣澤':3000000,'学 山口':3500000,'柚基 髙橋':3000000,'杏海 大野':2500000,'恵 秋山':2500000},
-  '2027/01': {'悠太 藤森':4000000,'日向子 林':3000000,'翔世 久保田':3500000,'良輝 平井':4000000,'勇亮 梶山':3000000,'陸 深澤':2500000,'未来 廣澤':2500000,'学 山口':3000000,'柚基 髙橋':2000000,'杏海 大野':2000000,'恵 秋山':2500000},
-  '2027/02': {'悠太 藤森':3500000,'日向子 林':3500000,'翔世 久保田':3500000,'良輝 平井':3500000,'勇亮 梶山':3500000,'陸 深澤':2500000,'未来 廣澤':2500000,'学 山口':3500000,'柚基 髙橋':3000000,'杏海 大野':2500000,'恵 秋山':2500000},
-  '2027/03': {'悠太 藤森':3500000,'日向子 林':3500000,'翔世 久保田':3500000,'良輝 平井':3500000,'勇亮 梶山':3500000,'陸 深澤':2500000,'未来 廣澤':3000000,'学 山口':3500000,'柚基 髙橋':2000000,'杏海 大野':2500000,'恵 秋山':2000000}
+  '2026/04': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3000000,'平井 良輝':4000000,'梶山 勇亮':3000000,'深澤 陸':2500000,'廣澤 未来':2000000,'山口 学':3000000,'髙橋 柚基':1000000,'大野 杏海':0,'秋山 恵':0},
+  '2026/05': {'藤森 悠太':4000000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':4000000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':1500000,'大野 杏海':0,'秋山 恵':1000000},
+  '2026/06': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3000000,'平井 良輝':4000000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2000000,'山口 学':3000000,'髙橋 柚基':2000000,'大野 杏海':1000000,'秋山 恵':1000000},
+  '2026/07': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3000000,'平井 良輝':4000000,'梶山 勇亮':3000000,'深澤 陸':2500000,'廣澤 未来':2000000,'山口 学':3000000,'髙橋 柚基':1000000,'大野 杏海':1000000,'秋山 恵':1000000},
+  '2026/08': {'藤森 悠太':3500000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':3500000,'梶山 勇亮':3500000,'深澤 陸':3000000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':1500000,'大野 杏海':1500000,'秋山 恵':1500000},
+  '2026/09': {'藤森 悠太':3500000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':3500000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':2500000,'大野 杏海':2500000,'秋山 恵':2500000},
+  '2026/10': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3000000,'平井 良輝':4000000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':2500000,'大野 杏海':2500000,'秋山 恵':2500000},
+  '2026/11': {'藤森 悠太':4000000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':4000000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':3000000,'大野 杏海':2500000,'秋山 恵':2500000},
+  '2026/12': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3500000,'平井 良輝':4000000,'梶山 勇亮':3500000,'深澤 陸':3000000,'廣澤 未来':3000000,'山口 学':3500000,'髙橋 柚基':3000000,'大野 杏海':2500000,'秋山 恵':2500000},
+  '2027/01': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3500000,'平井 良輝':4000000,'梶山 勇亮':3000000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3000000,'髙橋 柚基':2000000,'大野 杏海':2000000,'秋山 恵':2500000},
+  '2027/02': {'藤森 悠太':3500000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':3500000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':3000000,'大野 杏海':2500000,'秋山 恵':2500000},
+  '2027/03': {'藤森 悠太':3500000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':3500000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':3000000,'山口 学':3500000,'髙橋 柚基':2000000,'大野 杏海':2500000,'秋山 恵':2000000}
 };
 const TARGETS = {};
 FY_MONTHS.forEach(m => TARGETS[m] = _TARGETS_BASE[m] || Object.fromEntries(MEMBERS.map(n => [n, 0])));
 
 const JISSHI_MULT = 5, YOMI_MULT = 3;
-const PRODUCT_ESTIMATES = { '新卒': 700000, '中途': 360000, 'セット': 700000, '新卒中途セット': 700000 };
+// ===== 着地予想 勝率設定 =====
+const WIN_RATES_KEY = 'fs-win-rates-v1';
+const PRODUCTS_LIST = ['新卒', '中途', '新卒・中途'];
+const STAGE_LIST_WIN = ['D', 'C', 'C+', 'B', 'A'];
+// 商品別デフォルト勝率テーブル（stage → product → rate）
+const WIN_RATES_DEFAULT = {
+  'E':  { 'default':0, '新卒':0,    '中途':0,    '新卒・中途':0    },
+  'D':  { 'default':0.10,'新卒':0.10,'中途':0.10,'新卒・中途':0.10 },
+  'C':  { 'default':0.20,'新卒':0.20,'中途':0.20,'新卒・中途':0.20 },
+  'C+': { 'default':0.47,'新卒':0.47,'中途':0.47,'新卒・中途':0.47 },
+  'B':  { 'default':0.80,'新卒':0.80,'中途':0.80,'新卒・中途':0.80 },
+  'A':  { 'default':0.98,'新卒':0.98,'中途':0.98,'新卒・中途':0.98 },
+  'S':  { 'default':1.00,'新卒':1.00,'中途':1.00,'新卒・中途':1.00 },
+};
+let customWinRates = {}; // localStorage から上書き読み込み
+const E_WIN_RATE_KEY = 'fs-e-win-rate-v1';
+let eWinRate = 0.10; // E案件の最終受注率（初期値10%）
+
+function loadWinRates() {
+  try { const r = localStorage.getItem(WIN_RATES_KEY); customWinRates = r ? JSON.parse(r) : {}; }
+  catch(e) { customWinRates = {}; }
+  try { const r = localStorage.getItem(E_WIN_RATE_KEY); eWinRate = r !== null ? parseFloat(r) : 0.10; }
+  catch(e) { eWinRate = 0.10; }
+}
+function getWinRate(stage, product) {
+  if (stage === 'E') return 0;
+  if (stage === 'S') return 1.0;
+  const prod = (product && PRODUCTS_LIST.includes(product)) ? product : 'default';
+  const custom = customWinRates[stage];
+  if (custom && custom[prod] !== undefined) return custom[prod];
+  const def = WIN_RATES_DEFAULT[stage] || {};
+  return def[prod] !== undefined ? def[prod] : (def['default'] || 0);
+}
+
+const TIME_DECAY_STAGES = ['D', 'C', 'C+'];
+// ===== 滞留減衰 =====
+const STALE_STAGES    = ['D', 'C', 'C+', 'B'];
+const STALE_MIN       = 0.4;
+const STALE_PER_SNAP  = 0.12;
+
+function getStaleSnaps(deal) {
+  if (!snapshots || snapshots.length === 0) return 0;
+  const key = deal.hubspotId
+    ? `hs:${deal.hubspotId}`
+    : `${deal.company}||${deal.name}||${deal.month}`;
+  let count = 0;
+  for (const snap of snapshots) {
+    const hit = snap.pipeline.find(d => {
+      const k = d.hubspotId ? `hs:${d.hubspotId}` : `${d.company}||${d.name}||${d.month}`;
+      return k === key && d.stage === deal.stage;
+    });
+    if (hit) count++;
+  }
+  return count;
+}
+function getStaleFactor(deal) {
+  if (!STALE_STAGES.includes(deal.stage)) return 1.0;
+  return Math.max(STALE_MIN, 1 - STALE_PER_SNAP * getStaleSnaps(deal));
+}
+const PRODUCT_ESTIMATES = { '新卒': 700000, '中途': 360000, '新卒・中途': 700000, '新卒中途セット': 700000 };
 const DEFAULT_ESTIMATE = 360000;
 const SNAP_KEY = 'fs-dashboard-snapshots-v1';
+const PASS_KEY = 'fs-dashboard-pass-v1';
+let pendingDeleteCallback = null;
+
+function getStoredPassword() { return localStorage.getItem(PASS_KEY); }
+
+function openPassSetupModal() {
+  document.getElementById('passSetupInput').value = '';
+  document.getElementById('passSetupConfirm').value = '';
+  document.getElementById('passSetupError').textContent = '';
+  document.getElementById('passSetupModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('passSetupInput').focus(), 100);
+}
+function closePassSetupModal() { document.getElementById('passSetupModal').classList.add('hidden'); }
+function savePassword() {
+  const p1 = document.getElementById('passSetupInput').value;
+  const p2 = document.getElementById('passSetupConfirm').value;
+  const err = document.getElementById('passSetupError');
+  if (p1.length < 4) { err.textContent = '4文字以上で入力してください'; return; }
+  if (p1 !== p2) { err.textContent = 'パスワードが一致しません'; return; }
+  localStorage.setItem(PASS_KEY, p1);
+  closePassSetupModal();
+  alert('✅ パスワードを設定しました');
+}
+
+function requirePassword(callback) {
+  if (!getStoredPassword()) {
+    if (confirm('削除パスワードが未設定です。今すぐ設定しますか？')) openPassSetupModal();
+    return;
+  }
+  pendingDeleteCallback = callback;
+  document.getElementById('passInput').value = '';
+  document.getElementById('passError').classList.add('hidden');
+  document.getElementById('passModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('passInput').focus(), 100);
+}
+function closePassModal() {
+  document.getElementById('passModal').classList.add('hidden');
+  pendingDeleteCallback = null;
+}
+function confirmDelete() {
+  const input = document.getElementById('passInput').value;
+  if (input === getStoredPassword()) {
+    const cb = pendingDeleteCallback; // closePassModal前に退避
+    closePassModal();
+    if (cb) cb();
+  } else {
+    document.getElementById('passError').classList.remove('hidden');
+    document.getElementById('passInput').value = '';
+    document.getElementById('passInput').focus();
+  }
+}
 
 let pipeline = [];
+let lostDeals = [];
+
+const LOST_STAGE_MAP = {
+  '失注（未商談）': '未ヨミ化',
+  '失注（競合）': '競合失注',
+  '失注（ATS利用なし）': 'ATS導入なし',
+  '失注（音信不通）': '音信不通',
+  '失注（その他）': 'その他',
+};
 let currentMode = 'month';
 let currentPeriod = '2026/05';
-let jisshiChart = null, yomiChart = null, trendChart = null;
+let jisshiChart = null, yomiChart = null, landingChart = null, trendChart = null;
 let snapshots = [];
+let currentSnapMember = '';
+let eCalMember = '';
+let snapshotView = null; // { id, dateStr, label, pipeline } or null
+
+function getActivePipeline() { return snapshotView ? snapshotView.pipeline : pipeline; }
+
+function viewSnapshot(id) {
+  if (snapshotView && snapshotView.id === id) {
+    snapshotView = null; // 同じスナップショットをクリック → OFF
+  } else {
+    const snap = snapshots.find(s => s.id === id);
+    if (!snap) return;
+    snapshotView = snap; // 別のスナップショットをクリック → ON
+  }
+  render();
+}
+
+function exitSnapshotView() {
+  snapshotView = null;
+  render();
+}
 
 // ===== 初期データ =====
-const INITIAL_DATA = [{"company":"AIAI Child Care株式会社","name":"翔世 久保田","month":"2026/04","stage":"C+","amount":1400000,"product":"セット","estimated":false},{"company":"Chubb損害保険株式会社","name":"未来 廣澤","month":"2026/04","stage":"B","amount":1060000,"product":"セット","estimated":false},{"company":"Forvis Mazars Japan 有限責任監査法人","name":"翔世 久保田","month":"2026/04","stage":"B","amount":820000,"product":"セット","estimated":false},{"company":"FutureOne株式会社_CSトスアップ","name":"良輝 平井","month":"2026/04","stage":"C","amount":230000,"product":"セット","estimated":false},{"company":"jinjer株式会社","name":"勇亮 梶山","month":"2026/05","stage":"C","amount":1640000,"product":"セット","estimated":false},{"company":"JR西日本山陰開発株式会社","name":"学 山口","month":"2026/06","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"Lifortune株式会社","name":"悠太 藤森","month":"2026/05","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"MPアグロ株式会社","name":"翔世 久保田","month":"2026/04","stage":"C","amount":460000,"product":"セット","estimated":false},{"company":"SALES GO株式会社","name":"勇亮 梶山","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"Synthesy株式会社","name":"学 山口","month":"2026/05","stage":"C","amount":580000,"product":"中途","estimated":false},{"company":"TGC株式会社","name":"未来 廣澤","month":"2026/04","stage":"C+","amount":460000,"product":"セット","estimated":false},{"company":"TISソリューションリンク株式会社","name":"翔世 久保田","month":"2026/09","stage":"D","amount":1060000,"product":"新卒","estimated":false},{"company":"Zen Intelligence株式会社","name":"悠太 藤森","month":"2026/04","stage":"C+","amount":460000,"product":"中途","estimated":false},{"company":"めもりあるグループホールディングス株式会社","name":"勇亮 梶山","month":"2026/04","stage":"D","amount":580000,"product":"新卒","estimated":false},{"company":"アァルピィ東プラ株式会社","name":"陸 深澤","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"アキタ株式会社","name":"悠太 藤森","month":"2026/04","stage":"S","amount":1280000,"product":"セット","estimated":false},{"company":"アクアス株式会社","name":"未来 廣澤","month":"2026/05","stage":"C+","amount":1060000,"product":"セット","estimated":false},{"company":"アンリツ株式会社","name":"悠太 藤森","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"アンリツ株式会社","name":"悠太 藤森","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"ウッドリンク株式会社","name":"柚基 髙橋","month":"2026/06","stage":"C+","amount":1400000,"product":"セット","estimated":false},{"company":"ウツエバルブサービス株式会社","name":"陸 深澤","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"エムシーディースリー株式会社","name":"勇亮 梶山","month":"2026/05","stage":"D","amount":1080000,"product":"新卒","estimated":false},{"company":"エルガーホールディングス合同会社","name":"陸 深澤","month":"2026/05","stage":"C","amount":820000,"product":"セット","estimated":false},{"company":"オムロン株式会社","name":"悠太 藤森","month":"2026/06","stage":"C+","amount":1460000,"product":"セット","estimated":false},{"company":"オルバヘルスケアホールディングス株式会社","name":"悠太 藤森","month":"2026/04","stage":"C","amount":2700000,"product":"セット","estimated":false},{"company":"クルマテラス株式会社","name":"陸 深澤","month":"2026/04","stage":"C","amount":940000,"product":null,"estimated":false},{"company":"グリーン司法書士法人","name":"柚基 髙橋","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"ケイアイスター不動産株式会社","name":"学 山口","month":"2026/09","stage":"D","amount":360000,"product":"中途","estimated":true},{"company":"サンセイ医機株式会社","name":"悠太 藤森","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"サンネット株式会社","name":"勇亮 梶山","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"シマダヤ関東株式会社","name":"柚基 髙橋","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"シン・エナジー株式会社","name":"日向子 林","month":"2026/04","stage":"C","amount":460000,"product":null,"estimated":false},{"company":"スガノ農機株式会社","name":"翔世 久保田","month":"2026/05","stage":"C+","amount":820000,"product":"新卒","estimated":false},{"company":"スターコンサルティング株式会社","name":"未来 廣澤","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"スチールプランテック株式会社","name":"勇亮 梶山","month":"2026/06","stage":"C","amount":820000,"product":"新卒","estimated":false},{"company":"セルフ・エー株式会社","name":"陸 深澤","month":"2026/04","stage":"C","amount":580000,"product":"中途","estimated":false},{"company":"ソルト・コンソーシアム株式会社","name":"日向子 林","month":"2026/05","stage":"C","amount":360000,"product":null,"estimated":true},{"company":"ソルバ株式会社","name":"良輝 平井","month":"2026/04","stage":"C","amount":840000,"product":"新卒","estimated":false},{"company":"ダイハツインフィニアース株式会社","name":"翔世 久保田","month":"2026/04","stage":"S","amount":1060000,"product":"セット","estimated":false},{"company":"ダイハツインフィニアース株式会社","name":"翔世 久保田","month":"2026/04","stage":"S","amount":1060000,"product":"セット","estimated":false},{"company":"デリカフーズ株式会社","name":"未来 廣澤","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"トランスコスモス株式会社","name":"未来 廣澤","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"ナガセルータック株式会社","name":"陸 深澤","month":"2026/05","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"ハーベスト株式会社","name":"日向子 林","month":"2026/05","stage":"C","amount":700000,"product":null,"estimated":false},{"company":"バリュエンスホールディングス株式会社","name":"悠太 藤森","month":"2026/08","stage":"D","amount":1400000,"product":"セット","estimated":false},{"company":"パラカ株式会社","name":"良輝 平井","month":"2026/06","stage":"C","amount":720000,"product":"新卒","estimated":false},{"company":"パーカーエンジニアリング株式会社","name":"勇亮 梶山","month":"2026/04","stage":"D","amount":460000,"product":null,"estimated":false},{"company":"フェニックスリゾート株式会社","name":"良輝 平井","month":"2026/05","stage":"C","amount":460000,"product":"セット","estimated":false},{"company":"フソウホールディングス株式会社","name":"学 山口","month":"2026/07","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"フラームジャパン株式会社","name":"未来 廣澤","month":"2026/04","stage":"S","amount":460000,"product":"中途","estimated":false},{"company":"ミツワ電機株式会社","name":"翔世 久保田","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"ヤサカ観光バス株式会社","name":"良輝 平井","month":"2026/04","stage":"C","amount":720000,"product":"新卒","estimated":false},{"company":"ユニチカ株式会社","name":"良輝 平井","month":"2026/04","stage":"C+","amount":820000,"product":"セット","estimated":false},{"company":"ラッシュジャパン合同会社","name":"陸 深澤","month":"2026/04","stage":"C","amount":1400000,"product":null,"estimated":false},{"company":"ランディット株式会社","name":"日向子 林","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"リアルティ株式会社","name":"未来 廣澤","month":"2026/06","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"リスクモンスター株式会社","name":"良輝 平井","month":"2026/06","stage":"C+","amount":810000,"product":"セット","estimated":false},{"company":"ル・アンジェ株式会社","name":"良輝 平井","month":"2026/05","stage":"C","amount":480000,"product":"中途","estimated":false},{"company":"レイス株式会社","name":"陸 深澤","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"ロイヤルハウジング販売株式会社","name":"翔世 久保田","month":"2026/05","stage":"C","amount":700000,"product":"セット","estimated":true},{"company":"三友工業株式会社","name":"未来 廣澤","month":"2026/04","stage":"C+","amount":580000,"product":"新卒","estimated":false},{"company":"三友工業株式会社","name":"未来 廣澤","month":"2026/04","stage":"C+","amount":580000,"product":"新卒","estimated":false},{"company":"中央電設株式会社","name":"勇亮 梶山","month":"2026/04","stage":"S","amount":900000,"product":"セット","estimated":false},{"company":"中央電設株式会社","name":"勇亮 梶山","month":"2026/04","stage":"S","amount":900000,"product":"セット","estimated":false},{"company":"中部スカイサポート株式会社","name":"学 山口","month":"2026/06","stage":"C","amount":820000,"product":"新卒","estimated":false},{"company":"備後漬物株式会社","name":"陸 深澤","month":"2026/04","stage":"C","amount":1400000,"product":"セット","estimated":false},{"company":"兵庫ダイハツ販売株式会社","name":"悠太 藤森","month":"2026/04","stage":"C","amount":1160000,"product":"セット","estimated":false},{"company":"出光エナジーソリューションズ株式会社","name":"学 山口","month":"2026/06","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"医療法人御殿山　福田総合病院","name":"悠太 藤森","month":"2026/04","stage":"C","amount":640000,"product":"セット","estimated":false},{"company":"医療法人徳洲会","name":"未来 廣澤","month":"2026/05","stage":"C","amount":820000,"product":"新卒","estimated":false},{"company":"千代田興産株式会社","name":"翔世 久保田","month":"2026/05","stage":"C+","amount":1620000,"product":"セット","estimated":false},{"company":"南薩食鳥株式会社_自力獲得","name":"柚基 髙橋","month":"2026/04","stage":"C","amount":700000,"product":"新卒","estimated":true},{"company":"吉田泰産業株式会社","name":"良輝 平井","month":"2026/04","stage":"S","amount":360000,"product":"中途","estimated":false},{"company":"吉田泰産業株式会社","name":"良輝 平井","month":"2026/04","stage":"S","amount":360000,"product":"中途","estimated":false},{"company":"吉田泰産業株式会社","name":"良輝 平井","month":"2026/04","stage":"S","amount":360000,"product":"中途","estimated":false},{"company":"吉田泰産業株式会社","name":"良輝 平井","month":"2026/04","stage":"S","amount":360000,"product":"中途","estimated":false},{"company":"吉田泰産業株式会社","name":"良輝 平井","month":"2026/04","stage":"S","amount":360000,"product":"中途","estimated":false},{"company":"吉田泰産業株式会社","name":"良輝 平井","month":"2026/04","stage":"S","amount":360000,"product":"中途","estimated":false},{"company":"吉田泰産業株式会社","name":"良輝 平井","month":"2026/04","stage":"S","amount":360000,"product":"中途","estimated":false},{"company":"吉田泰産業株式会社","name":"良輝 平井","month":"2026/04","stage":"S","amount":360000,"product":"中途","estimated":false},{"company":"四国化成コーポレートサービス株式会社","name":"勇亮 梶山","month":"2026/04","stage":"B","amount":1000000,"product":"中途","estimated":false},{"company":"堺商事株式会社","name":"陸 深澤","month":"2026/04","stage":"C","amount":580000,"product":"新卒","estimated":false},{"company":"大和物流株式会社","name":"未来 廣澤","month":"2026/05","stage":"C","amount":460000,"product":"セット","estimated":false},{"company":"大成温調株式会社","name":"翔世 久保田","month":"2026/05","stage":"C","amount":700000,"product":"セット","estimated":true},{"company":"大阪市役所","name":"日向子 林","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"安房住宅株式会社","name":"翔世 久保田","month":"2026/05","stage":"C","amount":580000,"product":null,"estimated":false},{"company":"山下医科器械株式会社_新卒クロスセル","name":"翔世 久保田","month":"2026/04","stage":"C","amount":700000,"product":"セット","estimated":true},{"company":"山下医科器械株式会社_新卒クロスセル","name":"翔世 久保田","month":"2026/04","stage":"C","amount":700000,"product":"セット","estimated":true},{"company":"岡谷酸素株式会社","name":"柚基 髙橋","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"新菱冷熱工業株式会社","name":"勇亮 梶山","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"日光医科器械株式会社","name":"悠太 藤森","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"日本フェンオール株式会社","name":"翔世 久保田","month":"2026/05","stage":"C","amount":460000,"product":"中途","estimated":false},{"company":"日本ルメンタム株式会社","name":"陸 深澤","month":"2026/05","stage":"A","amount":580000,"product":"中途","estimated":false},{"company":"日本電子工業株式会社","name":"学 山口","month":"2026/06","stage":"C","amount":940000,"product":"新卒","estimated":false},{"company":"日東イシダ株式会社","name":"翔世 久保田","month":"2026/05","stage":"C","amount":600000,"product":"セット","estimated":false},{"company":"旭化成メディカル株式会社","name":"翔世 久保田","month":"2026/04","stage":"S","amount":460000,"product":"セット","estimated":false},{"company":"朝日ウッドテック株式会社","name":"良輝 平井","month":"2026/06","stage":"C","amount":1260000,"product":"セット","estimated":false},{"company":"東レ・ファインケミカル株式会社","name":"悠太 藤森","month":"2026/05","stage":"B","amount":840000,"product":"新卒","estimated":false},{"company":"東京周波株式会社","name":"学 山口","month":"2026/06","stage":"C","amount":580000,"product":"新卒","estimated":false},{"company":"松井産業株式会社＿自力獲得","name":"恵 秋山","month":"2026/05","stage":"C","amount":1200000,"product":"新卒","estimated":false},{"company":"株式会社2WINS","name":"勇亮 梶山","month":"2026/05","stage":"C+","amount":940000,"product":"セット","estimated":false},{"company":"株式会社CIJ","name":"日向子 林","month":"2026/05","stage":"C","amount":460000,"product":"中途","estimated":false},{"company":"株式会社ENERGIZE","name":"勇亮 梶山","month":"2026/04","stage":"A","amount":600000,"product":null,"estimated":false},{"company":"株式会社Forward Base_自力獲得","name":"恵 秋山","month":"2026/05","stage":"C+","amount":460000,"product":"セット","estimated":false},{"company":"株式会社GeNieee","name":"翔世 久保田","month":"2026/04","stage":"S","amount":1000000,"product":"セット","estimated":false},{"company":"株式会社Human Resource Design","name":"陸 深澤","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社IMC","name":"陸 深澤","month":"2026/05","stage":"C","amount":1400000,"product":"セット","estimated":false},{"company":"株式会社JMC","name":"勇亮 梶山","month":"2026/05","stage":"C","amount":1280000,"product":null,"estimated":false},{"company":"株式会社JR東日本パーソネルサービス_CSトスアップ","name":"良輝 平井","month":"2026/05","stage":"C","amount":460000,"product":null,"estimated":false},{"company":"株式会社K2Tプランニング","name":"柚基 髙橋","month":"2026/04","stage":"C+","amount":820000,"product":"セット","estimated":false},{"company":"株式会社Maenomery","name":"悠太 藤森","month":"2026/04","stage":"D","amount":1400000,"product":"セット","estimated":false},{"company":"株式会社MAXISエデュケーション_CSトスアップ","name":"翔世 久保田","month":"2026/04","stage":"C","amount":360000,"product":"セット","estimated":false},{"company":"株式会社My Nursing","name":"未来 廣澤","month":"2026/04","stage":"B","amount":1150012,"product":"中途","estimated":false},{"company":"株式会社Onfleek","name":"陸 深澤","month":"2026/04","stage":"C+","amount":1440000,"product":null,"estimated":false},{"company":"株式会社PEGASUS HOLDINGS （新卒検討）_自力獲得","name":"日向子 林","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社Philosophy Arts","name":"陸 深澤","month":"2026/04","stage":"D","amount":460000,"product":null,"estimated":false},{"company":"株式会社PMGPartners","name":"良輝 平井","month":"2026/04","stage":"C","amount":1110000,"product":"新卒","estimated":false},{"company":"株式会社S-FIT","name":"柚基 髙橋","month":"2026/06","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社SEVENRICH Accounting ＿自力獲得","name":"恵 秋山","month":"2026/05","stage":"C","amount":700000,"product":"セット","estimated":true},{"company":"株式会社SOYOKAZE","name":"悠太 藤森","month":"2026/04","stage":"C","amount":460000,"product":"中途","estimated":false},{"company":"株式会社SRCホールディングス_CSトスアップ","name":"翔世 久保田","month":"2026/05","stage":"C+","amount":290000,"product":"セット","estimated":false},{"company":"株式会社UPF","name":"翔世 久保田","month":"2026/05","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社ZOZO","name":"未来 廣澤","month":"2026/04","stage":"S","amount":940000,"product":null,"estimated":false},{"company":"株式会社ZOZO","name":"未来 廣澤","month":"2026/04","stage":"S","amount":940000,"product":null,"estimated":false},{"company":"株式会社ZOZO","name":"未来 廣澤","month":"2026/04","stage":"S","amount":940000,"product":null,"estimated":false},{"company":"株式会社ZOZO","name":"未来 廣澤","month":"2026/04","stage":"S","amount":940000,"product":null,"estimated":false},{"company":"株式会社ZOZO","name":"未来 廣澤","month":"2026/04","stage":"S","amount":940000,"product":null,"estimated":false},{"company":"株式会社あおば","name":"陸 深澤","month":"2026/04","stage":"C","amount":700000,"product":null,"estimated":false},{"company":"株式会社かがし屋","name":"翔世 久保田","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社こころ","name":"未来 廣澤","month":"2026/04","stage":"D","amount":360000,"product":"中途","estimated":true},{"company":"株式会社アガルート","name":"日向子 林","month":"2026/06","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社アクトワンヤマイチ","name":"陸 深澤","month":"2026/05","stage":"C","amount":820000,"product":null,"estimated":false},{"company":"株式会社アクトワンヤマイチ","name":"陸 深澤","month":"2026/05","stage":"C","amount":820000,"product":null,"estimated":false},{"company":"株式会社アサヒ商会","name":"翔世 久保田","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社アジレット","name":"陸 深澤","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社アルコン","name":"勇亮 梶山","month":"2026/05","stage":"C","amount":360000,"product":"中途","estimated":false},{"company":"株式会社アーキ・ジャパン_クロスセル","name":"悠太 藤森","month":"2026/09","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社アールアンドアール","name":"翔世 久保田","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社アールディーシー","name":"悠太 藤森","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社イトーキ","name":"未来 廣澤","month":"2026/05","stage":"C","amount":820000,"product":"新卒","estimated":false},{"company":"株式会社イーウェル_自力獲得","name":"勇亮 梶山","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社ウエダ","name":"日向子 林","month":"2026/04","stage":"C+","amount":1280000,"product":"セット","estimated":false},{"company":"株式会社エイト","name":"勇亮 梶山","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社エスエーティ＿自力獲得","name":"恵 秋山","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社エス・エム・エスサポートサービス","name":"良輝 平井","month":"2026/06","stage":"C","amount":960000,"product":"セット","estimated":false},{"company":"株式会社エフコムマーケティング","name":"学 山口","month":"2026/06","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社エフピコ","name":"恵 秋山","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社エンジョイワークス","name":"悠太 藤森","month":"2026/04","stage":"C+","amount":1280000,"product":"セット","estimated":false},{"company":"株式会社オフィス","name":"悠太 藤森","month":"2026/05","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社カジトル","name":"翔世 久保田","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社カブ&ピース","name":"悠太 藤森","month":"2026/04","stage":"D","amount":720000,"product":"中途","estimated":false},{"company":"株式会社カワニシ","name":"悠太 藤森","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社キカリ","name":"悠太 藤森","month":"2026/04","stage":"C","amount":820000,"product":"中途","estimated":false},{"company":"株式会社クリエイト・レストランツ・ホールディングス","name":"良輝 平井","month":"2026/04","stage":"C","amount":720000,"product":"新卒","estimated":false},{"company":"株式会社コドモン","name":"良輝 平井","month":"2026/04","stage":"C","amount":940000,"product":"セット","estimated":false},{"company":"株式会社コドモン","name":"良輝 平井","month":"2026/04","stage":"C","amount":940000,"product":"セット","estimated":false},{"company":"株式会社ゴールドファステート","name":"翔世 久保田","month":"2026/04","stage":"C","amount":820000,"product":"セット","estimated":false},{"company":"株式会社ゴールドファステート","name":"翔世 久保田","month":"2026/04","stage":"C","amount":820000,"product":"セット","estimated":false},{"company":"株式会社サクセス・プロ","name":"良輝 平井","month":"2026/05","stage":"C","amount":480000,"product":"新卒","estimated":false},{"company":"株式会社シェアードバリュー","name":"良輝 平井","month":"2026/04","stage":"C","amount":720000,"product":"セット","estimated":false},{"company":"株式会社システムハウスアールアンドシー","name":"日向子 林","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社シンギ","name":"柚基 髙橋","month":"2026/05","stage":"C","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社ジェイアール東海ホテルズ","name":"勇亮 梶山","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社ジーアフター","name":"日向子 林","month":"2026/06","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社スリーピース","name":"柚基 髙橋","month":"2026/05","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社セゾンパートナーズ","name":"翔世 久保田","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社セゾンファンデックス","name":"良輝 平井","month":"2026/04","stage":"C","amount":580000,"product":"中途","estimated":false},{"company":"株式会社セゾンファンデックス","name":"良輝 平井","month":"2026/04","stage":"C","amount":580000,"product":"中途","estimated":false},{"company":"株式会社ゼロイン_CSトスアップ","name":"勇亮 梶山","month":"2026/04","stage":"B","amount":410000,"product":"セット","estimated":false},{"company":"株式会社ソフテム","name":"陸 深澤","month":"2026/04","stage":"C","amount":820000,"product":"セット","estimated":false},{"company":"株式会社ソフテム","name":"陸 深澤","month":"2026/04","stage":"C","amount":820000,"product":"セット","estimated":false},{"company":"株式会社タイソンズアンドカンパニー","name":"良輝 平井","month":"2026/05","stage":"C","amount":820000,"product":"セット","estimated":false},{"company":"株式会社タイムチケット","name":"陸 深澤","month":"2026/04","stage":"C","amount":460000,"product":"中途","estimated":false},{"company":"株式会社タレントナビゲーター","name":"未来 廣澤","month":"2026/04","stage":"C","amount":1400000,"product":"セット","estimated":false},{"company":"株式会社チャイルドステージ","name":"陸 深澤","month":"2026/05","stage":"D","amount":580000,"product":null,"estimated":false},{"company":"株式会社ツクルバ","name":"悠太 藤森","month":"2026/04","stage":"B","amount":990000,"product":"セット","estimated":false},{"company":"株式会社ツチヨシ産業＿自力獲得","name":"杏海 大野","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社テセック","name":"勇亮 梶山","month":"2026/05","stage":"C","amount":1280000,"product":"セット","estimated":false},{"company":"株式会社デニーズジャパン＿自力獲得","name":"恵 秋山","month":"2026/05","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社デンソーワイパシステムズ","name":"勇亮 梶山","month":"2026/05","stage":"C","amount":700000,"product":"新卒","estimated":false},{"company":"株式会社トップエンジニアリング","name":"悠太 藤森","month":"2026/05","stage":"C","amount":360000,"product":"中途","estimated":true},{"company":"株式会社トヨタレンタリース新岡山","name":"未来 廣澤","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社トーセ","name":"柚基 髙橋","month":"2026/05","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社ドリームスタジオ","name":"未来 廣澤","month":"2026/04","stage":"C+","amount":580000,"product":"中途","estimated":false},{"company":"株式会社ナイスクラップ","name":"陸 深澤","month":"2026/04","stage":"C+","amount":1400000,"product":"セット","estimated":false},{"company":"株式会社ビッグ・エー","name":"勇亮 梶山","month":"2026/04","stage":"A","amount":900000,"product":"新卒","estimated":false},{"company":"株式会社ファイブ・ディグリーズ","name":"良輝 平井","month":"2026/04","stage":"C","amount":580000,"product":"セット","estimated":false},{"company":"株式会社ファニメディック","name":"悠太 藤森","month":"2026/05","stage":"D","amount":1400000,"product":"セット","estimated":false},{"company":"株式会社フェイスグループ","name":"日向子 林","month":"2026/04","stage":"C+","amount":1080000,"product":"セット","estimated":false},{"company":"株式会社プリンセススクゥエアー","name":"勇亮 梶山","month":"2026/04","stage":"C+","amount":1100000,"product":"セット","estimated":false},{"company":"株式会社プレステージ・インターナショナル","name":"翔世 久保田","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社プレステージ・ヒューマンソリューション","name":"陸 深澤","month":"2026/04","stage":"C+","amount":360000,"product":null,"estimated":false},{"company":"株式会社ヘッドウォータース","name":"勇亮 梶山","month":"2026/05","stage":"C","amount":940000,"product":"セット","estimated":false},{"company":"株式会社ヘッドウォータース","name":"勇亮 梶山","month":"2026/05","stage":"C","amount":940000,"product":"セット","estimated":false},{"company":"株式会社マグナ.リゾート","name":"学 山口","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社マザー牧場","name":"柚基 髙橋","month":"2026/05","stage":"C+","amount":700000,"product":"セット","estimated":true},{"company":"株式会社マスダック","name":"日向子 林","month":"2026/05","stage":"C","amount":600000,"product":"セット","estimated":false},{"company":"株式会社マルニックス","name":"学 山口","month":"2026/04","stage":"C+","amount":1640000,"product":"セット","estimated":false},{"company":"株式会社ミタス","name":"悠太 藤森","month":"2026/04","stage":"S","amount":910000,"product":"新卒","estimated":false},{"company":"株式会社ライフケア","name":"悠太 藤森","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社リグラス","name":"学 山口","month":"2026/05","stage":"C+","amount":720000,"product":"新卒","estimated":false},{"company":"株式会社リセ","name":"翔世 久保田","month":"2026/05","stage":"C+","amount":820000,"product":"中途","estimated":false},{"company":"株式会社リボラス","name":"良輝 平井","month":"2026/05","stage":"C","amount":460000,"product":"中途","estimated":false},{"company":"株式会社リヴトラスト_CSトスアップ","name":"日向子 林","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社リージェンシー","name":"悠太 藤森","month":"2026/06","stage":"D","amount":360000,"product":"中途","estimated":true},{"company":"株式会社ワークリレーション","name":"良輝 平井","month":"2026/04","stage":"C","amount":360000,"product":"中途","estimated":false},{"company":"株式会社三共消毒","name":"日向子 林","month":"2026/04","stage":"C+","amount":1000000,"product":"セット","estimated":false},{"company":"株式会社丸尾建築","name":"日向子 林","month":"2026/05","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社久栄社","name":"陸 深澤","month":"2026/04","stage":"D","amount":460000,"product":"中途","estimated":false},{"company":"株式会社九州DTS","name":"勇亮 梶山","month":"2026/04","stage":"D","amount":820000,"product":"セット","estimated":false},{"company":"株式会社北里コーポレーション","name":"翔世 久保田","month":"2026/05","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社国大グループホールディングス","name":"良輝 平井","month":"2026/05","stage":"C","amount":1200000,"product":"セット","estimated":false},{"company":"株式会社国大セミナー_自力獲得","name":"良輝 平井","month":"2026/05","stage":"C+","amount":580000,"product":"中途","estimated":false},{"company":"株式会社山善","name":"勇亮 梶山","month":"2026/04","stage":"C+","amount":820000,"product":"セット","estimated":false},{"company":"株式会社平八","name":"日向子 林","month":"2026/04","stage":"C","amount":360000,"product":null,"estimated":false},{"company":"株式会社日の丸リムジン","name":"翔世 久保田","month":"2026/05","stage":"C+","amount":1400000,"product":"セット","estimated":false},{"company":"株式会社日本アドシス","name":"勇亮 梶山","month":"2026/06","stage":"C","amount":600000,"product":"セット","estimated":false},{"company":"株式会社晋商ロジスティックス","name":"翔世 久保田","month":"2026/05","stage":"C+","amount":460000,"product":null,"estimated":false},{"company":"株式会社木下グループ","name":"陸 深澤","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社東コンサルタント","name":"良輝 平井","month":"2026/05","stage":"C","amount":1200000,"product":"セット","estimated":false},{"company":"株式会社東京プロパティサービス","name":"翔世 久保田","month":"2026/04","stage":"D","amount":360000,"product":"中途","estimated":true},{"company":"株式会社東洋新薬","name":"勇亮 梶山","month":"2026/05","stage":"C","amount":940000,"product":"セット","estimated":false},{"company":"株式会社桃谷順天館","name":"翔世 久保田","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社池田模範堂","name":"良輝 平井","month":"2026/06","stage":"C","amount":1200000,"product":"セット","estimated":false},{"company":"株式会社田中組","name":"翔世 久保田","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社田子の月","name":"学 山口","month":"2026/07","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社神戸物産","name":"翔世 久保田","month":"2026/05","stage":"C","amount":700000,"product":"セット","estimated":true},{"company":"株式会社福山コンサルタント","name":"未来 廣澤","month":"2026/05","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"株式会社穴吹ハウジングサービス","name":"柚基 髙橋","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社穴吹ハウジングサービス","name":"柚基 髙橋","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社綜合企画","name":"勇亮 梶山","month":"2026/04","stage":"C","amount":360000,"product":"中途","estimated":false},{"company":"株式会社誠進堂","name":"翔世 久保田","month":"2026/05","stage":"C+","amount":460000,"product":"中途","estimated":false},{"company":"株式会社豊通マシナリー","name":"翔世 久保田","month":"2026/04","stage":"C","amount":960000,"product":"新卒","estimated":false},{"company":"株式会社足利銀行","name":"日向子 林","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社ＦＩＶＥ．Ｈｏｌｄｉｎｇｓ","name":"悠太 藤森","month":"2026/04","stage":"S","amount":1550006,"product":"セット","estimated":false},{"company":"株式会社Ｐｌａｎ・Ｄｏ・Ｓｅｅ","name":"良輝 平井","month":"2026/04","stage":"S","amount":1060000,"product":"新卒","estimated":false},{"company":"株式会社Ｐｌａｎ・Ｄｏ・Ｓｅｅ","name":"良輝 平井","month":"2026/04","stage":"S","amount":1060000,"product":"新卒","estimated":false},{"company":"株式会社Ｐｌａｎ・Ｄｏ・Ｓｅｅ","name":"良輝 平井","month":"2026/04","stage":"S","amount":1060000,"product":"新卒","estimated":false},{"company":"株式会社Ｐｌａｎ・Ｄｏ・Ｓｅｅ","name":"良輝 平井","month":"2026/04","stage":"S","amount":1060000,"product":"新卒","estimated":false},{"company":"株式会社Ｐｌａｎ・Ｄｏ・Ｓｅｅ","name":"良輝 平井","month":"2026/04","stage":"S","amount":1060000,"product":"新卒","estimated":false},{"company":"沢井製薬株式会社","name":"勇亮 梶山","month":"2026/05","stage":"C","amount":820000,"product":"新卒","estimated":false},{"company":"油研工業株式会社","name":"日向子 林","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"浜理PFST株式会社","name":"未来 廣澤","month":"2026/05","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"濱坂電機株式会社","name":"日向子 林","month":"2026/07","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"熊本赤十字病院 ＿自力獲得","name":"杏海 大野","month":"2026/04","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"特定非営利活動法人ピースウィンズ・ジャパン","name":"陸 深澤","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"石垣メンテナンス株式会社","name":"勇亮 梶山","month":"2026/04","stage":"A","amount":1150000,"product":"セット","estimated":false},{"company":"社会福祉法人こころ福祉会","name":"良輝 平井","month":"2026/04","stage":"C+","amount":1080000,"product":"セット","estimated":false},{"company":"社会福祉法人神港園","name":"良輝 平井","month":"2026/05","stage":"C","amount":460000,"product":"中途","estimated":false},{"company":"社会福祉法人西春日井福祉会 - 　自力獲得","name":"学 山口","month":"2026/06","stage":"D","amount":700000,"product":"セット","estimated":true},{"company":"社会福祉法人長福会","name":"杏海 大野","month":"2026/05","stage":"C+","amount":1160000,"product":"新卒","estimated":false},{"company":"神戸信用金庫","name":"翔世 久保田","month":"2026/04","stage":"C","amount":700000,"product":"新卒","estimated":true},{"company":"福井信用金庫","name":"良輝 平井","month":"2026/05","stage":"C","amount":480000,"product":"新卒","estimated":false},{"company":"福井鐵工株式会社","name":"柚基 髙橋","month":"2026/04","stage":"C","amount":700000,"product":"新卒","estimated":true},{"company":"綾羽株式会社","name":"勇亮 梶山","month":"2026/05","stage":"C","amount":700000,"product":"セット","estimated":true},{"company":"草野産業株式会社","name":"日向子 林","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"西垣林業株式会社","name":"翔世 久保田","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"西川計測株式会社","name":"良輝 平井","month":"2026/04","stage":"S","amount":954000,"product":"セット","estimated":false},{"company":"豊通食料株式会社","name":"未来 廣澤","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"錦水館","name":"学 山口","month":"2026/07","stage":"C+","amount":1400000,"product":"セット","estimated":false},{"company":"関西フローズン株式会社","name":"勇亮 梶山","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true}];
+const INITIAL_DATA = [{"company":"AIAI Child Care株式会社","name":"久保田 翔世","month":"2026/04","stage":"C+","amount":1400000,"product":"新卒・中途","estimated":false},{"company":"Chubb損害保険株式会社","name":"廣澤 未来","month":"2026/04","stage":"B","amount":1060000,"product":"新卒・中途","estimated":false},{"company":"Forvis Mazars Japan 有限責任監査法人","name":"久保田 翔世","month":"2026/04","stage":"B","amount":820000,"product":"新卒・中途","estimated":false},{"company":"FutureOne株式会社_CSトスアップ","name":"平井 良輝","month":"2026/04","stage":"C","amount":230000,"product":"新卒・中途","estimated":false},{"company":"jinjer株式会社","name":"梶山 勇亮","month":"2026/05","stage":"C","amount":1640000,"product":"新卒・中途","estimated":false},{"company":"JR西日本山陰開発株式会社","name":"山口 学","month":"2026/06","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"Lifortune株式会社","name":"藤森 悠太","month":"2026/05","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"MPアグロ株式会社","name":"久保田 翔世","month":"2026/04","stage":"C","amount":460000,"product":"新卒・中途","estimated":false},{"company":"SALES GO株式会社","name":"梶山 勇亮","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"Synthesy株式会社","name":"山口 学","month":"2026/05","stage":"C","amount":580000,"product":"中途","estimated":false},{"company":"TGC株式会社","name":"廣澤 未来","month":"2026/04","stage":"C+","amount":460000,"product":"新卒・中途","estimated":false},{"company":"TISソリューションリンク株式会社","name":"久保田 翔世","month":"2026/09","stage":"D","amount":1060000,"product":"新卒","estimated":false},{"company":"Zen Intelligence株式会社","name":"藤森 悠太","month":"2026/04","stage":"C+","amount":460000,"product":"中途","estimated":false},{"company":"めもりあるグループホールディングス株式会社","name":"梶山 勇亮","month":"2026/04","stage":"D","amount":580000,"product":"新卒","estimated":false},{"company":"アァルピィ東プラ株式会社","name":"深澤 陸","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"アキタ株式会社","name":"藤森 悠太","month":"2026/04","stage":"S","amount":1280000,"product":"新卒・中途","estimated":false},{"company":"アクアス株式会社","name":"廣澤 未来","month":"2026/05","stage":"C+","amount":1060000,"product":"新卒・中途","estimated":false},{"company":"アンリツ株式会社","name":"藤森 悠太","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"アンリツ株式会社","name":"藤森 悠太","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"ウッドリンク株式会社","name":"髙橋 柚基","month":"2026/06","stage":"C+","amount":1400000,"product":"新卒・中途","estimated":false},{"company":"ウツエバルブサービス株式会社","name":"深澤 陸","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"エムシーディースリー株式会社","name":"梶山 勇亮","month":"2026/05","stage":"D","amount":1080000,"product":"新卒","estimated":false},{"company":"エルガーホールディングス合同会社","name":"深澤 陸","month":"2026/05","stage":"C","amount":820000,"product":"新卒・中途","estimated":false},{"company":"オムロン株式会社","name":"藤森 悠太","month":"2026/06","stage":"C+","amount":1460000,"product":"新卒・中途","estimated":false},{"company":"オルバヘルスケアホールディングス株式会社","name":"藤森 悠太","month":"2026/04","stage":"C","amount":2700000,"product":"新卒・中途","estimated":false},{"company":"クルマテラス株式会社","name":"深澤 陸","month":"2026/04","stage":"C","amount":940000,"product":null,"estimated":false},{"company":"グリーン司法書士法人","name":"髙橋 柚基","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"ケイアイスター不動産株式会社","name":"山口 学","month":"2026/09","stage":"D","amount":360000,"product":"中途","estimated":true},{"company":"サンセイ医機株式会社","name":"藤森 悠太","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"サンネット株式会社","name":"梶山 勇亮","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"シマダヤ関東株式会社","name":"髙橋 柚基","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"シン・エナジー株式会社","name":"林 日向子","month":"2026/04","stage":"C","amount":460000,"product":null,"estimated":false},{"company":"スガノ農機株式会社","name":"久保田 翔世","month":"2026/05","stage":"C+","amount":820000,"product":"新卒","estimated":false},{"company":"スターコンサルティング株式会社","name":"廣澤 未来","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"スチールプランテック株式会社","name":"梶山 勇亮","month":"2026/06","stage":"C","amount":820000,"product":"新卒","estimated":false},{"company":"セルフ・エー株式会社","name":"深澤 陸","month":"2026/04","stage":"C","amount":580000,"product":"中途","estimated":false},{"company":"ソルト・コンソーシアム株式会社","name":"林 日向子","month":"2026/05","stage":"C","amount":360000,"product":null,"estimated":true},{"company":"ソルバ株式会社","name":"平井 良輝","month":"2026/04","stage":"C","amount":840000,"product":"新卒","estimated":false},{"company":"ダイハツインフィニアース株式会社","name":"久保田 翔世","month":"2026/04","stage":"S","amount":1060000,"product":"新卒・中途","estimated":false},{"company":"ダイハツインフィニアース株式会社","name":"久保田 翔世","month":"2026/04","stage":"S","amount":1060000,"product":"新卒・中途","estimated":false},{"company":"デリカフーズ株式会社","name":"廣澤 未来","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"トランスコスモス株式会社","name":"廣澤 未来","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"ナガセルータック株式会社","name":"深澤 陸","month":"2026/05","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"ハーベスト株式会社","name":"林 日向子","month":"2026/05","stage":"C","amount":700000,"product":null,"estimated":false},{"company":"バリュエンスホールディングス株式会社","name":"藤森 悠太","month":"2026/08","stage":"D","amount":1400000,"product":"新卒・中途","estimated":false},{"company":"パラカ株式会社","name":"平井 良輝","month":"2026/06","stage":"C","amount":720000,"product":"新卒","estimated":false},{"company":"パーカーエンジニアリング株式会社","name":"梶山 勇亮","month":"2026/04","stage":"D","amount":460000,"product":null,"estimated":false},{"company":"フェニックスリゾート株式会社","name":"平井 良輝","month":"2026/05","stage":"C","amount":460000,"product":"新卒・中途","estimated":false},{"company":"フソウホールディングス株式会社","name":"山口 学","month":"2026/07","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"フラームジャパン株式会社","name":"廣澤 未来","month":"2026/04","stage":"S","amount":460000,"product":"中途","estimated":false},{"company":"ミツワ電機株式会社","name":"久保田 翔世","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"ヤサカ観光バス株式会社","name":"平井 良輝","month":"2026/04","stage":"C","amount":720000,"product":"新卒","estimated":false},{"company":"ユニチカ株式会社","name":"平井 良輝","month":"2026/04","stage":"C+","amount":820000,"product":"新卒・中途","estimated":false},{"company":"ラッシュジャパン合同会社","name":"深澤 陸","month":"2026/04","stage":"C","amount":1400000,"product":null,"estimated":false},{"company":"ランディット株式会社","name":"林 日向子","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"リアルティ株式会社","name":"廣澤 未来","month":"2026/06","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"リスクモンスター株式会社","name":"平井 良輝","month":"2026/06","stage":"C+","amount":810000,"product":"新卒・中途","estimated":false},{"company":"ル・アンジェ株式会社","name":"平井 良輝","month":"2026/05","stage":"C","amount":480000,"product":"中途","estimated":false},{"company":"レイス株式会社","name":"深澤 陸","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"ロイヤルハウジング販売株式会社","name":"久保田 翔世","month":"2026/05","stage":"C","amount":700000,"product":"新卒・中途","estimated":true},{"company":"三友工業株式会社","name":"廣澤 未来","month":"2026/04","stage":"C+","amount":580000,"product":"新卒","estimated":false},{"company":"三友工業株式会社","name":"廣澤 未来","month":"2026/04","stage":"C+","amount":580000,"product":"新卒","estimated":false},{"company":"中央電設株式会社","name":"梶山 勇亮","month":"2026/04","stage":"S","amount":900000,"product":"新卒・中途","estimated":false},{"company":"中央電設株式会社","name":"梶山 勇亮","month":"2026/04","stage":"S","amount":900000,"product":"新卒・中途","estimated":false},{"company":"中部スカイサポート株式会社","name":"山口 学","month":"2026/06","stage":"C","amount":820000,"product":"新卒","estimated":false},{"company":"備後漬物株式会社","name":"深澤 陸","month":"2026/04","stage":"C","amount":1400000,"product":"新卒・中途","estimated":false},{"company":"兵庫ダイハツ販売株式会社","name":"藤森 悠太","month":"2026/04","stage":"C","amount":1160000,"product":"新卒・中途","estimated":false},{"company":"出光エナジーソリューションズ株式会社","name":"山口 学","month":"2026/06","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"医療法人御殿山　福田総合病院","name":"藤森 悠太","month":"2026/04","stage":"C","amount":640000,"product":"新卒・中途","estimated":false},{"company":"医療法人徳洲会","name":"廣澤 未来","month":"2026/05","stage":"C","amount":820000,"product":"新卒","estimated":false},{"company":"千代田興産株式会社","name":"久保田 翔世","month":"2026/05","stage":"C+","amount":1620000,"product":"新卒・中途","estimated":false},{"company":"南薩食鳥株式会社_自力獲得","name":"髙橋 柚基","month":"2026/04","stage":"C","amount":700000,"product":"新卒","estimated":true},{"company":"吉田泰産業株式会社","name":"平井 良輝","month":"2026/04","stage":"S","amount":360000,"product":"中途","estimated":false},{"company":"吉田泰産業株式会社","name":"平井 良輝","month":"2026/04","stage":"S","amount":360000,"product":"中途","estimated":false},{"company":"吉田泰産業株式会社","name":"平井 良輝","month":"2026/04","stage":"S","amount":360000,"product":"中途","estimated":false},{"company":"吉田泰産業株式会社","name":"平井 良輝","month":"2026/04","stage":"S","amount":360000,"product":"中途","estimated":false},{"company":"吉田泰産業株式会社","name":"平井 良輝","month":"2026/04","stage":"S","amount":360000,"product":"中途","estimated":false},{"company":"吉田泰産業株式会社","name":"平井 良輝","month":"2026/04","stage":"S","amount":360000,"product":"中途","estimated":false},{"company":"吉田泰産業株式会社","name":"平井 良輝","month":"2026/04","stage":"S","amount":360000,"product":"中途","estimated":false},{"company":"吉田泰産業株式会社","name":"平井 良輝","month":"2026/04","stage":"S","amount":360000,"product":"中途","estimated":false},{"company":"四国化成コーポレートサービス株式会社","name":"梶山 勇亮","month":"2026/04","stage":"B","amount":1000000,"product":"中途","estimated":false},{"company":"堺商事株式会社","name":"深澤 陸","month":"2026/04","stage":"C","amount":580000,"product":"新卒","estimated":false},{"company":"大和物流株式会社","name":"廣澤 未来","month":"2026/05","stage":"C","amount":460000,"product":"新卒・中途","estimated":false},{"company":"大成温調株式会社","name":"久保田 翔世","month":"2026/05","stage":"C","amount":700000,"product":"新卒・中途","estimated":true},{"company":"大阪市役所","name":"林 日向子","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"安房住宅株式会社","name":"久保田 翔世","month":"2026/05","stage":"C","amount":580000,"product":null,"estimated":false},{"company":"山下医科器械株式会社_新卒クロスセル","name":"久保田 翔世","month":"2026/04","stage":"C","amount":700000,"product":"新卒・中途","estimated":true},{"company":"山下医科器械株式会社_新卒クロスセル","name":"久保田 翔世","month":"2026/04","stage":"C","amount":700000,"product":"新卒・中途","estimated":true},{"company":"岡谷酸素株式会社","name":"髙橋 柚基","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"新菱冷熱工業株式会社","name":"梶山 勇亮","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"日光医科器械株式会社","name":"藤森 悠太","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"日本フェンオール株式会社","name":"久保田 翔世","month":"2026/05","stage":"C","amount":460000,"product":"中途","estimated":false},{"company":"日本ルメンタム株式会社","name":"深澤 陸","month":"2026/05","stage":"A","amount":580000,"product":"中途","estimated":false},{"company":"日本電子工業株式会社","name":"山口 学","month":"2026/06","stage":"C","amount":940000,"product":"新卒","estimated":false},{"company":"日東イシダ株式会社","name":"久保田 翔世","month":"2026/05","stage":"C","amount":600000,"product":"新卒・中途","estimated":false},{"company":"旭化成メディカル株式会社","name":"久保田 翔世","month":"2026/04","stage":"S","amount":460000,"product":"新卒・中途","estimated":false},{"company":"朝日ウッドテック株式会社","name":"平井 良輝","month":"2026/06","stage":"C","amount":1260000,"product":"新卒・中途","estimated":false},{"company":"東レ・ファインケミカル株式会社","name":"藤森 悠太","month":"2026/05","stage":"B","amount":840000,"product":"新卒","estimated":false},{"company":"東京周波株式会社","name":"山口 学","month":"2026/06","stage":"C","amount":580000,"product":"新卒","estimated":false},{"company":"松井産業株式会社＿自力獲得","name":"秋山 恵","month":"2026/05","stage":"C","amount":1200000,"product":"新卒","estimated":false},{"company":"株式会社2WINS","name":"梶山 勇亮","month":"2026/05","stage":"C+","amount":940000,"product":"新卒・中途","estimated":false},{"company":"株式会社CIJ","name":"林 日向子","month":"2026/05","stage":"C","amount":460000,"product":"中途","estimated":false},{"company":"株式会社ENERGIZE","name":"梶山 勇亮","month":"2026/04","stage":"A","amount":600000,"product":null,"estimated":false},{"company":"株式会社Forward Base_自力獲得","name":"秋山 恵","month":"2026/05","stage":"C+","amount":460000,"product":"新卒・中途","estimated":false},{"company":"株式会社GeNieee","name":"久保田 翔世","month":"2026/04","stage":"S","amount":1000000,"product":"新卒・中途","estimated":false},{"company":"株式会社Human Resource Design","name":"深澤 陸","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社IMC","name":"深澤 陸","month":"2026/05","stage":"C","amount":1400000,"product":"新卒・中途","estimated":false},{"company":"株式会社JMC","name":"梶山 勇亮","month":"2026/05","stage":"C","amount":1280000,"product":null,"estimated":false},{"company":"株式会社JR東日本パーソネルサービス_CSトスアップ","name":"平井 良輝","month":"2026/05","stage":"C","amount":460000,"product":null,"estimated":false},{"company":"株式会社K2Tプランニング","name":"髙橋 柚基","month":"2026/04","stage":"C+","amount":820000,"product":"新卒・中途","estimated":false},{"company":"株式会社Maenomery","name":"藤森 悠太","month":"2026/04","stage":"D","amount":1400000,"product":"新卒・中途","estimated":false},{"company":"株式会社MAXISエデュケーション_CSトスアップ","name":"久保田 翔世","month":"2026/04","stage":"C","amount":360000,"product":"新卒・中途","estimated":false},{"company":"株式会社My Nursing","name":"廣澤 未来","month":"2026/04","stage":"B","amount":1150012,"product":"中途","estimated":false},{"company":"株式会社Onfleek","name":"深澤 陸","month":"2026/04","stage":"C+","amount":1440000,"product":null,"estimated":false},{"company":"株式会社PEGASUS HOLDINGS （新卒検討）_自力獲得","name":"林 日向子","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社Philosophy Arts","name":"深澤 陸","month":"2026/04","stage":"D","amount":460000,"product":null,"estimated":false},{"company":"株式会社PMGPartners","name":"平井 良輝","month":"2026/04","stage":"C","amount":1110000,"product":"新卒","estimated":false},{"company":"株式会社S-FIT","name":"髙橋 柚基","month":"2026/06","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社SEVENRICH Accounting ＿自力獲得","name":"秋山 恵","month":"2026/05","stage":"C","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社SOYOKAZE","name":"藤森 悠太","month":"2026/04","stage":"C","amount":460000,"product":"中途","estimated":false},{"company":"株式会社SRCホールディングス_CSトスアップ","name":"久保田 翔世","month":"2026/05","stage":"C+","amount":290000,"product":"新卒・中途","estimated":false},{"company":"株式会社UPF","name":"久保田 翔世","month":"2026/05","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社ZOZO","name":"廣澤 未来","month":"2026/04","stage":"S","amount":940000,"product":null,"estimated":false},{"company":"株式会社ZOZO","name":"廣澤 未来","month":"2026/04","stage":"S","amount":940000,"product":null,"estimated":false},{"company":"株式会社ZOZO","name":"廣澤 未来","month":"2026/04","stage":"S","amount":940000,"product":null,"estimated":false},{"company":"株式会社ZOZO","name":"廣澤 未来","month":"2026/04","stage":"S","amount":940000,"product":null,"estimated":false},{"company":"株式会社ZOZO","name":"廣澤 未来","month":"2026/04","stage":"S","amount":940000,"product":null,"estimated":false},{"company":"株式会社あおば","name":"深澤 陸","month":"2026/04","stage":"C","amount":700000,"product":null,"estimated":false},{"company":"株式会社かがし屋","name":"久保田 翔世","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社こころ","name":"廣澤 未来","month":"2026/04","stage":"D","amount":360000,"product":"中途","estimated":true},{"company":"株式会社アガルート","name":"林 日向子","month":"2026/06","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社アクトワンヤマイチ","name":"深澤 陸","month":"2026/05","stage":"C","amount":820000,"product":null,"estimated":false},{"company":"株式会社アクトワンヤマイチ","name":"深澤 陸","month":"2026/05","stage":"C","amount":820000,"product":null,"estimated":false},{"company":"株式会社アサヒ商会","name":"久保田 翔世","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社アジレット","name":"深澤 陸","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社アルコン","name":"梶山 勇亮","month":"2026/05","stage":"C","amount":360000,"product":"中途","estimated":false},{"company":"株式会社アーキ・ジャパン_クロスセル","name":"藤森 悠太","month":"2026/09","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社アールアンドアール","name":"久保田 翔世","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社アールディーシー","name":"藤森 悠太","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社イトーキ","name":"廣澤 未来","month":"2026/05","stage":"C","amount":820000,"product":"新卒","estimated":false},{"company":"株式会社イーウェル_自力獲得","name":"梶山 勇亮","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社ウエダ","name":"林 日向子","month":"2026/04","stage":"C+","amount":1280000,"product":"新卒・中途","estimated":false},{"company":"株式会社エイト","name":"梶山 勇亮","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社エスエーティ＿自力獲得","name":"秋山 恵","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社エス・エム・エスサポートサービス","name":"平井 良輝","month":"2026/06","stage":"C","amount":960000,"product":"新卒・中途","estimated":false},{"company":"株式会社エフコムマーケティング","name":"山口 学","month":"2026/06","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社エフピコ","name":"秋山 恵","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社エンジョイワークス","name":"藤森 悠太","month":"2026/04","stage":"C+","amount":1280000,"product":"新卒・中途","estimated":false},{"company":"株式会社オフィス","name":"藤森 悠太","month":"2026/05","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社カジトル","name":"久保田 翔世","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社カブ&ピース","name":"藤森 悠太","month":"2026/04","stage":"D","amount":720000,"product":"中途","estimated":false},{"company":"株式会社カワニシ","name":"藤森 悠太","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社キカリ","name":"藤森 悠太","month":"2026/04","stage":"C","amount":820000,"product":"中途","estimated":false},{"company":"株式会社クリエイト・レストランツ・ホールディングス","name":"平井 良輝","month":"2026/04","stage":"C","amount":720000,"product":"新卒","estimated":false},{"company":"株式会社コドモン","name":"平井 良輝","month":"2026/04","stage":"C","amount":940000,"product":"新卒・中途","estimated":false},{"company":"株式会社コドモン","name":"平井 良輝","month":"2026/04","stage":"C","amount":940000,"product":"新卒・中途","estimated":false},{"company":"株式会社ゴールドファステート","name":"久保田 翔世","month":"2026/04","stage":"C","amount":820000,"product":"新卒・中途","estimated":false},{"company":"株式会社ゴールドファステート","name":"久保田 翔世","month":"2026/04","stage":"C","amount":820000,"product":"新卒・中途","estimated":false},{"company":"株式会社サクセス・プロ","name":"平井 良輝","month":"2026/05","stage":"C","amount":480000,"product":"新卒","estimated":false},{"company":"株式会社シェアードバリュー","name":"平井 良輝","month":"2026/04","stage":"C","amount":720000,"product":"新卒・中途","estimated":false},{"company":"株式会社システムハウスアールアンドシー","name":"林 日向子","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社シンギ","name":"髙橋 柚基","month":"2026/05","stage":"C","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社ジェイアール東海ホテルズ","name":"梶山 勇亮","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社ジーアフター","name":"林 日向子","month":"2026/06","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社スリーピース","name":"髙橋 柚基","month":"2026/05","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社セゾンパートナーズ","name":"久保田 翔世","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社セゾンファンデックス","name":"平井 良輝","month":"2026/04","stage":"C","amount":580000,"product":"中途","estimated":false},{"company":"株式会社セゾンファンデックス","name":"平井 良輝","month":"2026/04","stage":"C","amount":580000,"product":"中途","estimated":false},{"company":"株式会社ゼロイン_CSトスアップ","name":"梶山 勇亮","month":"2026/04","stage":"B","amount":410000,"product":"新卒・中途","estimated":false},{"company":"株式会社ソフテム","name":"深澤 陸","month":"2026/04","stage":"C","amount":820000,"product":"新卒・中途","estimated":false},{"company":"株式会社ソフテム","name":"深澤 陸","month":"2026/04","stage":"C","amount":820000,"product":"新卒・中途","estimated":false},{"company":"株式会社タイソンズアンドカンパニー","name":"平井 良輝","month":"2026/05","stage":"C","amount":820000,"product":"新卒・中途","estimated":false},{"company":"株式会社タイムチケット","name":"深澤 陸","month":"2026/04","stage":"C","amount":460000,"product":"中途","estimated":false},{"company":"株式会社タレントナビゲーター","name":"廣澤 未来","month":"2026/04","stage":"C","amount":1400000,"product":"新卒・中途","estimated":false},{"company":"株式会社チャイルドステージ","name":"深澤 陸","month":"2026/05","stage":"D","amount":580000,"product":null,"estimated":false},{"company":"株式会社ツクルバ","name":"藤森 悠太","month":"2026/04","stage":"B","amount":990000,"product":"新卒・中途","estimated":false},{"company":"株式会社ツチヨシ産業＿自力獲得","name":"大野 杏海","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社テセック","name":"梶山 勇亮","month":"2026/05","stage":"C","amount":1280000,"product":"新卒・中途","estimated":false},{"company":"株式会社デニーズジャパン＿自力獲得","name":"秋山 恵","month":"2026/05","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社デンソーワイパシステムズ","name":"梶山 勇亮","month":"2026/05","stage":"C","amount":700000,"product":"新卒","estimated":false},{"company":"株式会社トップエンジニアリング","name":"藤森 悠太","month":"2026/05","stage":"C","amount":360000,"product":"中途","estimated":true},{"company":"株式会社トヨタレンタリース新岡山","name":"廣澤 未来","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社トーセ","name":"髙橋 柚基","month":"2026/05","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社ドリームスタジオ","name":"廣澤 未来","month":"2026/04","stage":"C+","amount":580000,"product":"中途","estimated":false},{"company":"株式会社ナイスクラップ","name":"深澤 陸","month":"2026/04","stage":"C+","amount":1400000,"product":"新卒・中途","estimated":false},{"company":"株式会社ビッグ・エー","name":"梶山 勇亮","month":"2026/04","stage":"A","amount":900000,"product":"新卒","estimated":false},{"company":"株式会社ファイブ・ディグリーズ","name":"平井 良輝","month":"2026/04","stage":"C","amount":580000,"product":"新卒・中途","estimated":false},{"company":"株式会社ファニメディック","name":"藤森 悠太","month":"2026/05","stage":"D","amount":1400000,"product":"新卒・中途","estimated":false},{"company":"株式会社フェイスグループ","name":"林 日向子","month":"2026/04","stage":"C+","amount":1080000,"product":"新卒・中途","estimated":false},{"company":"株式会社プリンセススクゥエアー","name":"梶山 勇亮","month":"2026/04","stage":"C+","amount":1100000,"product":"新卒・中途","estimated":false},{"company":"株式会社プレステージ・インターナショナル","name":"久保田 翔世","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社プレステージ・ヒューマンソリューション","name":"深澤 陸","month":"2026/04","stage":"C+","amount":360000,"product":null,"estimated":false},{"company":"株式会社ヘッドウォータース","name":"梶山 勇亮","month":"2026/05","stage":"C","amount":940000,"product":"新卒・中途","estimated":false},{"company":"株式会社ヘッドウォータース","name":"梶山 勇亮","month":"2026/05","stage":"C","amount":940000,"product":"新卒・中途","estimated":false},{"company":"株式会社マグナ.リゾート","name":"山口 学","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社マザー牧場","name":"髙橋 柚基","month":"2026/05","stage":"C+","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社マスダック","name":"林 日向子","month":"2026/05","stage":"C","amount":600000,"product":"新卒・中途","estimated":false},{"company":"株式会社マルニックス","name":"山口 学","month":"2026/04","stage":"C+","amount":1640000,"product":"新卒・中途","estimated":false},{"company":"株式会社ミタス","name":"藤森 悠太","month":"2026/04","stage":"S","amount":910000,"product":"新卒","estimated":false},{"company":"株式会社ライフケア","name":"藤森 悠太","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社リグラス","name":"山口 学","month":"2026/05","stage":"C+","amount":720000,"product":"新卒","estimated":false},{"company":"株式会社リセ","name":"久保田 翔世","month":"2026/05","stage":"C+","amount":820000,"product":"中途","estimated":false},{"company":"株式会社リボラス","name":"平井 良輝","month":"2026/05","stage":"C","amount":460000,"product":"中途","estimated":false},{"company":"株式会社リヴトラスト_CSトスアップ","name":"林 日向子","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社リージェンシー","name":"藤森 悠太","month":"2026/06","stage":"D","amount":360000,"product":"中途","estimated":true},{"company":"株式会社ワークリレーション","name":"平井 良輝","month":"2026/04","stage":"C","amount":360000,"product":"中途","estimated":false},{"company":"株式会社三共消毒","name":"林 日向子","month":"2026/04","stage":"C+","amount":1000000,"product":"新卒・中途","estimated":false},{"company":"株式会社丸尾建築","name":"林 日向子","month":"2026/05","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社久栄社","name":"深澤 陸","month":"2026/04","stage":"D","amount":460000,"product":"中途","estimated":false},{"company":"株式会社九州DTS","name":"梶山 勇亮","month":"2026/04","stage":"D","amount":820000,"product":"新卒・中途","estimated":false},{"company":"株式会社北里コーポレーション","name":"久保田 翔世","month":"2026/05","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社国大グループホールディングス","name":"平井 良輝","month":"2026/05","stage":"C","amount":1200000,"product":"新卒・中途","estimated":false},{"company":"株式会社国大セミナー_自力獲得","name":"平井 良輝","month":"2026/05","stage":"C+","amount":580000,"product":"中途","estimated":false},{"company":"株式会社山善","name":"梶山 勇亮","month":"2026/04","stage":"C+","amount":820000,"product":"新卒・中途","estimated":false},{"company":"株式会社平八","name":"林 日向子","month":"2026/04","stage":"C","amount":360000,"product":null,"estimated":false},{"company":"株式会社日の丸リムジン","name":"久保田 翔世","month":"2026/05","stage":"C+","amount":1400000,"product":"新卒・中途","estimated":false},{"company":"株式会社日本アドシス","name":"梶山 勇亮","month":"2026/06","stage":"C","amount":600000,"product":"新卒・中途","estimated":false},{"company":"株式会社晋商ロジスティックス","name":"久保田 翔世","month":"2026/05","stage":"C+","amount":460000,"product":null,"estimated":false},{"company":"株式会社木下グループ","name":"深澤 陸","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社東コンサルタント","name":"平井 良輝","month":"2026/05","stage":"C","amount":1200000,"product":"新卒・中途","estimated":false},{"company":"株式会社東京プロパティサービス","name":"久保田 翔世","month":"2026/04","stage":"D","amount":360000,"product":"中途","estimated":true},{"company":"株式会社東洋新薬","name":"梶山 勇亮","month":"2026/05","stage":"C","amount":940000,"product":"新卒・中途","estimated":false},{"company":"株式会社桃谷順天館","name":"久保田 翔世","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"株式会社池田模範堂","name":"平井 良輝","month":"2026/06","stage":"C","amount":1200000,"product":"新卒・中途","estimated":false},{"company":"株式会社田中組","name":"久保田 翔世","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社田子の月","name":"山口 学","month":"2026/07","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社神戸物産","name":"久保田 翔世","month":"2026/05","stage":"C","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社福山コンサルタント","name":"廣澤 未来","month":"2026/05","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"株式会社穴吹ハウジングサービス","name":"髙橋 柚基","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社穴吹ハウジングサービス","name":"髙橋 柚基","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社綜合企画","name":"梶山 勇亮","month":"2026/04","stage":"C","amount":360000,"product":"中途","estimated":false},{"company":"株式会社誠進堂","name":"久保田 翔世","month":"2026/05","stage":"C+","amount":460000,"product":"中途","estimated":false},{"company":"株式会社豊通マシナリー","name":"久保田 翔世","month":"2026/04","stage":"C","amount":960000,"product":"新卒","estimated":false},{"company":"株式会社足利銀行","name":"林 日向子","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"株式会社ＦＩＶＥ．Ｈｏｌｄｉｎｇｓ","name":"藤森 悠太","month":"2026/04","stage":"S","amount":1550006,"product":"新卒・中途","estimated":false},{"company":"株式会社Ｐｌａｎ・Ｄｏ・Ｓｅｅ","name":"平井 良輝","month":"2026/04","stage":"S","amount":1060000,"product":"新卒","estimated":false},{"company":"株式会社Ｐｌａｎ・Ｄｏ・Ｓｅｅ","name":"平井 良輝","month":"2026/04","stage":"S","amount":1060000,"product":"新卒","estimated":false},{"company":"株式会社Ｐｌａｎ・Ｄｏ・Ｓｅｅ","name":"平井 良輝","month":"2026/04","stage":"S","amount":1060000,"product":"新卒","estimated":false},{"company":"株式会社Ｐｌａｎ・Ｄｏ・Ｓｅｅ","name":"平井 良輝","month":"2026/04","stage":"S","amount":1060000,"product":"新卒","estimated":false},{"company":"株式会社Ｐｌａｎ・Ｄｏ・Ｓｅｅ","name":"平井 良輝","month":"2026/04","stage":"S","amount":1060000,"product":"新卒","estimated":false},{"company":"沢井製薬株式会社","name":"梶山 勇亮","month":"2026/05","stage":"C","amount":820000,"product":"新卒","estimated":false},{"company":"油研工業株式会社","name":"林 日向子","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"浜理PFST株式会社","name":"廣澤 未来","month":"2026/05","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"濱坂電機株式会社","name":"林 日向子","month":"2026/07","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"熊本赤十字病院 ＿自力獲得","name":"大野 杏海","month":"2026/04","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"特定非営利活動法人ピースウィンズ・ジャパン","name":"深澤 陸","month":"2026/04","stage":"D","amount":360000,"product":null,"estimated":true},{"company":"石垣メンテナンス株式会社","name":"梶山 勇亮","month":"2026/04","stage":"A","amount":1150000,"product":"新卒・中途","estimated":false},{"company":"社会福祉法人こころ福祉会","name":"平井 良輝","month":"2026/04","stage":"C+","amount":1080000,"product":"新卒・中途","estimated":false},{"company":"社会福祉法人神港園","name":"平井 良輝","month":"2026/05","stage":"C","amount":460000,"product":"中途","estimated":false},{"company":"社会福祉法人西春日井福祉会 - 　自力獲得","name":"山口 学","month":"2026/06","stage":"D","amount":700000,"product":"新卒・中途","estimated":true},{"company":"社会福祉法人長福会","name":"大野 杏海","month":"2026/05","stage":"C+","amount":1160000,"product":"新卒","estimated":false},{"company":"神戸信用金庫","name":"久保田 翔世","month":"2026/04","stage":"C","amount":700000,"product":"新卒","estimated":true},{"company":"福井信用金庫","name":"平井 良輝","month":"2026/05","stage":"C","amount":480000,"product":"新卒","estimated":false},{"company":"福井鐵工株式会社","name":"髙橋 柚基","month":"2026/04","stage":"C","amount":700000,"product":"新卒","estimated":true},{"company":"綾羽株式会社","name":"梶山 勇亮","month":"2026/05","stage":"C","amount":700000,"product":"新卒・中途","estimated":true},{"company":"草野産業株式会社","name":"林 日向子","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"西垣林業株式会社","name":"久保田 翔世","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"西川計測株式会社","name":"平井 良輝","month":"2026/04","stage":"S","amount":954000,"product":"新卒・中途","estimated":false},{"company":"豊通食料株式会社","name":"廣澤 未来","month":"2026/05","stage":"D","amount":700000,"product":"新卒","estimated":true},{"company":"錦水館","name":"山口 学","month":"2026/07","stage":"C+","amount":1400000,"product":"新卒・中途","estimated":false},{"company":"関西フローズン株式会社","name":"梶山 勇亮","month":"2026/04","stage":"D","amount":700000,"product":"新卒","estimated":true}];
 
 document.addEventListener('DOMContentLoaded', () => {
   setupDropZone();
   loadSnapshots();
+  loadWinRates();
   pipeline = INITIAL_DATA.slice();
   document.getElementById('fileStatus').textContent = `初期データ（HubSpot 2026/04/21）: ${pipeline.length}件`;
   renderPeriodTabs();
@@ -314,7 +777,9 @@ function parseCSV(file) {
   Papa.parse(file, {
     header: true, skipEmptyLines: true, encoding: 'UTF-8',
     complete: (results) => {
-      pipeline = results.data.map(normalizeRow).filter(r => r);
+      const allRows = results.data.map(normalizeRow).filter(r => r);
+      pipeline = allRows.filter(r => r.stage !== '失注');
+      lostDeals = allRows.filter(r => r.stage === '失注');
       document.getElementById('fileStatus').textContent = `${file.name} 読込完了（${pipeline.length}件 / 全${results.data.length}行）`;
       render();
     },
@@ -328,7 +793,16 @@ function parseExcel(file) {
       const wb = XLSX.read(e.target.result, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { raw: false, dateNF: 'yyyy/mm/dd' });
-      pipeline = rows.map(normalizeRow).filter(r => r);
+      // U列（index=20）の取引IDを列番号指定で直接取得（同名ヘッダー重複対策）
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      const hubspotIds = [];
+      for (let r = 1; r <= range.e.r; r++) {
+        const cell = ws[XLSX.utils.encode_cell({ r, c: 20 })];
+        hubspotIds.push(cell ? String(cell.v) : null);
+      }
+      const allRows = rows.map((row, i) => normalizeRow(row, hubspotIds[i])).filter(r => r);
+      pipeline = allRows.filter(r => r.stage !== '失注');
+      lostDeals = allRows.filter(r => r.stage === '失注');
       document.getElementById('fileStatus').textContent = `${file.name} 読込完了（${pipeline.length}件 / 全${rows.length}行）`;
       render();
     } catch (err) { document.getElementById('fileStatus').textContent = `読込エラー: ${err.message}`; }
@@ -337,13 +811,14 @@ function parseExcel(file) {
 }
 
 const DATA_NAME_MAP = {
-  '藤森 悠太':'悠太 藤森','林 日向子':'日向子 林','久保田 翔世':'翔世 久保田',
-  '平井 良輝':'良輝 平井','梶山 勇亮':'勇亮 梶山','深澤 陸':'陸 深澤',
-  '廣澤 未来':'未来 廣澤','山口 学':'学 山口','髙橋 柚基':'柚基 髙橋',
-  '大野 杏海':'杏海 大野','秋山 恵':'恵 秋山'
+  // HubSpot読み込み形式（名姓順）→ 内部形式（姓名順）
+  '悠太 藤森':'藤森 悠太','日向子 林':'林 日向子','翔世 久保田':'久保田 翔世',
+  '良輝 平井':'平井 良輝','勇亮 梶山':'梶山 勇亮','陸 深澤':'深澤 陸',
+  '未来 廣澤':'廣澤 未来','学 山口':'山口 学','柚基 髙橋':'髙橋 柚基',
+  '杏海 大野':'大野 杏海','恵 秋山':'秋山 恵'
 };
 
-function normalizeRow(row) {
+function normalizeRow(row, hubspotId = null) {
   const keys = Object.keys(row);
   const find = (...cands) => {
     for (const c of cands) {
@@ -355,6 +830,7 @@ function normalizeRow(row) {
   const company = String(find('取引名','案件名','会社名') || '').trim();
   const rawMember = String(find('取引担当者','担当者','FS','営業','氏名','メンバー') || '').trim();
   const dateRaw = find('クローズ日','受注予定月','予定月','年月','クロージング','close','決済月') || '';
+  const appointRaw = find('FS初回アポ実施日','初回アポ実施日','アポ実施日','アポ日','初回アポ') || '';
   const amountRaw = find('金額（計上）','金額','売上','受注金額','amount');
   const stageRaw = String(find('取引ステージ','ステージ','stage','フェーズ','phase','確度','ランク') || '').trim();
   const targetSvc = String(find('検討/対象サービス','対象サービス','検討サービス') || '').trim();
@@ -368,17 +844,23 @@ function normalizeRow(row) {
   else return null;
 
   let month = null;
+  let closeDay = null;
   if (dateRaw instanceof Date && !isNaN(dateRaw)) {
     month = `${dateRaw.getFullYear()}/${String(dateRaw.getMonth()+1).padStart(2,'0')}`;
+    closeDay = dateRaw.getDate();
   } else {
-    const match = String(dateRaw).match(/(\d{4})[\/\-年]?\s*(\d{1,2})/);
+    const match = String(dateRaw).match(/(\d{4})[\/\-年]?\s*(\d{1,2})(?:[\/\-月]\s*(\d{1,2}))?/);
     if (!match) return null;
     month = `${match[1]}/${String(match[2]).padStart(2,'0')}`;
+    closeDay = match[3] ? parseInt(match[3], 10) : null;
   }
   if (!FY_MONTHS.includes(month)) return null;
 
   const su = stageRaw.toUpperCase().replace(/\s/g,'');
-  if (stageRaw.includes('失注')) return null;
+  if (stageRaw.includes('失注')) {
+    const lostLabel = LOST_STAGE_MAP[Object.keys(LOST_STAGE_MAP).find(k => stageRaw.includes(k))] || 'その他';
+    return { company, name, month, closeDay, amount: 0, estimated: false, stage: '失注', lostLabel, hubspotId: hubspotId||null };
+  }
   let stage = null;
   if (su.startsWith('S')) stage = 'S';
   else if (su.startsWith('A')) stage = 'A';
@@ -387,24 +869,44 @@ function normalizeRow(row) {
   else if (su.startsWith('C')) stage = 'C';
   else if (su.startsWith('D')) stage = 'D';
   else if (su.startsWith('E')) stage = 'E';
-  if (!stage || stage === 'E') return null;
+  if (!stage) return null;
 
   let product = null;
   const combinedJp = productRaw + ' ' + targetSvc;
   const hasShin = combinedJp.includes('新卒') || (shinStatus && !['未ヒアリング','（値なし）',''].includes(shinStatus));
   const hasChu = combinedJp.includes('中途') || (chuStatus && !['未ヒアリング','（値なし）',''].includes(chuStatus));
-  if (combinedJp.includes('セット')) product = 'セット';
-  else if (hasShin && hasChu) product = 'セット';
+  if (combinedJp.includes('セット') || combinedJp.includes('新卒・中途')) product = '新卒・中途';
+  else if (hasShin && hasChu) product = '新卒・中途';
   else if (hasShin) product = '新卒';
   else if (hasChu) product = '中途';
 
   let amount = Number(String(amountRaw || '').replace(/[,¥\s]/g,'')) || 0;
   let estimated = false;
-  if (amount === 0 && ['D','C','C+','B','A','S'].includes(stage)) {
+  if (amount === 0 && ['E','D','C','C+','B','A','S'].includes(stage)) {
     amount = product ? PRODUCT_ESTIMATES[product] : DEFAULT_ESTIMATE;
     estimated = true;
   }
-  return { company, name, month, amount, stage, product, estimated };
+
+  // FS初回アポ実施日のパース
+  let appointDate = null; // "YYYY/MM/DD"
+  let appointMonth = null; // "YYYY/MM"
+  let appointDay = null;   // 日(数値)
+  if (appointRaw) {
+    if (appointRaw instanceof Date && !isNaN(appointRaw)) {
+      appointDate = `${appointRaw.getFullYear()}/${String(appointRaw.getMonth()+1).padStart(2,'0')}/${String(appointRaw.getDate()).padStart(2,'0')}`;
+      appointMonth = `${appointRaw.getFullYear()}/${String(appointRaw.getMonth()+1).padStart(2,'0')}`;
+      appointDay = appointRaw.getDate();
+    } else {
+      const m = String(appointRaw).match(/(\d{4})[\/\-年]\s*(\d{1,2})[\/\-月]\s*(\d{1,2})/);
+      if (m) {
+        appointDate = `${m[1]}/${String(m[2]).padStart(2,'0')}/${String(m[3]).padStart(2,'0')}`;
+        appointMonth = `${m[1]}/${String(m[2]).padStart(2,'0')}`;
+        appointDay = parseInt(m[3], 10);
+      }
+    }
+  }
+
+  return { company, name, month, closeDay, appointDate, appointMonth, appointDay, amount, stage, product, estimated, hubspotId };
 }
 
 function clearData() { pipeline = []; document.getElementById('fileStatus').textContent = ''; document.getElementById('fileInput').value = ''; render(); }
@@ -503,17 +1005,71 @@ function statusOf(jRate, yRate, sRate, target) {
   if (jRate >= 0.5 || yRate >= 0.5) return { label: '△ 要注意', cls: 'bg-amber-100 text-amber-700' };
   return { label: '× 要対策', cls: 'bg-red-100 text-red-700' };
 }
-function barColor(r) { return r >= 1 ? 'bg-emerald-500' : r >= 0.7 ? 'bg-blue-500' : r >= 0.4 ? 'bg-amber-500' : 'bg-red-500'; }
+function barColor(r) { return r >= 1 ? 'bg-emerald-500' : r >= 0.6 ? 'bg-sky-500' : 'bg-slate-300'; }
+function landColor(r) { return r >= 1 ? 'text-emerald-600' : r >= 0.6 ? 'text-violet-600' : 'text-slate-400'; }
+
+function getBizDaysRatio(monthStr) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const [y, m] = monthStr.split('/').map(Number);
+  const firstDay = new Date(y, m - 1, 1);
+  const lastDay  = new Date(y, m, 0);
+  if (firstDay > today) return 1.0;
+  if (lastDay < today)  return 0.0;
+  let total = 0, remaining = 0;
+  for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+    if (d.getDay() !== 0 && d.getDay() !== 6) {
+      total++;
+      if (d >= today) remaining++;
+    }
+  }
+  return total > 0 ? remaining / total : 0;
+}
+
+function calcLanding(member, pipe, months) {
+  let total = 0;
+  months.forEach(m => {
+    const ratio = getBizDaysRatio(m);
+    pipe.filter(d => d.name === member && d.month === m).forEach(d => {
+      if (d.stage === 'E') return;
+      let rate = getWinRate(d.stage, d.product);
+      if (TIME_DECAY_STAGES.includes(d.stage)) rate *= ratio;
+      rate *= getStaleFactor(d);
+      total += d.amount * rate;
+    });
+  });
+  return total;
+}
+
+function calcLandingE(member, pipe, months) {
+  let total = 0;
+  months.forEach(m => {
+    const ratio = getBizDaysRatio(m);
+    pipe.filter(d => d.name === member && d.month === m && d.stage === 'E').forEach(d => {
+      total += d.amount * eWinRate * ratio;
+    });
+  });
+  return total;
+}
 
 // ===== 描画 =====
 function render() {
+  // 保存ボタン制御（スナップショット閲覧中は無効化）
+  const saveBtn = document.querySelector('button[onclick="saveSnapshot()"]');
+  if (saveBtn) {
+    if (snapshotView) { saveBtn.disabled = true; saveBtn.classList.add('opacity-40', 'cursor-not-allowed'); }
+    else { saveBtn.disabled = false; saveBtn.classList.remove('opacity-40', 'cursor-not-allowed'); }
+  }
+
   document.getElementById('periodLabel').textContent = '（' + getPeriodLabel() + '）';
   const months = getMonthsForPeriod();
-  const totals = { target:0, j:0, jc:0, y:0, yc:0, s:0, sc:0,
+  const activePipeline = getActivePipeline();
+  const totals = { target:0, j:0, jc:0, y:0, yc:0, s:0, sc:0, land:0, landE:0,
                    e:0, ec:0, d:0, dc:0, c:0, cc:0, cp:0, cpc:0, b:0, bc:0, a:0, ac:0 };
-  const rows = MEMBERS.map(m => {
+  // メンバーフィルター：スナップショット欄で選択中のメンバーに連動
+  const activeMembers = currentSnapMember ? [currentSnapMember] : MEMBERS;
+  const rows = activeMembers.map(m => {
     const target = getTargetFor(m, months);
-    const p = getPipelineFor(m, pipeline, months);
+    const p = getPipelineFor(m, activePipeline, months);
     totals.target += target;
     totals.j += p.jisshi.amount; totals.jc += p.jisshi.count;
     totals.y += p.yomi.amount;   totals.yc += p.yomi.count;
@@ -525,11 +1081,17 @@ function render() {
     totals.b += p.b.amount; totals.bc += p.b.count;
     totals.a += p.a.amount; totals.ac += p.a.count;
     const jNeed = target * JISSHI_MULT, yNeed = target * YOMI_MULT;
+    const land = calcLanding(m, activePipeline, months);
+    const landE = calcLandingE(m, activePipeline, months);
+    totals.land += land;
+    totals.landE += landE;
     return {
-      name: m, target, jisshi: p.jisshi, yomi: p.yomi, won: p.s, jNeed, yNeed,
+      name: m, target, jisshi: p.jisshi, yomi: p.yomi, won: p.s, jNeed, yNeed, land, landE,
       jRate: jNeed>0 ? p.jisshi.amount/jNeed : (p.jisshi.amount>0?1:0),
       yRate: yNeed>0 ? p.yomi.amount/yNeed : (p.yomi.amount>0?1:0),
-      sRate: target>0 ? p.s.amount/target : (p.s.amount>0?1:0)
+      sRate: target>0 ? p.s.amount/target : (p.s.amount>0?1:0),
+      lRate: target>0 ? land/target : 0,
+      lERate: target>0 ? (land+landE)/target : 0
     };
   });
 
@@ -537,6 +1099,8 @@ function render() {
   const tJrate = tJneed>0 ? totals.j/tJneed : 0;
   const tYrate = tYneed>0 ? totals.y/tYneed : 0;
   const tSrate = totals.target>0 ? totals.s/totals.target : 0;
+  const tLrate  = totals.target>0 ? totals.land/totals.target : 0;
+  const tLErate = totals.target>0 ? (totals.land+totals.landE)/totals.target : 0;
 
   document.getElementById('kpi-target').textContent = fmt(totals.target);
   document.getElementById('kpi-s-amount').textContent = fmt(totals.s);
@@ -562,6 +1126,31 @@ function render() {
   yb.style.width = Math.min(tYrate*100, 100) + '%';
   yb.className = 'progress-bar h-2 rounded-full ' + barColor(tYrate);
 
+  const avgBizRatio = months.reduce((s,m) => s + getBizDaysRatio(m), 0) / months.length;
+  // BASE (D以上)
+  document.getElementById('kpi-land-amount').textContent = fmt(totals.land);
+  document.getElementById('kpi-land-rate').textContent = pct(tLrate);
+  document.getElementById('kpi-land-rate').className = 'text-sm font-bold ' + landColor(tLrate);
+  document.getElementById('kpi-land-ratio').textContent = `残営業日比 ${(avgBizRatio*100).toFixed(0)}%`;
+  const lb = document.getElementById('kpi-land-bar');
+  lb.style.width = Math.min(tLrate*100, 100) + '%';
+  // E込み
+  document.getElementById('kpi-lande-amount').textContent = fmt(totals.land + totals.landE);
+  document.getElementById('kpi-lande-rate').textContent = pct(tLErate);
+  document.getElementById('kpi-lande-rate').className = 'text-sm font-bold ' + landColor(tLErate);
+  // 達成可能性バッジ
+  const badge = document.getElementById('kpi-achieve-badge');
+  if (tLrate >= 1) {
+    badge.textContent = '✅ 確定圏';
+    badge.className = 'mt-2 text-center text-xs font-bold px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700';
+  } else if (tLErate >= 1) {
+    badge.textContent = '📋 E次第で達成可能';
+    badge.className = 'mt-2 text-center text-xs font-bold px-2 py-1 rounded-lg bg-amber-100 text-amber-700';
+  } else {
+    badge.textContent = '⚠️ 積み増し必要';
+    badge.className = 'mt-2 text-center text-xs font-bold px-2 py-1 rounded-lg bg-red-100 text-red-700';
+  }
+
   document.getElementById('cnt-e').textContent = `${totals.ec}件 / ${fmt(totals.e)}`;
   document.getElementById('cnt-d').textContent = `${totals.dc}件 / ${fmt(totals.d)}`;
   document.getElementById('cnt-c').textContent = `${totals.cc}件 / ${fmt(totals.c)}`;
@@ -570,58 +1159,71 @@ function render() {
   document.getElementById('cnt-a').textContent = `${totals.ac}件 / ${fmt(totals.a)}`;
   document.getElementById('cnt-s').textContent = `${totals.sc}件 / ${fmt(totals.s)}`;
 
+  const NEED_UNIT = 700000;
+  const needCount = (needAmt, target) => target === 0 ? '—' : Math.round(needAmt / NEED_UNIT);
   const tbody = document.getElementById('memberTable');
   tbody.innerHTML = rows.map(r => {
-    const s = statusOf(r.jRate, r.yRate, r.sRate, r.target);
-    const jRC = r.target===0 ? 'text-slate-400' : r.jRate>=1?'text-emerald-600':r.jRate>=0.7?'text-blue-600':r.jRate>=0.4?'text-amber-600':'text-red-600';
-    const yRC = r.target===0 ? 'text-slate-400' : r.yRate>=1?'text-emerald-600':r.yRate>=0.7?'text-blue-600':r.yRate>=0.4?'text-amber-600':'text-red-600';
+    const jRC = r.target===0 ? 'text-slate-400' : r.jRate>=1?'text-emerald-600':r.jRate>=0.6?'text-sky-600':'text-slate-400';
+    const yRC = r.target===0 ? 'text-slate-400' : r.yRate>=1?'text-emerald-600':r.yRate>=0.6?'text-sky-600':'text-slate-400';
+    const lRC = r.target===0 ? 'text-slate-400' : landColor(r.lRate);
     return `<tr class="border-b hover:bg-slate-50">
-      <td class="px-2 py-2">${r.name}</td>
-      <td class="px-2 py-2 text-right">${fmt(r.target)}</td>
-      <td class="px-2 py-2 text-right text-slate-500">${fmt(r.jNeed)}</td>
-      <td class="px-2 py-2 text-right font-semibold">${fmt(r.jisshi.amount)}</td>
-      <td class="px-2 py-2 text-right">${r.jisshi.count}</td>
-      <td class="px-2 py-2 text-right font-bold ${jRC}">${r.target>0?pct(r.jRate):'—'}</td>
-      <td class="px-2 py-2 text-right text-slate-500">${fmt(r.yNeed)}</td>
-      <td class="px-2 py-2 text-right font-semibold">${fmt(r.yomi.amount)}</td>
-      <td class="px-2 py-2 text-right">${r.yomi.count}</td>
-      <td class="px-2 py-2 text-right font-bold ${yRC}">${r.target>0?pct(r.yRate):'—'}</td>
-      <td class="px-2 py-2 text-center"><span class="status-chip ${s.cls}">${s.label}</span></td>
+      <td class="px-1 py-2">${r.name}</td>
+      <td class="px-1 py-2 text-right">${fmt(r.target)}</td>
+      <td class="px-1 py-2 text-right text-slate-500">${fmt(r.jNeed)}</td>
+      <td class="px-1 py-2 text-right text-slate-500">${needCount(r.jNeed, r.target)}${r.target>0?'件':''}</td>
+      <td class="px-1 py-2 text-right font-semibold">${fmt(r.jisshi.amount)}</td>
+      <td class="px-1 py-2 text-right">${r.jisshi.count}</td>
+      <td class="px-1 py-2 text-right font-bold ${jRC}">${r.target>0?pct(r.jRate):'—'}</td>
+      <td class="px-1 py-2 text-right text-slate-500">${fmt(r.yNeed)}</td>
+      <td class="px-1 py-2 text-right text-slate-500">${needCount(r.yNeed, r.target)}${r.target>0?'件':''}</td>
+      <td class="px-1 py-2 text-right font-semibold">${fmt(r.yomi.amount)}</td>
+      <td class="px-1 py-2 text-right">${r.yomi.count}</td>
+      <td class="px-1 py-2 text-right font-bold ${yRC}">${r.target>0?pct(r.yRate):'—'}</td>
+      <td class="px-1 py-2 text-right font-semibold text-violet-700">${fmt(r.land)}</td>
+      <td class="px-1 py-2 text-right font-bold ${lRC}">${r.target>0?pct(r.lRate):'—'}</td>
     </tr>`;
   }).join('');
 
   document.getElementById('totalRow').innerHTML = `
-    <td class="px-2 py-2">合計</td>
-    <td class="px-2 py-2 text-right">${fmt(totals.target)}</td>
-    <td class="px-2 py-2 text-right">${fmt(tJneed)}</td>
-    <td class="px-2 py-2 text-right">${fmt(totals.j)}</td>
-    <td class="px-2 py-2 text-right">${totals.jc}</td>
-    <td class="px-2 py-2 text-right text-blue-700">${pct(tJrate)}</td>
-    <td class="px-2 py-2 text-right">${fmt(tYneed)}</td>
-    <td class="px-2 py-2 text-right">${fmt(totals.y)}</td>
-    <td class="px-2 py-2 text-right">${totals.yc}</td>
-    <td class="px-2 py-2 text-right text-amber-700">${pct(tYrate)}</td>
-    <td></td>`;
+    <td class="px-1 py-2">合計</td>
+    <td class="px-1 py-2 text-right">${fmt(totals.target)}</td>
+    <td class="px-1 py-2 text-right">${fmt(tJneed)}</td>
+    <td class="px-1 py-2 text-right">${Math.round(tJneed/NEED_UNIT)}件</td>
+    <td class="px-1 py-2 text-right">${fmt(totals.j)}</td>
+    <td class="px-1 py-2 text-right">${totals.jc}</td>
+    <td class="px-1 py-2 text-right text-blue-700">${pct(tJrate)}</td>
+    <td class="px-1 py-2 text-right">${fmt(tYneed)}</td>
+    <td class="px-1 py-2 text-right">${Math.round(tYneed/NEED_UNIT)}件</td>
+    <td class="px-1 py-2 text-right">${fmt(totals.y)}</td>
+    <td class="px-1 py-2 text-right">${totals.yc}</td>
+    <td class="px-1 py-2 text-right text-amber-700">${pct(tYrate)}</td>
+    <td class="px-1 py-2 text-right text-violet-700">${fmt(totals.land)}</td>
+    <td class="px-1 py-2 text-right text-violet-700">${pct(tLrate)}</td>
+`;
 
   drawChart('jisshiChart', jisshiChart, rows.map(r=>r.name), rows.map(r=>r.jRate*100), '#3b82f6', ref => jisshiChart = ref);
   drawChart('yomiChart', yomiChart, rows.map(r=>r.name), rows.map(r=>r.yRate*100), '#f59e0b', ref => yomiChart = ref);
+  drawChart('landingChart', landingChart, rows.map(r=>r.name), rows.map(r=>r.lRate*100), '#8b5cf6', ref => landingChart = ref, '達成予想');
 
   const memberSel = document.getElementById('dealFilterMember');
   const cur = memberSel.value;
   memberSel.innerHTML = '<option value="">全員</option>' + MEMBERS.map(m => `<option value="${m}">${m}</option>`).join('');
-  memberSel.value = cur;
-  renderDealList();
+  // スナップショットメンバー選択に連動
+  if (currentSnapMember) memberSel.value = currentSnapMember;
+  else memberSel.value = cur;
+  renderDealList(activePipeline);
   renderSnapshots();
+  renderECalendar();
 }
 
-function renderDealList() {
+function renderDealList(activePipe) {
   const tbody = document.getElementById('dealList');
   if (!tbody) return;
   const months = getMonthsForPeriod();
   const filterMember = document.getElementById('dealFilterMember').value;
   const filterStage = document.getElementById('dealFilterStage').value;
   const STAGE_ORDER = {'S':1,'A':2,'B':3,'C+':4,'C':5,'D':6};
-  const filtered = pipeline
+  const filtered = (activePipe || getActivePipeline())
     .filter(p => months.includes(p.month))
     .filter(p => !filterMember || p.name === filterMember)
     .filter(p => !filterStage || p.stage === filterStage)
@@ -630,7 +1232,11 @@ function renderDealList() {
   tbody.innerHTML = filtered.length === 0
     ? `<tr><td colspan="6" class="px-2 py-4 text-center text-slate-400">該当案件なし</td></tr>`
     : filtered.map(d => `<tr class="border-b hover:bg-slate-50">
-        <td class="px-2 py-1.5 truncate max-w-xs" title="${d.company||''}">${d.company||'-'}</td>
+        <td class="px-2 py-1.5 truncate max-w-xs" title="${d.company||''}">
+          ${d.hubspotId
+            ? `<a href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener" class="hover:underline" style="color:#0284c7">${d.company||'-'}</a>`
+            : (d.company||'-')}
+        </td>
         <td class="px-2 py-1.5">${d.name}</td>
         <td class="px-2 py-1.5 text-center"><b class="${stageColor[d.stage]||''}">${d.stage}</b></td>
         <td class="px-2 py-1.5 text-center">${parseInt(d.month.slice(5))}月</td>
@@ -639,16 +1245,17 @@ function renderDealList() {
       </tr>`).join('');
 }
 
-function drawChart(id, oldChart, labels, data, color, setter) {
+function drawChart(id, oldChart, labels, data, color, setter, tooltipLabel) {
   if (oldChart) oldChart.destroy();
   const ctx = document.getElementById(id).getContext('2d');
+  const tlabel = tooltipLabel || '充足率';
   const chart = new Chart(ctx, {
     type: 'bar',
-    data: { labels, datasets: [{ label: '充足率(%)', data, backgroundColor: data.map(v => v>=100?'#10b981':v>=70?color:v>=40?'#f59e0b':'#ef4444') }] },
+    data: { labels, datasets: [{ label: tlabel+'(%)', data, backgroundColor: data.map(v => v>=100?'#10b981':v>=60?'#0284c7':'#cbd5e1') }] },
     options: {
       responsive: true, indexAxis: 'y',
       scales: { x: { ticks: { callback: v => v+'%' }, suggestedMax: Math.max(120, ...data.map(v=>Math.ceil(v/10)*10+10)) } },
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => '充足率: ' + c.parsed.x.toFixed(0) + '%' } } }
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => tlabel + ': ' + c.parsed.x.toFixed(0) + '%' } } }
     },
     plugins: [{ id: 'hundredLine', afterDraw: (c) => {
       const x = c.scales.x.getPixelForValue(100); const ctx = c.ctx;
@@ -661,12 +1268,310 @@ function drawChart(id, oldChart, labels, data, color, setter) {
   setter(chart);
 }
 
+// ===== 勝率設定UI =====
+function openWinRatesModal() {
+  renderWinRatesTable();
+  const eEl = document.getElementById('wr-e-rate');
+  if (eEl) eEl.value = Math.round(eWinRate * 100);
+  document.getElementById('winRatesModal').classList.remove('hidden');
+}
+function closeWinRatesModal() {
+  document.getElementById('winRatesModal').classList.add('hidden');
+}
+function renderWinRatesTable() {
+  const cols = ['default', '新卒', '中途', '新卒・中途'];
+  const colLabels = { default:'デフォルト（不明）', '新卒':'新卒採用', '中途':'中途採用', '新卒・中途':'新卒・中途（両方）' };
+  const stageDescs = { 'D':'D 実施済', 'C':'C ヨミ', 'C+':'C+ 見積提出', 'B':'B 稟議握り', 'A':'A 締結中' };
+  let html = `<table class="text-xs border-collapse w-full">
+    <thead><tr class="bg-slate-50">
+      <th class="px-3 py-2 text-left border border-slate-200 text-slate-600">ステージ</th>
+      ${cols.map(c=>`<th class="px-3 py-2 text-center border border-slate-200 text-slate-600">${colLabels[c]}</th>`).join('')}
+    </tr></thead><tbody>`;
+  STAGE_LIST_WIN.forEach(stage => {
+    html += `<tr><td class="px-3 py-2 border border-slate-200 font-semibold whitespace-nowrap">${stageDescs[stage]||stage}</td>`;
+    cols.forEach(prod => {
+      const cur = Math.round(getWinRate(stage, prod === 'default' ? null : prod) * 100);
+      const hasCustom = customWinRates[stage] && customWinRates[stage][prod] !== undefined;
+      html += `<td class="px-2 py-1 border border-slate-200">
+        <div class="flex items-center gap-1 justify-center">
+          <input type="number" min="0" max="100" step="0.1" value="${cur}"
+            id="wr-${stage.replace('+','p')}-${prod}"
+            class="w-16 border rounded px-1 py-0.5 text-right text-xs ${hasCustom ? 'border-violet-400 bg-violet-50' : ''}" />
+          <span class="text-slate-400">%</span>
+        </div></td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table>`;
+  document.getElementById('winRatesTableWrap').innerHTML = html;
+}
+function applyWinRates() {
+  const cols = ['default', '新卒', '中途', '新卒・中途'];
+  const newRates = {};
+  STAGE_LIST_WIN.forEach(stage => {
+    newRates[stage] = {};
+    cols.forEach(prod => {
+      const id = `wr-${stage.replace('+','p')}-${prod}`;
+      const el = document.getElementById(id);
+      if (el) newRates[stage][prod] = parseFloat(el.value) / 100;
+    });
+  });
+  customWinRates = newRates;
+  try { localStorage.setItem(WIN_RATES_KEY, JSON.stringify(customWinRates)); }
+  catch(e) { alert('保存失敗: ' + e.message); return; }
+  const eEl = document.getElementById('wr-e-rate');
+  if (eEl) {
+    eWinRate = parseFloat(eEl.value) / 100;
+    try { localStorage.setItem(E_WIN_RATE_KEY, String(eWinRate)); } catch(e) {}
+  }
+  closeWinRatesModal();
+  render();
+}
+function resetWinRates() {
+  if (!confirm('全ての勝率をデフォルト値に戻しますか？')) return;
+  customWinRates = {};
+  eWinRate = 0.10;
+  localStorage.removeItem(WIN_RATES_KEY);
+  localStorage.removeItem(E_WIN_RATE_KEY);
+  renderWinRatesTable();
+}
+
+// ===== Eステージ カレンダー =====
+const MEMBER_COLORS = [
+  '#0284c7','#7c3aed','#059669','#d97706','#dc2626',
+  '#0891b2','#9333ea','#65a30d','#ea580c','#db2777','#64748b'
+];
+function memberColor(name) {
+  const idx = MEMBERS.indexOf(name);
+  return MEMBER_COLORS[idx >= 0 ? idx % MEMBER_COLORS.length : MEMBER_COLORS.length - 1];
+}
+const PRODUCT_BADGE = { '新卒': { bg: '#dbeafe', text: '#1d4ed8' }, '中途': { bg: '#dcfce7', text: '#15803d' }, '新卒・中途': { bg: '#ede9fe', text: '#6d28d9' } };
+const WEEK_LABELS = ['日','月','火','水','木','金','土'];
+
+// eCalViewMonth: "2026/05" 形式
+let eCalViewMonth = (()=>{
+  const now = new Date();
+  return `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}`;
+})();
+const E_CAL_MAX = 3; // 1日の最大表示件数
+let eCalExpandedDays = new Set(); // 展開中の日付 "YYYY/MM/DD"
+
+function toggleECalDay(dateStr) {
+  if (eCalExpandedDays.has(dateStr)) {
+    eCalExpandedDays.delete(dateStr);
+  } else {
+    eCalExpandedDays.add(dateStr);
+  }
+  renderECalendar();
+}
+
+function setECalMember(v) { eCalMember = v; eCalExpandedDays.clear(); renderECalendar(); }
+function eCalPrevMonth() {
+  const idx = FY_MONTHS.indexOf(eCalViewMonth);
+  if (idx > 0) { eCalViewMonth = FY_MONTHS[idx - 1]; eCalExpandedDays.clear(); renderECalendar(); }
+}
+function eCalNextMonth() {
+  const idx = FY_MONTHS.indexOf(eCalViewMonth);
+  if (idx >= 0 && idx < FY_MONTHS.length - 1) { eCalViewMonth = FY_MONTHS[idx + 1]; eCalExpandedDays.clear(); renderECalendar(); }
+}
+function eCalGoToday() {
+  const now = new Date();
+  const m = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}`;
+  if (FY_MONTHS.includes(m)) { eCalViewMonth = m; renderECalendar(); }
+}
+
+function renderECalendar() {
+  const cal = document.getElementById('eCalendar');
+  if (!cal) return;
+
+  // Populate member filter
+  const sel = document.getElementById('eCalMemberFilter');
+  if (sel) {
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">全員</option>' + MEMBERS.map(m => `<option value="${m}">${m}</option>`).join('');
+    sel.value = cur || eCalMember;
+  }
+
+  // Clamp eCalViewMonth to FY range
+  if (!FY_MONTHS.includes(eCalViewMonth)) eCalViewMonth = FY_MONTHS[0];
+  const [yr, mo] = eCalViewMonth.split('/').map(Number);
+
+  // Update label
+  const lbl = document.getElementById('eCalMonthLabel');
+  if (lbl) lbl.textContent = `${yr}年 ${mo}月`;
+
+  // Navigation button state
+  const idx = FY_MONTHS.indexOf(eCalViewMonth);
+  // (leave buttons always visible for simplicity)
+
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}`;
+
+  // スナップショット閲覧中はそのデータ、そうでなければ現在データを使用
+  const calPipeline = getActivePipeline();
+
+  // スナップショットバナー更新
+  const snapBanner = document.getElementById('eCalSnapBanner');
+  const snapLabelEl = document.getElementById('eCalSnapLabel');
+  if (snapBanner && snapLabelEl) {
+    if (snapshotView) {
+      snapBanner.classList.remove('hidden');
+      snapLabelEl.textContent = `スナップショット閲覧中：${snapshotView.dateStr} のデータを表示しています`;
+    } else {
+      snapBanner.classList.add('hidden');
+    }
+  }
+
+  // Filter E deals: アポ実施日がこの月のもの、またはアポ日なしでクローズ月がこの月のもの
+  const allEDeals = calPipeline.filter(d => d.stage === 'E' && (!eCalMember || d.name === eCalMember));
+
+  // E合計バッジ：表示中の月に該当するE案件数
+  const badge = document.getElementById('eCalTotalBadge');
+  const monthECount = allEDeals.filter(d =>
+    d.appointMonth === eCalViewMonth || (!d.appointDate && d.month === eCalViewMonth)
+  ).length;
+  if (badge) badge.textContent = `${parseInt(eCalViewMonth.split('/')[1])}月 E案件 ${monthECount}件`;
+
+  // アポ実施日がこの月に該当するもの
+  const eDealsAppt = allEDeals.filter(d => d.appointMonth === eCalViewMonth);
+  // アポ実施日がなく、クローズ月がこの月のもの（未設定扱い）
+  const eDealsNoApptThisMonth = allEDeals.filter(d => !d.appointDate && d.month === eCalViewMonth);
+  const eDeals = [...eDealsAppt, ...eDealsNoApptThisMonth];
+  const dealsWithDay = eDealsAppt.filter(d => d.appointDay);
+  const dealsNoDay = eDealsNoApptThisMonth;
+
+  // Build calendar grid
+  const firstDay = new Date(yr, mo - 1, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(yr, mo, 0).getDate();
+
+  // Header row
+  let html = `<div class="border rounded-xl overflow-hidden" style="border-color:#e2e8f0">`;
+  // Day-of-week header
+  html += `<div class="grid grid-cols-7 border-b" style="border-color:#e2e8f0;background:#f8fafc">`;
+  WEEK_LABELS.forEach((w, i) => {
+    const col = i === 0 ? '#dc2626' : i === 6 ? '#0284c7' : '#475569';
+    html += `<div class="text-center py-2 text-xs font-semibold" style="color:${col}">${w}</div>`;
+  });
+  html += `</div>`;
+
+  // Calendar cells
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+  html += `<div class="grid grid-cols-7">`;
+  for (let i = 0; i < totalCells; i++) {
+    const dayNum = i - firstDay + 1;
+    const isValid = dayNum >= 1 && dayNum <= daysInMonth;
+    const dateStr = isValid ? `${yr}/${String(mo).padStart(2,'0')}/${String(dayNum).padStart(2,'0')}` : '';
+    const isToday = dateStr === todayStr;
+    const dow = i % 7;
+    const isSun = dow === 0, isSat = dow === 6;
+    const isPast = isValid && dateStr < todayStr;
+
+    const dayDeals = isValid ? dealsWithDay.filter(d => d.appointDay === dayNum) : [];
+    const hasDeals = dayDeals.length > 0;
+    const isExpanded = isValid && eCalExpandedDays.has(dateStr);
+    const visibleDeals = isExpanded ? dayDeals : dayDeals.slice(0, E_CAL_MAX);
+    const hiddenCount = dayDeals.length - E_CAL_MAX;
+
+    let cellBg = isToday ? '#eff6ff' : 'white';
+    let numColor = isToday ? '#0284c7' : isSun ? '#dc2626' : isSat ? '#0284c7' : isPast ? '#cbd5e1' : '#374151';
+    const borderR = i % 7 !== 6 ? 'border-r' : '';
+    const borderB = i < totalCells - 7 ? 'border-b' : '';
+
+    html += `<div class="${borderR} ${borderB}" style="border-color:#f1f5f9;min-height:80px;background:${cellBg};padding:4px">`;
+    if (isValid) {
+      html += `<div class="flex items-center gap-1 mb-1">
+        <span class="text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full ${isToday ? 'text-white' : ''}" style="${isToday ? 'background:#0284c7;' : ''}color:${isToday ? 'white' : numColor}">${dayNum}</span>
+        ${hasDeals ? `<span class="text-[9px] font-semibold rounded-full px-1" style="background:#dbeafe;color:#0284c7">${dayDeals.length}件</span>` : ''}
+      </div>`;
+      visibleDeals.forEach(d => {
+        const pb = PRODUCT_BADGE[d.product] || { bg: '#f1f5f9', text: '#475569' };
+        const mc = memberColor(d.name);
+        const shortName = d.name ? d.name.split(' ').slice(-1)[0] : '';
+        const hubUrl = d.hubspotId ? `href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener"` : '';
+        html += `<div class="rounded p-1 mb-0.5 text-[10px] leading-tight" style="background:${mc}15;border-left:3px solid ${mc}">
+          <a ${hubUrl} class="font-medium block truncate hover:underline" style="color:#1e293b" title="${d.company}">${d.company || '-'}</a>
+          <div class="flex items-center justify-between mt-0.5 flex-wrap gap-0.5">
+            <span class="font-semibold" style="color:${mc}">${shortName}</span>
+            ${d.product ? `<span class="rounded-full px-1" style="background:${pb.bg};color:${pb.text}">${d.product}</span>` : ''}
+          </div>
+        </div>`;
+      });
+      // 展開ボタン
+      if (!isExpanded && hiddenCount > 0) {
+        html += `<button onclick="toggleECalDay('${dateStr}')" class="w-full mt-0.5 text-[9px] font-semibold rounded py-0.5 hover:opacity-80" style="background:#dbeafe;color:#0284c7">＋${hiddenCount}件 もっと見る</button>`;
+      } else if (isExpanded && dayDeals.length > E_CAL_MAX) {
+        html += `<button onclick="toggleECalDay('${dateStr}')" class="w-full mt-0.5 text-[9px] font-semibold rounded py-0.5 hover:opacity-80" style="background:#f1f5f9;color:#64748b">折りたたむ ▲</button>`;
+      }
+    }
+    html += `</div>`;
+  }
+  html += `</div></div>`;
+
+  // Month total bar
+  const monthTotal = eDeals.reduce((s,d)=>s+d.amount,0);
+  html += `<div class="mt-2 flex items-center justify-between text-xs text-slate-500 px-1">
+    <span>この月のE案件 合計 <b class="text-slate-700">${eDeals.length}件</b></span>
+    <span>合計金額 <b class="text-slate-700">${fmt(monthTotal)}</b></span>
+  </div>`;
+
+  cal.innerHTML = html;
+
+  // No-day deals section
+  const sec = document.getElementById('eCalNoDaySection');
+  const lst = document.getElementById('eCalNoDayList');
+  if (sec && lst) {
+    if (dealsNoDay.length > 0) {
+      sec.classList.remove('hidden');
+      lst.innerHTML = dealsNoDay.map(d => {
+        const mc = memberColor(d.name);
+        const pb = PRODUCT_BADGE[d.product] || { bg: '#f1f5f9', text: '#475569' };
+        const shortName = d.name ? d.name.split(' ').slice(-1)[0] : '';
+        const hubUrl = d.hubspotId ? `href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener"` : '';
+        return `<div class="rounded-lg p-2 text-[10px] border" style="background:#fafafa;border-color:#e2e8f0;min-width:120px">
+          <a ${hubUrl} class="font-medium block truncate hover:underline" style="color:#1e293b" title="${d.company}">${d.company || '-'}</a>
+          <div class="flex items-center gap-1 mt-0.5">
+            <span class="font-semibold" style="color:${mc}">${shortName}</span>
+            ${d.product ? `<span class="rounded-full px-1" style="background:${pb.bg};color:${pb.text}">${d.product}</span>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    } else {
+      sec.classList.add('hidden');
+    }
+  }
+}
+
 // ===== スナップショット =====
+// 旧名前形式（名姓）→ 新形式（姓名）変換マップ
+const SNAP_NAME_MIGRATION = {
+  '悠太 藤森':'藤森 悠太','日向子 林':'林 日向子','翔世 久保田':'久保田 翔世',
+  '良輝 平井':'平井 良輝','勇亮 梶山':'梶山 勇亮','陸 深澤':'深澤 陸',
+  '未来 廣澤':'廣澤 未来','学 山口':'山口 学','柚基 髙橋':'髙橋 柚基',
+  '杏海 大野':'大野 杏海','恵 秋山':'秋山 恵'
+};
+
+function migrateSnapshotNames() {
+  let changed = false;
+  snapshots.forEach(snap => {
+    if (!snap.pipeline) return;
+    snap.pipeline.forEach(d => {
+      if (SNAP_NAME_MIGRATION[d.name]) {
+        d.name = SNAP_NAME_MIGRATION[d.name];
+        changed = true;
+      }
+    });
+  });
+  if (changed) {
+    try { localStorage.setItem(SNAP_KEY, JSON.stringify(snapshots)); } catch(e) {}
+  }
+}
+
 function loadSnapshots() {
   try {
     const raw = localStorage.getItem(SNAP_KEY);
     snapshots = raw ? JSON.parse(raw) : [];
   } catch (e) { snapshots = []; }
+  migrateSnapshotNames(); // 旧形式の名前を自動変換
 }
 function persistSnapshots() {
   try { localStorage.setItem(SNAP_KEY, JSON.stringify(snapshots)); }
@@ -674,28 +1579,69 @@ function persistSnapshots() {
 }
 function saveSnapshot() {
   if (pipeline.length === 0) { alert('保存するデータがありません'); return; }
-  const label = document.getElementById('snapLabel').value.trim();
   const now = new Date();
   const ts = now.toISOString();
   const dateStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  snapshots.push({ id: ts, dateStr, label: label || dateStr, pipeline: pipeline.slice() });
+  snapshots.push({ id: ts, dateStr, label: dateStr, pipeline: pipeline.slice(), lostDeals: lostDeals.slice() });
   persistSnapshots();
-  document.getElementById('snapLabel').value = '';
   renderSnapshots();
 }
 function deleteSnapshot(id) {
-  if (!confirm('このスナップショットを削除しますか？')) return;
-  snapshots = snapshots.filter(s => s.id !== id);
-  persistSnapshots();
-  renderSnapshots();
+  requirePassword(() => {
+    snapshots = snapshots.filter(s => s.id !== id);
+    if (snapshotView && snapshotView.id === id) snapshotView = null;
+    persistSnapshots();
+    render();
+  });
 }
 function clearAllSnapshots() {
   if (snapshots.length === 0) return;
-  if (!confirm(`${snapshots.length}件のスナップショットを全て削除しますか？`)) return;
-  snapshots = []; persistSnapshots(); renderSnapshots();
+  requirePassword(() => {
+    if (!confirm(`${snapshots.length}件のスナップショットを全て削除しますか？`)) return;
+    snapshots = []; snapshotView = null; persistSnapshots(); render();
+  });
+}
+
+function setSnapMember(v) {
+  currentSnapMember = v;
+  render(); // KPI・グラフ・表も連動して切り替え
+}
+
+function computeSnapPoint(pipe, months, member) {
+  if (member) {
+    const p = getPipelineFor(member, pipe, months);
+    const target = getTargetFor(member, months);
+    const jNeed = target * JISSHI_MULT, yNeed = target * YOMI_MULT;
+    return {
+      target, j: p.jisshi.amount, jc: p.jisshi.count,
+      y: p.yomi.amount, yc: p.yomi.count, s: p.s.amount, sc: p.s.count,
+      jRate: jNeed>0 ? (p.jisshi.amount/jNeed)*100 : 0,
+      yRate: yNeed>0 ? (p.yomi.amount/yNeed)*100 : 0,
+      sRate: target>0 ? (p.s.amount/target)*100 : 0,
+      count: pipe.filter(d => d.name===member && months.includes(d.month) && d.stage !== 'E').length
+    };
+  } else {
+    const t = aggregateTotals(pipe, months);
+    const jNeed = t.target*JISSHI_MULT, yNeed = t.target*YOMI_MULT;
+    return {
+      target: t.target, j: t.j, jc: t.jc, y: t.y, yc: t.yc, s: t.s, sc: t.sc,
+      jRate: jNeed>0 ? (t.j/jNeed)*100 : 0,
+      yRate: yNeed>0 ? (t.y/yNeed)*100 : 0,
+      sRate: t.target>0 ? (t.s/t.target)*100 : 0,
+      count: pipe.filter(d => months.includes(d.month) && d.stage !== 'E').length
+    };
+  }
 }
 
 function renderSnapshots() {
+  // Sync member select options
+  const sel = document.getElementById('snapMemberFilter');
+  if (sel) {
+    const cur = currentSnapMember;
+    sel.innerHTML = '<option value="">全体</option>' + MEMBERS.map(m => `<option value="${m}">${m}</option>`).join('');
+    sel.value = cur;
+  }
+
   const empty = document.getElementById('snapshotEmpty');
   const content = document.getElementById('snapshotContent');
   if (snapshots.length === 0) {
@@ -706,26 +1652,17 @@ function renderSnapshots() {
   empty.classList.add('hidden'); content.classList.remove('hidden');
 
   const months = getMonthsForPeriod();
+  const member = currentSnapMember;
+  const titleSuffix = member ? ` （${member}）` : '';
+
   const points = snapshots.map(s => {
-    const t = aggregateTotals(s.pipeline, months);
-    const jNeed = t.target*JISSHI_MULT, yNeed = t.target*YOMI_MULT;
-    return {
-      ...s, totals: t,
-      jRate: jNeed>0 ? (t.j/jNeed)*100 : 0,
-      yRate: yNeed>0 ? (t.y/yNeed)*100 : 0,
-      sRate: t.target>0 ? (t.s/t.target)*100 : 0
-    };
+    const stats = computeSnapPoint(s.pipeline, months, member);
+    return { ...s, stats };
   });
-  // Add current state as latest virtual snapshot
-  const curT = aggregateTotals(pipeline, months);
-  const curJneed = curT.target*JISSHI_MULT, curYneed = curT.target*YOMI_MULT;
-  const current = {
-    id: '__current__', dateStr: '現在', label: '現在',
-    totals: curT,
-    jRate: curJneed>0 ? (curT.j/curJneed)*100 : 0,
-    yRate: curYneed>0 ? (curT.y/curYneed)*100 : 0,
-    sRate: curT.target>0 ? (curT.s/curT.target)*100 : 0
-  };
+
+  // Current state as virtual snapshot
+  const curStats = computeSnapPoint(pipeline, months, member);
+  const current = { id: '__current__', dateStr: '現在', label: '現在', stats: curStats };
   const allPoints = [...points, current];
 
   // Trend chart
@@ -736,16 +1673,16 @@ function renderSnapshots() {
     data: {
       labels: allPoints.map(p => p.label.length > 12 ? p.label.slice(0,12)+'…' : p.label),
       datasets: [
-        { label: '実施積載率', data: allPoints.map(p => p.jRate), borderColor: '#3b82f6', backgroundColor: '#3b82f620', tension: 0.3, fill: false },
-        { label: 'ヨミ積載率', data: allPoints.map(p => p.yRate), borderColor: '#f59e0b', backgroundColor: '#f59e0b20', tension: 0.3, fill: false },
-        { label: '受注率', data: allPoints.map(p => p.sRate), borderColor: '#10b981', backgroundColor: '#10b98120', tension: 0.3, fill: false }
+        { label: '実施積載率', data: allPoints.map(p => p.stats.jRate), borderColor: '#3b82f6', backgroundColor: '#3b82f620', tension: 0.3, fill: false },
+        { label: 'ヨミ積載率', data: allPoints.map(p => p.stats.yRate), borderColor: '#f59e0b', backgroundColor: '#f59e0b20', tension: 0.3, fill: false },
+        { label: '受注率', data: allPoints.map(p => p.stats.sRate), borderColor: '#10b981', backgroundColor: '#10b98120', tension: 0.3, fill: false }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display: true, position: 'top' },
-        title: { display: true, text: `${getPeriodLabel()} 積載率推移`, font: { size: 12 } },
+        title: { display: true, text: `${getPeriodLabel()} 積載率推移${titleSuffix}`, font: { size: 12 } },
         tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(0)}%` } }
       },
       scales: { y: { beginAtZero: true, ticks: { callback: v => v+'%' }, suggestedMax: 120 } }
@@ -760,17 +1697,328 @@ function renderSnapshots() {
   // Snapshot list
   const list = document.getElementById('snapshotList');
   const rows = [...points].reverse();
-  list.innerHTML = rows.map(p => `
-    <tr class="border-b hover:bg-slate-50">
-      <td class="px-2 py-1.5 text-slate-600">${p.dateStr}</td>
-      <td class="px-2 py-1.5">${p.label === p.dateStr ? '—' : p.label}</td>
-      <td class="px-2 py-1.5 text-right">${p.pipeline.length}件</td>
-      <td class="px-2 py-1.5 text-right">${fmt(p.totals.target)}</td>
-      <td class="px-2 py-1.5 text-right"><b class="${p.jRate>=100?'text-emerald-600':p.jRate>=70?'text-blue-600':p.jRate>=40?'text-amber-600':'text-red-600'}">${p.jRate.toFixed(0)}%</b> <span class="text-slate-400">(${fmt(p.totals.j)})</span></td>
-      <td class="px-2 py-1.5 text-right"><b class="${p.yRate>=100?'text-emerald-600':p.yRate>=70?'text-blue-600':p.yRate>=40?'text-amber-600':'text-red-600'}">${p.yRate.toFixed(0)}%</b> <span class="text-slate-400">(${fmt(p.totals.y)})</span></td>
-      <td class="px-2 py-1.5 text-right"><b class="${p.sRate>=100?'text-emerald-600':'text-slate-600'}">${p.sRate.toFixed(0)}%</b> <span class="text-slate-400">(${fmt(p.totals.s)})</span></td>
+  list.innerHTML = rows.map(p => {
+    const isViewing = snapshotView && snapshotView.id === p.id;
+    const isSelected = selectedSnapIds.has(p.id);
+    return `
+    <tr class="border-b hover:bg-slate-50 ${isViewing ? 'bg-amber-50' : ''} ${isSelected ? 'bg-violet-50' : ''}">
+      <td class="px-2 py-1.5 text-center">
+        <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSnapSelect('${p.id}')"
+          class="w-3.5 h-3.5 cursor-pointer accent-violet-600" title="比較対象に追加">
+      </td>
+      <td class="px-2 py-1.5">
+        <button onclick="viewSnapshot('${p.id}')" class="text-blue-600 hover:underline font-medium text-xs text-left" title="クリックでこの時点のデータを表示">${p.dateStr}</button>
+        ${isViewing ? '<span class="ml-1 text-amber-600 text-xs font-bold">👁 閲覧中</span>' : ''}
+        ${isSelected ? '<span class="ml-1 text-violet-600 text-xs font-bold">✓ 比較対象</span>' : ''}
+      </td>
+      <td class="px-2 py-1.5 text-right">${p.stats.count}件</td>
+      <td class="px-2 py-1.5 text-right">${fmt(p.stats.target)}</td>
+      <td class="px-2 py-1.5 text-right"><b class="${p.stats.jRate>=100?'text-emerald-600':p.stats.jRate>=60?'text-sky-600':'text-slate-400'}">${p.stats.jRate.toFixed(0)}%</b> <span class="text-slate-400">(${fmt(p.stats.j)})</span></td>
+      <td class="px-2 py-1.5 text-right"><b class="${p.stats.yRate>=100?'text-emerald-600':p.stats.yRate>=60?'text-sky-600':'text-slate-400'}">${p.stats.yRate.toFixed(0)}%</b> <span class="text-slate-400">(${fmt(p.stats.y)})</span></td>
+      <td class="px-2 py-1.5 text-right"><b class="${p.stats.sRate>=100?'text-emerald-600':p.stats.sRate>0?'text-sky-600':'text-slate-400'}">${p.stats.sRate.toFixed(0)}%</b> <span class="text-slate-400">(${fmt(p.stats.s)})</span></td>
       <td class="px-2 py-1.5 text-center"><button onclick="deleteSnapshot('${p.id}')" class="text-red-500 hover:text-red-700 text-xs">削除</button></td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
+
+  // 「比較する」ボタンの表示制御
+  const compareBtn = document.getElementById('compareBtn');
+  if (compareBtn) {
+    if (selectedSnapIds.size >= 2) {
+      compareBtn.classList.remove('hidden');
+      compareBtn.textContent = `📊 比較する（${selectedSnapIds.size}件選択中）`;
+    } else {
+      compareBtn.classList.add('hidden');
+    }
+  }
+}
+
+// ===== スナップショット比較 =====
+const STAGE_RANK = { '失注': -1, 'E': 0, 'D': 1, 'C': 2, 'C+': 3, 'B': 4, 'A': 5, 'S': 6 };
+let selectedSnapIds = new Set();
+
+function getSnapDealKey(d) {
+  return d.hubspotId ? `hs:${d.hubspotId}` : `${d.company}||${d.name}||${d.month}`;
+}
+
+function toggleSnapSelect(id) {
+  if (selectedSnapIds.has(id)) selectedSnapIds.delete(id);
+  else selectedSnapIds.add(id);
+  renderSnapshots();
+}
+
+function doCompare() {
+  if (selectedSnapIds.size < 2) {
+    alert('比較するスナップショットを2件以上選択してください');
+    return;
+  }
+  const selected = snapshots.filter(s => selectedSnapIds.has(s.id));
+  selected.sort((a, b) => new Date(a.id) - new Date(b.id));
+  showCompareModal(selected);
+}
+
+// ===== 比較モーダル共有データ（タブ切り替え用） =====
+let _cmpData = null;
+
+function showCompareModal(snaps) {
+  const modal = document.getElementById('compareModal');
+
+  // サブタイトル: "4/1 → 4/25 → 4/30"
+  document.getElementById('compareModalSubtitle').textContent =
+    snaps.map(s => s.dateStr).join(' → ');
+
+  const STAGE_CLS = { E:'stage-e',D:'stage-d',C:'stage-c','C+':'stage-cp',B:'stage-b',A:'stage-a',S:'stage-s' };
+
+  // 各スナップショットのMapを構築（pipeline + lostDeals をマージ）
+  const snapMaps = snaps.map(snap => {
+    const m = new Map();
+    const allDeals = [...(snap.pipeline||[]), ...(snap.lostDeals||[])];
+    allDeals.forEach(d => { const k = getSnapDealKey(d); if (!m.has(k)) m.set(k, d); });
+    return m;
+  });
+
+  // 全スナップショット横断の全案件キーを収集
+  const allKeys = new Set();
+  snapMaps.forEach(m => m.forEach((_, k) => allKeys.add(k)));
+
+  // 各案件の軌跡を構築
+  const trajectories = [];
+  allKeys.forEach(key => {
+    const points = snaps.map((_, i) => snapMaps[i].get(key) || null);
+    const firstIdx = points.findIndex(p => p !== null);
+    const revPoints = [...points].reverse();
+    const lastIdx = points.length - 1 - revPoints.findIndex(p => p !== null);
+    const firstDeal = points[firstIdx];
+    const lastDeal = points[lastIdx];
+    trajectories.push({ key, points, firstIdx, lastIdx, firstDeal, lastDeal });
+  });
+
+  // カテゴリ分け（memberFilter指定時はそのメンバーが関与する案件のみ）
+  function categorize(memberFilter) {
+    const cats = { up:[], down:[], fluctuate:[], newAdded:[], gone:[], dateChanged:[], stay:[] };
+    trajectories.forEach(traj => {
+      const { points, firstIdx, lastIdx, firstDeal, lastDeal } = traj;
+      if (memberFilter && !points.some(p => p && p.name === memberFilter)) return;
+      const inFirst = firstIdx === 0;
+      const inLast  = lastIdx === snaps.length - 1;
+
+      // 消滅（最終スナップに存在しない、または最終ステージが失注）
+      if (!inLast || lastDeal.stage === '失注') { cats.gone.push(traj); return; }
+      // 新規流入（最初のスナップに存在しない）
+      if (!inFirst) { cats.newAdded.push(traj); return; }
+
+      // 最初〜最後を通して存在する案件：軌跡で判定
+      const presentRanks = points.filter(p => p !== null).map(p => STAGE_RANK[p.stage] ?? -1);
+      let wentUp = false, wentDown = false;
+      for (let i = 1; i < presentRanks.length; i++) {
+        if (presentRanks[i] > presentRanks[i-1]) wentUp = true;
+        if (presentRanks[i] < presentRanks[i-1]) wentDown = true;
+      }
+      if (wentUp && wentDown) { cats.fluctuate.push(traj); return; }
+
+      const fr = STAGE_RANK[firstDeal.stage] ?? -1;
+      const lr = STAGE_RANK[lastDeal.stage]  ?? -1;
+      if (lr > fr) { cats.up.push(traj); return; }
+      if (lr < fr) { cats.down.push(traj); return; }
+
+      // ステージ同じ → 月を跨いだ日程変更のみ（スタートがD/C/C+/B/Aの案件のみ）
+      const DATE_CHG_STAGES = ['D','C','C+','B','A'];
+      if (firstDeal.month !== lastDeal.month && DATE_CHG_STAGES.includes(firstDeal.stage)) { cats.dateChanged.push(traj); return; }
+      cats.stay.push(traj);
+    });
+    return cats;
+  }
+
+  const CATS_DEF = [
+    { key:'up',          title:'⬆️ 上昇',      color:'#059669', bg:'#f0fdf4' },
+    { key:'down',        title:'⬇️ 下降',       color:'#dc2626', bg:'#fef2f2' },
+    { key:'fluctuate',   title:'🔄 変動',       color:'#d97706', bg:'#fffbeb' },
+    { key:'newAdded',    title:'✨ 新規流入',   color:'#0284c7', bg:'#eff6ff' },
+    { key:'gone',        title:'✕ 消滅・失注', color:'#7c3aed', bg:'#faf5ff' },
+    { key:'dateChanged', title:'📅 日程変更',  color:'#0891b2', bg:'#ecfeff' },
+    { key:'stay',        title:'➡️ ステイ',    color:'#6b7280', bg:'#f8fafc' },
+  ];
+
+  // 軌跡バッジ: C → C+ → B  または  - → C → 競合失注
+  function trajectoryBadges(traj) {
+    return traj.points.map((p, i) => {
+      let badge;
+      if (!p) {
+        badge = `<span class="text-[10px] text-slate-300">-</span>`;
+      } else if (p.stage === '失注') {
+        badge = `<span class="text-[10px] font-bold px-1 rounded" style="color:#dc2626;background:#fef2f2">${p.lostLabel||'失注'}</span>`;
+      } else {
+        badge = `<b class="${STAGE_CLS[p.stage]||''} text-[11px] font-bold">${p.stage}</b>`;
+      }
+      const arrow = i < traj.points.length - 1
+        ? `<span class="text-slate-300 text-[10px] mx-0.5">→</span>`
+        : '';
+      return badge + arrow;
+    }).join('');
+  }
+
+  function dealRow(traj, bg, catKey) {
+    const d = traj.lastDeal || traj.firstDeal;
+    const hub = d.hubspotId
+      ? `href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener"`
+      : '';
+    const mColor = memberColor(d.name);
+
+    // 日程変更の場合、最初と最後の日付を表示
+    let dateChangeHtml = '';
+    if (catKey === 'dateChanged' && traj.firstDeal && traj.lastDeal) {
+      const fd = traj.firstDeal, ld = traj.lastDeal;
+      const fm = fd.month ? fd.month.slice(5).replace(/^0/,'') : '?';
+      const fd2 = fd.closeDay ?? '?';
+      const lm = ld.month ? ld.month.slice(5).replace(/^0/,'') : '?';
+      const ld2 = ld.closeDay ?? '?';
+      dateChangeHtml = `<span class="text-[10px] font-semibold shrink-0 px-1.5 py-0.5 rounded" style="background:#ecfeff;color:#0891b2">${fm}/${fd2}→${lm}/${ld2}</span>`;
+    }
+
+    return `<div class="flex items-center gap-2 px-2 py-1.5 rounded text-[11px]" style="background:${bg}">
+      <div class="flex items-center gap-0.5 shrink-0">${trajectoryBadges(traj)}</div>
+      <a ${hub} class="flex-1 truncate font-medium hover:underline" style="color:#1e293b" title="${d.company||''}">${d.company||'?'}</a>
+      ${dateChangeHtml}
+      <span class="text-[10px] font-semibold shrink-0 px-1.5 py-0.5 rounded-full" style="background:${mColor}20;color:${mColor}">${d.name.split(' ')[0]}</span>
+    </div>`;
+  }
+
+  const SORT_ORDER = { 'S':0,'A':1,'B':2,'C+':3,'C':4,'D':5,'E':6 };
+  const LOST_SORT_ORDER = { '競合失注':7,'ATS導入なし':8,'音信不通':9,'その他':10,'未ヨミ化':11 };
+  function trajSortKey(traj) {
+    const d = traj.lastDeal || traj.firstDeal;
+    const stageKey = d.stage === '失注'
+      ? (LOST_SORT_ORDER[d.lostLabel] ?? 10)
+      : (SORT_ORDER[d.stage] ?? 99);
+    return [stageKey, d.name || ''];
+  }
+
+  function renderAccordion(cat, items, total, panelId) {
+    if (items.length === 0) return '';
+    const rate = total > 0 ? ((items.length/total)*100).toFixed(0) : 0;
+    const sorted = [...items].sort((a, b) => {
+      const [as_, an] = trajSortKey(a);
+      const [bs_, bn] = trajSortKey(b);
+      return as_ !== bs_ ? as_ - bs_ : an.localeCompare(bn, 'ja');
+    });
+    const rows = sorted.map(t => dealRow(t, cat.bg, cat.key)).join('');
+    return `<div class="border rounded-lg overflow-hidden mb-1.5" style="border-color:#e2e8f0">
+      <button onclick="toggleCmpSection('${panelId}')"
+        class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-slate-50 transition-colors">
+        <span class="font-semibold text-[12px]" style="color:${cat.color}">${cat.title}</span>
+        <span class="text-[11px] px-1.5 py-0.5 rounded-full font-bold shrink-0" style="background:${cat.color}18;color:${cat.color}">${items.length}件</span>
+        <span class="text-[11px] text-slate-400">${rate}%</span>
+        <span class="ml-auto text-slate-400 text-xs" id="${panelId}-arrow">▶</span>
+      </button>
+      <div id="${panelId}" class="hidden px-3 pb-3 space-y-1">${rows}</div>
+    </div>`;
+  }
+
+  // 全体タブ
+  const overallCats = categorize('');
+  const overallTotal = trajectories.length;
+
+  function buildSummaryBar(cats, total) {
+    return CATS_DEF.map(c => {
+      const n = cats[c.key].length;
+      const r = total > 0 ? ((n/total)*100).toFixed(0) : 0;
+      return `<div class="flex flex-col items-center px-3 py-2 rounded-lg" style="background:${c.color}10;min-width:68px">
+        <span class="text-base font-bold" style="color:${c.color}">${n}</span>
+        <span class="text-[10px] font-semibold mt-0.5 text-center" style="color:${c.color}">${c.title.split(' ')[1]||c.title}</span>
+        <span class="text-[10px] text-slate-400">${r}%</span>
+      </div>`;
+    }).join('');
+  }
+
+  // 軌跡ヘッダー（日付ラベル行）
+  const snapHeaderHtml = `<div class="flex items-center gap-1 mb-3 px-2 text-[10px] text-slate-400">
+    <span class="text-slate-400 font-semibold mr-1">軌跡:</span>
+    ${snaps.map((s,i) => `<span>${s.dateStr}</span>${i<snaps.length-1?'<span class="text-slate-300">→</span>':''}`).join('')}
+  </div>`;
+
+  let overallHtml = snapHeaderHtml +
+    `<div class="mb-4 p-3 rounded-xl border" style="border-color:#e2e8f0;background:#fafafa">
+      <p class="text-[11px] font-semibold text-slate-500 mb-2">サマリー（全 ${overallTotal}件）</p>
+      <div class="flex gap-2 flex-wrap">${buildSummaryBar(overallCats, overallTotal)}</div>
+    </div>`;
+  CATS_DEF.forEach((cat, i) => {
+    overallHtml += renderAccordion(cat, overallCats[cat.key], overallTotal, `cmp-overall-${i}`);
+  });
+
+  // メンバー別タブ
+  const activeMembers = MEMBERS.filter(m =>
+    snaps.some(snap => snap.pipeline.some(d => d.name === m))
+  );
+  let memberHtml = snapHeaderHtml;
+  activeMembers.forEach((m, mi) => {
+    const cats = categorize(m);
+    const mTotal = trajectories.filter(t => t.points.some(p => p && p.name === m)).length;
+    const changed = CATS_DEF.filter(c => c.key !== 'stay').reduce((s,c) => s+cats[c.key].length, 0);
+    const changeRate = mTotal > 0 ? ((changed/mTotal)*100).toFixed(0) : 0;
+    const mColor = memberColor(m);
+    let innerHtml = '';
+    CATS_DEF.forEach((cat, ci) => { innerHtml += renderAccordion(cat, cats[cat.key], mTotal, `cmp-m${mi}-${ci}`); });
+    if (!innerHtml) innerHtml = `<p class="text-xs text-slate-400 px-3 pb-3">変化なし</p>`;
+    memberHtml += `<div class="border rounded-xl overflow-hidden mb-3" style="border-color:#e2e8f0">
+      <button onclick="toggleCmpMember('cmp-member-${mi}')"
+        class="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-50" style="background:#f8fafc">
+        <span class="w-2 h-2 rounded-full shrink-0" style="background:${mColor}"></span>
+        <span class="font-bold text-slate-700 text-sm">${m}</span>
+        <span class="text-xs text-slate-400">全 ${mTotal}件</span>
+        <span class="text-xs px-2 py-0.5 rounded-full font-semibold ml-1" style="background:#fef3c7;color:#92400e">変化率 ${changeRate}%</span>
+        <div class="ml-auto flex gap-1">
+          ${CATS_DEF.filter(c=>cats[c.key].length>0).map(c=>`<span class="text-[10px] px-1.5 py-0.5 rounded-full font-bold" style="background:${c.color}18;color:${c.color}">${c.title.split(' ')[0]}${cats[c.key].length}</span>`).join('')}
+          <span class="text-slate-400 text-xs ml-1" id="cmp-member-${mi}-arrow">▶</span>
+        </div>
+      </button>
+      <div id="cmp-member-${mi}" class="hidden px-3 py-3 space-y-1">${innerHtml}</div>
+    </div>`;
+  });
+
+  document.getElementById('compareModalBody').innerHTML = `
+    <div class="flex gap-1 mb-4 border-b" style="border-color:#e2e8f0">
+      <button id="cmpTab-overall" onclick="switchCmpTab('overall')"
+        class="px-4 py-2 text-sm font-semibold border-b-2 transition-colors"
+        style="border-color:#0284c7;color:#0284c7">📊 全体</button>
+      <button id="cmpTab-member" onclick="switchCmpTab('member')"
+        class="px-4 py-2 text-sm font-semibold border-b-2 text-slate-400 transition-colors"
+        style="border-color:transparent">👤 メンバー別</button>
+    </div>
+    <div id="cmpPane-overall">${overallHtml}</div>
+    <div id="cmpPane-member" class="hidden">${memberHtml}</div>
+  `;
+  modal.classList.remove('hidden');
+}
+
+function switchCmpTab(tab) {
+  ['overall','member'].forEach(t => {
+    const btn = document.getElementById(`cmpTab-${t}`);
+    const pane = document.getElementById(`cmpPane-${t}`);
+    if (t === tab) {
+      btn.style.borderColor = '#0284c7'; btn.style.color = '#0284c7';
+      pane.classList.remove('hidden');
+    } else {
+      btn.style.borderColor = 'transparent'; btn.style.color = '#94a3b8';
+      pane.classList.add('hidden');
+    }
+  });
+}
+
+function toggleCmpSection(id) {
+  const panel = document.getElementById(id);
+  const arrow = document.getElementById(id + '-arrow');
+  const hidden = panel.classList.toggle('hidden');
+  if (arrow) arrow.textContent = hidden ? '▶' : '▼';
+}
+
+function toggleCmpMember(id) {
+  const panel = document.getElementById(id);
+  const arrow = document.getElementById(id + '-arrow');
+  const hidden = panel.classList.toggle('hidden');
+  if (arrow) arrow.textContent = hidden ? '▶' : '▼';
+}
+
+function closeCompareModal() {
+  document.getElementById('compareModal').classList.add('hidden');
 }
 </script>
 </body>
