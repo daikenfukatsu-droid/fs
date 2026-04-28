@@ -791,10 +791,18 @@ async function fetchFromSheets(silent = false) {
     pipeline  = allRows.filter(r => r.stage !== '失注');
     lostDeals = allRows.filter(r => r.stage === '失注');
 
-    // スナップショット
-    if (json.snapshots) {
-      snapshots = json.snapshots;
+    // スナップショット：GAS + localStorage をマージ（GAS優先、localStorageのみのものを移行）
+    if (json.snapshots !== undefined) {
+      const gasSnaps = json.snapshots || [];
+      // localStorage 旧データをGASに移行
+      await migrateLocalSnapshotsToGas(gasSnaps);
+      // GASのIDセットで重複除去してマージ
+      const gasIds = new Set(gasSnaps.map(s => s.id));
+      const localOnly = snapshots.filter(s => !gasIds.has(s.id));
+      snapshots = [...gasSnaps, ...localOnly]
+        .sort((a, b) => new Date(a.id) - new Date(b.id));
       migrateSnapshotNames();
+      persistSnapshots(); // GASデータをlocalStorageにもバックアップ
     }
 
     // 受注率
@@ -1577,11 +1585,29 @@ function migrateSnapshotNames() {
 }
 
 function loadSnapshots() {
-  // データは fetchFromSheets() で取得するため no-op
-  snapshots = [];
+  // localStorage に残っている旧データを読み込む（GAS移行前の復元用）
+  try {
+    const raw = localStorage.getItem(SNAP_KEY);
+    snapshots = raw ? JSON.parse(raw) : [];
+  } catch (e) { snapshots = []; }
+  migrateSnapshotNames();
+}
+
+// localStorage のスナップショットを GAS に移行（初回のみ）
+async function migrateLocalSnapshotsToGas(gasSnapshots) {
+  const gasIds = new Set((gasSnapshots || []).map(s => s.id));
+  const localOnly = snapshots.filter(s => !gasIds.has(s.id));
+  if (localOnly.length === 0) return;
+
+  Logger && console.log(`GAS未登録のローカルスナップショット ${localOnly.length}件を移行中...`);
+  for (const snap of localOnly) {
+    await gasPost('saveSnapshot', { snapshot: snap });
+  }
+  console.log(`✅ ${localOnly.length}件を GAS に移行完了`);
 }
 function persistSnapshots() {
-  // データは fetchFromSheets() で取得するため no-op（後方互換のため残す）
+  // GASが主データだが、コード変更・障害時のバックアップとしてlocalStorageにも常に書く
+  try { localStorage.setItem(SNAP_KEY, JSON.stringify(snapshots)); } catch(e) {}
 }
 async function saveSnapshot() {
   if (pipeline.length === 0) { alert('保存するデータがありません'); return; }
@@ -1591,6 +1617,7 @@ async function saveSnapshot() {
   const snap = { id: ts, dateStr, label: dateStr, pipeline: pipeline.slice(), lostDeals: lostDeals.slice() };
   // ローカルに即時反映
   snapshots.push(snap);
+  persistSnapshots(); // localStorageにバックアップ
   renderSnapshots();
   // GAS に保存（バックグラウンド）
   await gasPost('saveSnapshot', { snapshot: snap });
@@ -1599,6 +1626,7 @@ function deleteSnapshot(id) {
   requirePassword(async () => {
     snapshots = snapshots.filter(s => s.id !== id);
     if (snapshotView && snapshotView.id === id) snapshotView = null;
+    persistSnapshots(); // localStorageにも反映
     render();
     await gasPost('deleteSnapshot', { id });
   });
@@ -1608,7 +1636,9 @@ function clearAllSnapshots() {
   requirePassword(async () => {
     if (!confirm(`${snapshots.length}件のスナップショットを全て削除しますか？`)) return;
     const ids = snapshots.map(s => s.id);
-    snapshots = []; snapshotView = null; render();
+    snapshots = []; snapshotView = null;
+    persistSnapshots(); // localStorageからも削除
+    render();
     for (const id of ids) { await gasPost('deleteSnapshot', { id }); }
   });
 }
