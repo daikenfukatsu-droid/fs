@@ -261,12 +261,24 @@
         <div class="mb-3">
           <canvas id="trendChart" height="90"></canvas>
         </div>
+        <!-- 日付範囲選択 -->
+        <div class="flex items-center gap-2 mb-3 p-2 bg-slate-50 rounded-lg">
+          <span class="text-xs text-slate-500 font-semibold whitespace-nowrap">期間で選択:</span>
+          <input type="date" id="rangeFrom" class="px-2 py-1 text-xs border rounded bg-white">
+          <span class="text-xs text-slate-400">〜</span>
+          <input type="date" id="rangeTo" class="px-2 py-1 text-xs border rounded bg-white">
+          <button onclick="applyDateRange()" class="px-3 py-1 text-xs text-white rounded-lg font-semibold hover:opacity-90 whitespace-nowrap" style="background:#475569">適用する</button>
+          <button onclick="clearDateRange()" class="px-3 py-1 text-xs bg-white border text-slate-500 rounded-lg hover:bg-slate-100 whitespace-nowrap">クリア</button>
+        </div>
         <div class="overflow-x-auto">
           <table class="min-w-full text-xs">
             <thead class="bg-slate-50 text-slate-600">
               <tr>
-                <th class="px-2 py-2 text-center w-8">比較</th>
-                <th class="px-2 py-2 text-left">日時</th>
+                <th class="px-2 py-2 text-center w-8">
+                  <input type="checkbox" id="snapSelectAll" onchange="toggleSelectAll(this.checked)"
+                    class="w-3.5 h-3.5 cursor-pointer accent-violet-600" title="全選択 / 全解除">
+                </th>
+                <th class="px-2 py-2 text-left">日時 <span class="text-slate-400 font-normal text-[10px]">Shift+クリックで範囲選択</span></th>
                 <th class="px-2 py-2 text-right">案件数</th>
                 <th class="px-2 py-2 text-right">目標</th>
                 <th class="px-2 py-2 text-right">実施積載</th>
@@ -1744,8 +1756,8 @@ function renderSnapshots() {
     return `
     <tr class="border-b hover:bg-slate-50 ${isViewing ? 'bg-amber-50' : ''} ${isSelected ? 'bg-violet-50' : ''}">
       <td class="px-2 py-1.5 text-center">
-        <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSnapSelect('${p.id}')"
-          class="w-3.5 h-3.5 cursor-pointer accent-violet-600" title="比較対象に追加">
+        <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSnapSelect('${p.id}', event)"
+          class="w-3.5 h-3.5 cursor-pointer accent-violet-600" title="比較対象に追加（Shift+クリックで範囲選択）">
       </td>
       <td class="px-2 py-1.5">
         <button onclick="viewSnapshot('${p.id}')" class="text-blue-600 hover:underline font-medium text-xs text-left" title="クリックでこの時点のデータを表示">${p.dateStr}</button>
@@ -1760,6 +1772,10 @@ function renderSnapshots() {
       <td class="px-2 py-1.5 text-center"><button onclick="deleteSnapshot('${p.id}')" class="text-red-500 hover:text-red-700 text-xs">削除</button></td>
     </tr>`;
   }).join('');
+
+  // 全選択チェックボックスの状態を同期
+  const allChk = document.getElementById('snapSelectAll');
+  if (allChk) allChk.checked = snapshots.length > 0 && selectedSnapIds.size === snapshots.length;
 
   // 「比較する」ボタンの表示制御
   const compareBtn = document.getElementById('compareBtn');
@@ -1781,9 +1797,65 @@ function getSnapDealKey(d) {
   return d.hubspotId ? `hs:${d.hubspotId}` : `${d.company}||${d.name}||${d.month}`;
 }
 
-function toggleSnapSelect(id) {
-  if (selectedSnapIds.has(id)) selectedSnapIds.delete(id);
-  else selectedSnapIds.add(id);
+let lastClickedSnapIdx = -1; // Shift範囲選択用
+
+function toggleSnapSelect(id, event) {
+  // スナップショットは新しい順に表示されているので、インデックスを取得
+  const orderedIds = [...snapshots].sort((a, b) => new Date(a.id) - new Date(b.id)).map(s => s.id);
+  const idx = orderedIds.indexOf(id);
+
+  if (event && event.shiftKey && lastClickedSnapIdx >= 0) {
+    // Shift+クリック：lastClickedSnapIdx ～ idx の範囲を全選択
+    const from = Math.min(lastClickedSnapIdx, idx);
+    const to   = Math.max(lastClickedSnapIdx, idx);
+    for (let i = from; i <= to; i++) {
+      selectedSnapIds.add(orderedIds[i]);
+    }
+  } else {
+    if (selectedSnapIds.has(id)) selectedSnapIds.delete(id);
+    else selectedSnapIds.add(id);
+    lastClickedSnapIdx = idx;
+  }
+
+  // 全選択チェックボックスの状態を同期
+  const allChk = document.getElementById('snapSelectAll');
+  if (allChk) allChk.checked = selectedSnapIds.size === snapshots.length;
+
+  renderSnapshots();
+}
+
+function toggleSelectAll(checked) {
+  if (checked) {
+    snapshots.forEach(s => selectedSnapIds.add(s.id));
+  } else {
+    selectedSnapIds.clear();
+    lastClickedSnapIdx = -1;
+  }
+  renderSnapshots();
+}
+
+function applyDateRange() {
+  const fromVal = document.getElementById('rangeFrom').value;
+  const toVal   = document.getElementById('rangeTo').value;
+  if (!fromVal && !toVal) { alert('開始日または終了日を入力してください'); return; }
+
+  const from = fromVal ? new Date(fromVal + 'T00:00:00') : new Date(0);
+  const to   = toVal   ? new Date(toVal   + 'T23:59:59') : new Date(9999, 11, 31);
+
+  let count = 0;
+  snapshots.forEach(s => {
+    const d = new Date(s.id);
+    if (d >= from && d <= to) { selectedSnapIds.add(s.id); count++; }
+  });
+  renderSnapshots();
+  if (count === 0) alert('指定した期間にスナップショットがありませんでした');
+}
+
+function clearDateRange() {
+  document.getElementById('rangeFrom').value = '';
+  document.getElementById('rangeTo').value   = '';
+  selectedSnapIds.clear();
+  lastClickedSnapIdx = -1;
   renderSnapshots();
 }
 
