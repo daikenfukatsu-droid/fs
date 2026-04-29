@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>FS売上積載ダッシュボード</title>
+<title>FS案件管理ダッシュボード</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -41,15 +41,15 @@
   <div class="mb-6">
     <div class="rounded-xl px-6 py-4 mb-3 flex items-center justify-between" style="background-color:#0284c7">
       <div>
-        <h1 class="text-xl font-bold text-white">FS売上積載ダッシュボード</h1>
-        <p class="text-indigo-200 text-xs mt-0.5">FY2026（2026/04 - 2027/03）の売上目標に対する積載状況</p>
+        <a href="https://docs.google.com/spreadsheets/d/1pKeHjAtMsakwgzAiUbk2zIsqVgP_D1UrPZLDHT0HVYs/edit?gid=490263780#gid=490263780" target="_blank" rel="noopener" class="text-xl font-bold text-white hover:underline">FS案件管理ダッシュボード ↗</a>
+        <p class="text-indigo-200 text-xs mt-0.5">🏆 ギネスを狙え</p>
       </div>
     </div>
     <div class="text-xs text-slate-600 bg-white rounded-lg p-3">
       <!-- 折りたたみルール一覧 -->
       <div>
         <button onclick="toggleRules()" class="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 text-[11px] font-semibold">
-          <span id="rulesArrow">▶</span> 詳細ルール一覧（全12項目）
+          <span id="rulesArrow">▶</span> 詳細ルール一覧（全13項目）
         </button>
         <div id="rulesPanel" class="hidden mt-3 space-y-4 text-[11px] text-slate-600">
 
@@ -175,29 +175,52 @@
 
           <!-- 10 -->
           <div>
-            <p class="font-bold text-slate-700 mb-1">10. スナップショット</p>
+            <p class="font-bold text-slate-700 mb-1">10. スナップショット（保存・管理）</p>
             <ul class="space-y-0.5 text-slate-500 list-disc list-inside">
               <li>現在のパイプライン状態を手動保存して経過追跡</li>
+              <li>データは <b>GAS（Googleスプレッドシート）</b> に保存 → チーム全員が同じデータを参照</li>
+              <li>ブラウザのlocalStorageにも自動バックアップ → コード更新後も消えない</li>
               <li>削除にはパスワード保護（4文字以上）</li>
               <li>スナップショット選択中はグラフ・表・カレンダー全てがそのデータに切り替わる</li>
               <li>案件数カウントは <b>Eを除く</b>（D〜Sのみ）</li>
+              <li>ヘッダーのチェックボックスで <b>全件一括選択 / 解除</b></li>
+              <li><b>Shift+クリック</b> で指定範囲を一括選択</li>
+              <li><b>期間で選択</b>（開始日〜終了日）で該当スナップショットを一括選択</li>
+              <li>2件以上選択すると「📊 比較する」ボタンが表示される</li>
             </ul>
           </div>
 
           <!-- 11 -->
           <div>
-            <p class="font-bold text-slate-700 mb-1">11. ステージEカレンダー</p>
+            <p class="font-bold text-slate-700 mb-1">11. スナップショット比較（軌跡追跡のルール）</p>
+            <table class="w-full border-collapse text-[11px]">
+              <thead><tr class="bg-slate-50"><th class="border border-slate-200 px-2 py-1 text-left">カテゴリ</th><th class="border border-slate-200 px-2 py-1 text-left">表示条件</th></tr></thead>
+              <tbody>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">✨ 新規流入</td><td class="border border-slate-200 px-2 py-1">最初のスナップに存在せず、最後のスナップに <b>D以上</b>（E除外）で出現</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">⬆ 上昇</td><td class="border border-slate-200 px-2 py-1">最初〜最後でステージが上がった（途中下降なし）</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">⬇ 下降</td><td class="border border-slate-200 px-2 py-1">最初〜最後でステージが下がった（途中上昇なし）</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">↕ 変動</td><td class="border border-slate-200 px-2 py-1">上昇と下降の両方が発生（行ったり来たり）</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">➡ ステイ</td><td class="border border-slate-200 px-2 py-1">スタートが <b>D/C/C+/B/A</b> のみ（E・S・失注スタートは除外）。クローズ月別にグループ表示</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">📅 日程変更</td><td class="border border-slate-200 px-2 py-1">クローズ月が <b>月を跨いで変更</b> された案件。スタートが <b>D/C/C+/B/A</b> のみ</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">✕ 消滅・失注</td><td class="border border-slate-200 px-2 py-1">最終スナップに存在しないまたは失注になった案件。スタートが <b>E/D/C/C+/B/A</b> のみ（失注スタートは除外）</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 12 -->
+          <div>
+            <p class="font-bold text-slate-700 mb-1">12. ステージEカレンダー</p>
             <ul class="space-y-0.5 text-slate-500 list-disc list-inside">
-              <li>G列「FS初回アポ実施日」を実施日として使用</li>
+              <li>「FS初回アポ実施日」を実施日として使用</li>
               <li>アポ実施日が未設定の場合はクローズ予定月の欄外に「未設定」として表示</li>
               <li>1日最大 <b>3件</b> 表示、超える場合は「＋N件」ボタンで全展開</li>
               <li>スナップショット閲覧中はそのデータに連動</li>
             </ul>
           </div>
 
-          <!-- 12 -->
+          <!-- 13 -->
           <div>
-            <p class="font-bold text-slate-700 mb-1">12. 将来実装予定（未着手）</p>
+            <p class="font-bold text-slate-700 mb-1">13. 将来実装予定（未着手）</p>
             <ul class="space-y-0.5 text-slate-500 list-disc list-inside">
               <li>スナップショット10件以上蓄積後：担当者別・検討サービス別の勝率を自動学習</li>
               <li>リードソース別E案件受注率の個別設定UI</li>
@@ -215,7 +238,7 @@
     <div class="flex items-center justify-between mb-3">
       <div>
         <h2 class="font-semibold text-slate-700">パイプラインデータ読み込み</h2>
-        <p class="text-xs text-slate-500 mt-1">HubSpotからエクスポートしたExcel/CSV（A:取引名, B:取引ステージ, C:取引担当者, H:クローズ日, I:金額）</p>
+        <p class="text-xs text-slate-500 mt-1">HubSpotのデータをGASが自動同期します。「データ更新」で最新を取得。</p>
       </div>
       <div class="flex gap-2 items-center">
         <button onclick="fetchFromSheets()" id="fetchBtn" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold flex items-center gap-1" style="background:#0284c7">
@@ -228,12 +251,16 @@
 
   <!-- View Mode Tabs -->
   <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
-    <div class="flex gap-2 mb-3 items-center">
+    <div class="flex gap-2 mb-3 items-center flex-wrap">
       <span class="text-xs text-slate-500 font-semibold mr-2">表示単位:</span>
       <button onclick="setView('month')" id="view-month" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-active">月別</button>
       <button onclick="setView('quarter')" id="view-quarter" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">四半期</button>
       <button onclick="setView('half')" id="view-half" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">半期</button>
       <button onclick="setView('year')" id="view-year" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">年間</button>
+      <div class="ml-auto flex items-center gap-1 border rounded-lg overflow-hidden text-xs font-semibold">
+        <button id="fy-btn-2025" onclick="switchFY('FY2025')" class="px-3 py-1.5 bg-slate-100 text-slate-500 hover:bg-slate-200">FY2025</button>
+        <button id="fy-btn-2026" onclick="switchFY('FY2026')" class="px-3 py-1.5 text-white" style="background:#0284c7">FY2026</button>
+      </div>
     </div>
     <div class="flex gap-1 flex-wrap" id="periodTabs"></div>
   </div>
@@ -258,9 +285,6 @@
     <div id="snapshotSection">
       <div id="snapshotEmpty" class="text-xs text-slate-400 text-center py-4">まだスナップショットがありません。「📸 現在を保存」で現時点の状態を記録できます。</div>
       <div id="snapshotContent" class="hidden">
-        <div class="mb-3">
-          <canvas id="trendChart" height="90"></canvas>
-        </div>
         <!-- 日付範囲選択 -->
         <div class="flex items-center gap-2 mb-3 p-2 bg-slate-50 rounded-lg">
           <span class="text-xs text-slate-500 font-semibold whitespace-nowrap">期間で選択:</span>
@@ -353,6 +377,19 @@
       </div>
       <!-- 達成可能性バッジ -->
       <div id="kpi-achieve-badge" class="mt-2 text-center text-xs font-bold px-2 py-1 rounded-lg"></div>
+    </div>
+  </div>
+
+  <!-- Progress Chart -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-semibold text-slate-700 text-sm">📈 目標 vs 受注実績</h3>
+      <select id="chartMemberSelect" onchange="setChartMember(this.value)" class="px-2 py-1 text-xs border rounded">
+        <option value="">全体</option>
+      </select>
+    </div>
+    <div style="height:220px">
+      <canvas id="progressChart"></canvas>
     </div>
   </div>
 
@@ -572,6 +609,17 @@ function toggleRules() {
 
 // ===== 定数 =====
 const MEMBERS = ['藤森 悠太','林 日向子','久保田 翔世','平井 良輝','梶山 勇亮','深澤 陸','廣澤 未来','山口 学','髙橋 柚基','大野 杏海','秋山 恵'];
+const FY2025_MONTHS = ['2025/04','2025/05','2025/06','2025/07','2025/08','2025/09','2025/10','2025/11','2025/12','2026/01','2026/02','2026/03'];
+const FY2025_QUARTERS = {
+  'Q1': {label:'Q1（4-6月）', months:['2025/04','2025/05','2025/06']},
+  'Q2': {label:'Q2（7-9月）', months:['2025/07','2025/08','2025/09']},
+  'Q3': {label:'Q3（10-12月）', months:['2025/10','2025/11','2025/12']},
+  'Q4': {label:'Q4（1-3月）', months:['2026/01','2026/02','2026/03']}
+};
+const FY2025_HALVES = {
+  'H1': {label:'上期（4-9月）', months:['2025/04','2025/05','2025/06','2025/07','2025/08','2025/09']},
+  'H2': {label:'下期（10-3月）', months:['2025/10','2025/11','2025/12','2026/01','2026/02','2026/03']}
+};
 const FY_MONTHS = ['2026/04','2026/05','2026/06','2026/07','2026/08','2026/09','2026/10','2026/11','2026/12','2027/01','2027/02','2027/03'];
 const QUARTERS = {
   'Q1': {label:'Q1（4-6月）', months:['2026/04','2026/05','2026/06']},
@@ -600,6 +648,7 @@ const _TARGETS_BASE = {
   '2027/03': {'藤森 悠太':3500000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':3500000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':3000000,'山口 学':3500000,'髙橋 柚基':2000000,'大野 杏海':2500000,'秋山 恵':2000000}
 };
 const TARGETS = {};
+FY2025_MONTHS.forEach(m => TARGETS[m] = Object.fromEntries(MEMBERS.map(n => [n, 0]))); // FY2025は目標0
 FY_MONTHS.forEach(m => TARGETS[m] = _TARGETS_BASE[m] || Object.fromEntries(MEMBERS.map(n => [n, 0])));
 
 const JISSHI_MULT = 5, YOMI_MULT = 3;
@@ -725,6 +774,7 @@ const LOST_STAGE_MAP = {
   '失注（その他）': 'その他',
 };
 let currentMode = 'month';
+let currentFY = 'FY2026'; // 'FY2025' | 'FY2026'
 let currentPeriod = '2026/05';
 let jisshiChart = null, yomiChart = null, landingChart = null, trendChart = null;
 let snapshots = [];
@@ -889,7 +939,7 @@ function normalizeRow(row, hubspotId = null) {
     month = `${match[1]}/${String(match[2]).padStart(2,'0')}`;
     closeDay = match[3] ? parseInt(match[3], 10) : null;
   }
-  if (!FY_MONTHS.includes(month)) return null;
+  if (!FY_MONTHS.includes(month) && !FY2025_MONTHS.includes(month)) return null;
 
   const su = stageRaw.toUpperCase().replace(/\s/g,'');
   if (stageRaw.includes('失注')) {
@@ -947,6 +997,36 @@ function normalizeRow(row, hubspotId = null) {
 function clearData() { pipeline = []; lostDeals = []; document.getElementById('fileStatus').textContent = ''; render(); }
 
 // ===== ビュー切替 =====
+function getFyData() {
+  return currentFY === 'FY2025'
+    ? { months: FY2025_MONTHS, quarters: FY2025_QUARTERS, halves: FY2025_HALVES }
+    : { months: FY_MONTHS,     quarters: QUARTERS,        halves: HALVES        };
+}
+
+function switchFY(fy) {
+  currentFY = fy;
+  // FYボタンの見た目を更新
+  ['FY2025','FY2026'].forEach(f => {
+    const btn = document.getElementById('fy-btn-' + f.replace('FY',''));
+    if (!btn) return;
+    if (f === fy) {
+      btn.style.background = '#0284c7'; btn.style.color = 'white';
+      btn.classList.remove('bg-slate-100','text-slate-500');
+    } else {
+      btn.style.background = ''; btn.style.color = '';
+      btn.classList.add('bg-slate-100','text-slate-500');
+    }
+  });
+  // 現在のモードに合わせてperiodをリセット
+  const fy2 = getFyData();
+  if (currentMode === 'month') currentPeriod = fy2.months[1];
+  else if (currentMode === 'quarter') currentPeriod = 'Q1';
+  else if (currentMode === 'half') currentPeriod = 'H1';
+  else currentPeriod = 'FY';
+  renderPeriodTabs();
+  render();
+}
+
 function setView(v) {
   currentMode = v;
   ['month','quarter','half','year'].forEach(k => {
@@ -955,7 +1035,8 @@ function setView(v) {
   });
   const ve = document.getElementById('view-' + v);
   ve.classList.remove('tab-inactive'); ve.classList.add('tab-active');
-  if (v === 'month') currentPeriod = '2026/05';
+  const fy = getFyData();
+  if (v === 'month') currentPeriod = fy.months[1]; // 5月相当
   else if (v === 'quarter') currentPeriod = 'Q1';
   else if (v === 'half') currentPeriod = 'H1';
   else currentPeriod = 'FY';
@@ -965,36 +1046,50 @@ function setView(v) {
 
 function renderPeriodTabs() {
   const wrap = document.getElementById('periodTabs');
+  const fy = getFyData();
   let opts = [];
   if (currentMode === 'month') {
-    opts = FY_MONTHS.map(m => ({ key: m, label: parseInt(m.split('/')[1]) + '月' }));
+    opts = fy.months.map(m => ({ key: m, label: parseInt(m.split('/')[1]) + '月' }));
   } else if (currentMode === 'quarter') {
-    opts = Object.entries(QUARTERS).map(([k,v]) => ({ key: k, label: v.label }));
+    opts = Object.entries(fy.quarters).map(([k,v]) => ({ key: k, label: v.label }));
   } else if (currentMode === 'half') {
-    opts = Object.entries(HALVES).map(([k,v]) => ({ key: k, label: v.label }));
+    opts = Object.entries(fy.halves).map(([k,v]) => ({ key: k, label: v.label }));
   } else {
-    opts = [{ key: 'FY', label: 'FY2026（4-3月）' }];
+    opts = [
+      { key: 'FY2025', label: 'FY2025（4-3月）' },
+      { key: 'FY2026', label: 'FY2026（4-3月）' }
+    ];
   }
   wrap.innerHTML = opts.map(o => {
-    const active = o.key === currentPeriod;
+    const active = currentMode === 'year' ? o.key === currentFY : o.key === currentPeriod;
     return `<button onclick="setPeriod('${o.key}')" class="px-3 py-1.5 rounded-lg font-medium text-xs ${active?'tab-active':'tab-inactive'}">${o.label}</button>`;
   }).join('');
 }
 
-function setPeriod(k) { currentPeriod = k; renderPeriodTabs(); render(); }
+function setPeriod(k) {
+  if (k === 'FY2025' || k === 'FY2026') {
+    switchFY(k); // FYボタン同期も含む
+    return;
+  }
+  currentPeriod = k;
+  renderPeriodTabs();
+  render();
+}
 
 function getMonthsForPeriod() {
+  const fy = getFyData();
   if (currentMode === 'month') return [currentPeriod];
-  if (currentMode === 'quarter') return QUARTERS[currentPeriod].months;
-  if (currentMode === 'half') return HALVES[currentPeriod].months;
-  return FY_MONTHS;
+  if (currentMode === 'quarter') return fy.quarters[currentPeriod].months;
+  if (currentMode === 'half') return fy.halves[currentPeriod].months;
+  return fy.months;
 }
 
 function getPeriodLabel() {
+  const fy = getFyData();
   if (currentMode === 'month') return parseInt(currentPeriod.split('/')[1]) + '月';
-  if (currentMode === 'quarter') return QUARTERS[currentPeriod].label;
-  if (currentMode === 'half') return HALVES[currentPeriod].label;
-  return 'FY2026';
+  if (currentMode === 'quarter') return fy.quarters[currentPeriod].label;
+  if (currentMode === 'half') return fy.halves[currentPeriod].label;
+  return currentFY;
 }
 
 // ===== 集計 =====
@@ -1018,7 +1113,11 @@ function getPipelineFor(member, pipe, months) {
   };
 }
 function aggregateTotals(pipe, months) {
+  pipe = pipe || pipeline;
+  months = months || getMonthsForPeriod();
   const t = { target:0, j:0, jc:0, y:0, yc:0, s:0, sc:0 };
+
+  // MEMBERSの集計（目標含む）
   MEMBERS.forEach(m => {
     t.target += getTargetFor(m, months);
     const p = getPipelineFor(m, pipe, months);
@@ -1026,6 +1125,16 @@ function aggregateTotals(pipe, months) {
     t.y += p.yomi.amount;   t.yc += p.yomi.count;
     t.s += p.s.amount;      t.sc += p.s.count;
   });
+
+  // MEMBERS外の担当者の案件も全体に加算（目標は0）
+  const memberSet = new Set(MEMBERS);
+  const extraRows = pipe.filter(r => !memberSet.has(r.name) && months.includes(r.month));
+  const exSum = (stages) => extraRows.filter(r => stages.includes(r.stage)).reduce((s,r) => s+r.amount, 0);
+  const exCnt = (stages) => extraRows.filter(r => stages.includes(r.stage)).length;
+  t.j  += exSum(['D','C','C+','B','A']); t.jc += exCnt(['D','C','C+','B','A']);
+  t.y  += exSum(['C','C+','B','A']);     t.yc += exCnt(['C','C+','B','A']);
+  t.s  += exSum(['S']);                  t.sc += exCnt(['S']);
+
   return t;
 }
 
@@ -1248,6 +1357,159 @@ function render() {
   renderDealList(activePipeline);
   renderSnapshots();
   renderECalendar();
+  renderProgressChart();
+}
+
+// ===== 目標 vs 受注実績グラフ =====
+let progressChart = null;
+let chartMember = '';
+
+function setChartMember(v) { chartMember = v; renderProgressChart(); }
+
+function renderProgressChart() {
+  const canvas = document.getElementById('progressChart');
+  if (!canvas) return;
+
+  const months   = getMonthsForPeriod();
+  const member   = chartMember;
+  const activePipe = getActivePipeline();
+
+  // 担当者セレクトを更新
+  const sel = document.getElementById('chartMemberSelect');
+  if (sel && sel.options.length <= 1) {
+    MEMBERS.forEach(m => {
+      const o = document.createElement('option');
+      o.value = m; o.textContent = m.split(' ')[0];
+      sel.appendChild(o);
+    });
+  }
+  if (sel) sel.value = member;
+
+  // S案件を取得
+  const sDeals = activePipe.filter(d =>
+    d.stage === 'S' && months.includes(d.month) && (!member || d.name === member)
+  );
+
+  // 目標計算
+  function getTarget(m) {
+    if (member) return TARGETS[m]?.[member] || 0;
+    return MEMBERS.reduce((s, mem) => s + (TARGETS[m]?.[mem] || 0), 0);
+  }
+
+  let labels = [], targetData = [], actualData = [], barData = [];
+
+  if (currentMode === 'month') {
+    // 日次（月内の各日）
+    const [yr, mo] = currentPeriod.split('/').map(Number);
+    const daysInMonth = new Date(yr, mo, 0).getDate();
+    const totalTarget = getTarget(currentPeriod);
+    labels = Array.from({length: daysInMonth}, (_, i) => `${i+1}`);
+    const daily = new Array(daysInMonth).fill(0);
+    sDeals.filter(d => d.month === currentPeriod).forEach(d => {
+      const idx = (d.closeDay || daysInMonth) - 1;
+      if (idx >= 0 && idx < daysInMonth) daily[idx] += d.amount;
+    });
+    let cum = 0;
+    actualData = daily.map(v => { cum += v; return cum; });
+    barData = daily;
+    targetData = labels.map((_, i) => Math.round(totalTarget * (i+1) / daysInMonth));
+
+  } else if (currentMode === 'quarter') {
+    // 週次（四半期内）
+    const fy = getFyData();
+    const [sy, sm] = months[0].split('/').map(Number);
+    const [ey, em] = months[months.length-1].split('/').map(Number);
+    const startDate = new Date(sy, sm-1, 1);
+    const endDate   = new Date(ey, em, 0);
+    const totalTarget = months.reduce((s, m) => s + getTarget(m), 0);
+    const weeks = [];
+    let d = new Date(startDate);
+    while (d <= endDate) {
+      const we = new Date(d); we.setDate(we.getDate() + 6);
+      weeks.push({ start: new Date(d), end: we < endDate ? we : new Date(endDate) });
+      d.setDate(d.getDate() + 7);
+    }
+    labels = weeks.map((_, i) => `W${i+1}`);
+    const weekly = new Array(weeks.length).fill(0);
+    sDeals.forEach(deal => {
+      const [dm, dd2] = deal.month.split('/').map(Number);
+      const day = deal.closeDay || new Date(dm, dd2, 0).getDate();
+      const dt = new Date(dm, dd2-1, day);
+      for (let i = 0; i < weeks.length; i++) {
+        if (dt >= weeks[i].start && dt <= weeks[i].end) { weekly[i] += deal.amount; break; }
+      }
+    });
+    let cum = 0;
+    actualData = weekly.map(v => { cum += v; return cum; });
+    barData = weekly;
+    targetData = weeks.map((_, i) => Math.round(totalTarget * (i+1) / weeks.length));
+
+  } else {
+    // 月次（半期・年間）
+    labels = months.map(m => parseInt(m.split('/')[1]) + '月');
+    const monthly = {};
+    months.forEach(m => monthly[m] = 0);
+    sDeals.forEach(d => { if (monthly[d.month] !== undefined) monthly[d.month] += d.amount; });
+    let cum = 0, tCum = 0;
+    actualData = months.map(m => { cum += monthly[m]; return cum; });
+    barData = months.map(m => monthly[m]);
+    targetData = months.map(m => { tCum += getTarget(m); return tCum; });
+  }
+
+  if (progressChart) progressChart.destroy();
+  progressChart = new Chart(canvas.getContext('2d'), {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: '受注（期間）',
+          data: barData,
+          backgroundColor: '#10b98130',
+          borderColor: '#10b981',
+          borderWidth: 1,
+          yAxisID: 'y',
+          order: 2,
+        },
+        {
+          type: 'line',
+          label: '受注累計',
+          data: actualData,
+          borderColor: '#10b981',
+          backgroundColor: 'transparent',
+          tension: 0.3,
+          pointRadius: 3,
+          yAxisID: 'y',
+          order: 1,
+        },
+        {
+          type: 'line',
+          label: '目標（累計）',
+          data: targetData,
+          borderColor: '#94a3b8',
+          borderDash: [5, 5],
+          backgroundColor: 'transparent',
+          tension: 0,
+          pointRadius: 2,
+          yAxisID: 'y',
+          order: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'top', labels: { font: { size: 11 } } },
+        tooltip: { callbacks: { label: c => `${c.dataset.label}: ¥${Math.round(c.parsed.y).toLocaleString()}` } }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v.toLocaleString() }
+        }
+      }
+    }
+  });
 }
 
 function renderDealList(activePipe) {
@@ -1699,52 +1961,16 @@ function renderSnapshots() {
   const content = document.getElementById('snapshotContent');
   if (snapshots.length === 0) {
     empty.classList.remove('hidden'); content.classList.add('hidden');
-    if (trendChart) { trendChart.destroy(); trendChart = null; }
     return;
   }
   empty.classList.add('hidden'); content.classList.remove('hidden');
 
   const months = getMonthsForPeriod();
   const member = currentSnapMember;
-  const titleSuffix = member ? ` （${member}）` : '';
 
   const points = snapshots.map(s => {
     const stats = computeSnapPoint(s.pipeline, months, member);
     return { ...s, stats };
-  });
-
-  // Current state as virtual snapshot
-  const curStats = computeSnapPoint(pipeline, months, member);
-  const current = { id: '__current__', dateStr: '現在', label: '現在', stats: curStats };
-  const allPoints = [...points, current];
-
-  // Trend chart
-  const ctx = document.getElementById('trendChart').getContext('2d');
-  if (trendChart) trendChart.destroy();
-  trendChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: allPoints.map(p => p.label.length > 12 ? p.label.slice(0,12)+'…' : p.label),
-      datasets: [
-        { label: '実施積載率', data: allPoints.map(p => p.stats.jRate), borderColor: '#3b82f6', backgroundColor: '#3b82f620', tension: 0.3, fill: false },
-        { label: 'ヨミ積載率', data: allPoints.map(p => p.stats.yRate), borderColor: '#f59e0b', backgroundColor: '#f59e0b20', tension: 0.3, fill: false },
-        { label: '受注率', data: allPoints.map(p => p.stats.sRate), borderColor: '#10b981', backgroundColor: '#10b98120', tension: 0.3, fill: false }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: true, position: 'top' },
-        title: { display: true, text: `${getPeriodLabel()} 積載率推移${titleSuffix}`, font: { size: 12 } },
-        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y.toFixed(0)}%` } }
-      },
-      scales: { y: { beginAtZero: true, ticks: { callback: v => v+'%' }, suggestedMax: 120 } }
-    },
-    plugins: [{ id: 'h100', afterDraw: (c) => {
-      const y = c.scales.y.getPixelForValue(100); const ctx = c.ctx;
-      ctx.save(); ctx.strokeStyle = '#64748b'; ctx.setLineDash([4,4]); ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(c.chartArea.left, y); ctx.lineTo(c.chartArea.right, y); ctx.stroke(); ctx.restore();
-    }}]
   });
 
   // Snapshot list
@@ -1915,9 +2141,18 @@ function showCompareModal(snaps) {
       const inLast  = lastIdx === snaps.length - 1;
 
       // 消滅（最終スナップに存在しない、または最終ステージが失注）
-      if (!inLast || lastDeal.stage === '失注') { cats.gone.push(traj); return; }
-      // 新規流入（最初のスナップに存在しない）
-      if (!inFirst) { cats.newAdded.push(traj); return; }
+      // スタートが E/D/C/C+/B/A の案件のみ対象（失注ラベルスタートは除外）
+      if (!inLast || lastDeal.stage === '失注') {
+        const GONE_VALID_STARTS = ['E', 'D', 'C', 'C+', 'B', 'A'];
+        if (GONE_VALID_STARTS.includes(firstDeal.stage)) cats.gone.push(traj);
+        return;
+      }
+      // 新規流入（最初のスナップに存在しない、かつ最終ステージがD以上）
+      if (!inFirst) {
+        const NEW_VALID_STAGES = ['D', 'C', 'C+', 'B', 'A', 'S'];
+        if (NEW_VALID_STAGES.includes(lastDeal.stage)) cats.newAdded.push(traj);
+        return;
+      }
 
       // 最初〜最後を通して存在する案件：軌跡で判定
       const presentRanks = points.filter(p => p !== null).map(p => STAGE_RANK[p.stage] ?? -1);
@@ -1936,7 +2171,9 @@ function showCompareModal(snaps) {
       // ステージ同じ → 月を跨いだ日程変更のみ（スタートがD/C/C+/B/Aの案件のみ）
       const DATE_CHG_STAGES = ['D','C','C+','B','A'];
       if (firstDeal.month !== lastDeal.month && DATE_CHG_STAGES.includes(firstDeal.stage)) { cats.dateChanged.push(traj); return; }
-      cats.stay.push(traj);
+      // ステイ：スタートが D/C/C+/B/A のみ（E・S・失注スタートは除外）
+      const STAY_VALID_STARTS = ['D', 'C', 'C+', 'B', 'A'];
+      if (STAY_VALID_STARTS.includes(firstDeal.stage)) cats.stay.push(traj);
     });
     return cats;
   }
@@ -1986,6 +2223,11 @@ function showCompareModal(snaps) {
       const ld2 = ld.closeDay ?? '?';
       dateChangeHtml = `<span class="text-[10px] font-semibold shrink-0 px-1.5 py-0.5 rounded" style="background:#ecfeff;color:#0891b2">${fm}/${fd2}→${lm}/${ld2}</span>`;
     }
+    // 新規流入の場合、クローズ予定月を表示
+    if (catKey === 'newAdded' && d.month) {
+      const m = d.month.slice(0, 7); // YYYY/MM
+      dateChangeHtml = `<span class="text-[10px] font-semibold shrink-0 px-1.5 py-0.5 rounded" style="background:#f0fdf4;color:#16a34a">📅 ${m}</span>`;
+    }
 
     return `<div class="flex items-center gap-2 px-2 py-1.5 rounded text-[11px]" style="background:${bg}">
       <div class="flex items-center gap-0.5 shrink-0">${trajectoryBadges(traj)}</div>
@@ -2005,15 +2247,21 @@ function showCompareModal(snaps) {
     return [stageKey, d.name || ''];
   }
 
-  function renderAccordion(cat, items, total, panelId) {
-    if (items.length === 0) return '';
-    const rate = total > 0 ? ((items.length/total)*100).toFixed(0) : 0;
-    const sorted = [...items].sort((a, b) => {
+  function sortTrajs(items) {
+    return [...items].sort((a, b) => {
       const [as_, an] = trajSortKey(a);
       const [bs_, bn] = trajSortKey(b);
       return as_ !== bs_ ? as_ - bs_ : an.localeCompare(bn, 'ja');
     });
-    const rows = sorted.map(t => dealRow(t, cat.bg, cat.key)).join('');
+  }
+
+  function renderAccordion(cat, items, total, panelId) {
+    if (items.length === 0) return '';
+    // ステイは月別グループ表示
+    if (cat.key === 'stay') return renderStayAccordion(cat, items, total, panelId);
+
+    const rate = total > 0 ? ((items.length/total)*100).toFixed(0) : 0;
+    const rows = sortTrajs(items).map(t => dealRow(t, cat.bg, cat.key)).join('');
     return `<div class="border rounded-lg overflow-hidden mb-1.5" style="border-color:#e2e8f0">
       <button onclick="toggleCmpSection('${panelId}')"
         class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-slate-50 transition-colors">
@@ -2023,6 +2271,50 @@ function showCompareModal(snaps) {
         <span class="ml-auto text-slate-400 text-xs" id="${panelId}-arrow">▶</span>
       </button>
       <div id="${panelId}" class="hidden px-3 pb-3 space-y-1">${rows}</div>
+    </div>`;
+  }
+
+  // ステイ専用：大項目 > 中項目（クローズ月）> 小項目（企業）
+  function renderStayAccordion(cat, items, total, panelId) {
+    if (items.length === 0) return '';
+    const rate = total > 0 ? ((items.length/total)*100).toFixed(0) : 0;
+
+    // クローズ月でグループ化
+    const grouped = {};
+    sortTrajs(items).forEach(traj => {
+      const d = traj.lastDeal || traj.firstDeal;
+      const month = d.month ? d.month.slice(0, 7) : '不明';
+      if (!grouped[month]) grouped[month] = [];
+      grouped[month].push(traj);
+    });
+    const months = Object.keys(grouped).sort();
+
+    // 中項目（月別アコーディオン）を生成
+    const monthsHtml = months.map((month, mi) => {
+      const monthItems = grouped[month];
+      const subId = `${panelId}-m${mi}`;
+      const rows = monthItems.map(t => dealRow(t, cat.bg, cat.key)).join('');
+      return `
+        <div class="border rounded-lg overflow-hidden mb-1" style="border-color:#e2e8f0;background:#fafafa">
+          <button onclick="toggleCmpSection('${subId}')"
+            class="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-slate-100 transition-colors">
+            <span class="text-[11px] font-semibold" style="color:${cat.color}">📅 ${month}</span>
+            <span class="text-[11px] px-1.5 py-0.5 rounded-full font-bold" style="background:${cat.color}18;color:${cat.color}">${monthItems.length}件</span>
+            <span class="ml-auto text-slate-400 text-xs" id="${subId}-arrow">▶</span>
+          </button>
+          <div id="${subId}" class="hidden px-3 pb-2 space-y-1">${rows}</div>
+        </div>`;
+    }).join('');
+
+    return `<div class="border rounded-lg overflow-hidden mb-1.5" style="border-color:#e2e8f0">
+      <button onclick="toggleCmpSection('${panelId}')"
+        class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-slate-50 transition-colors">
+        <span class="font-semibold text-[12px]" style="color:${cat.color}">${cat.title}</span>
+        <span class="text-[11px] px-1.5 py-0.5 rounded-full font-bold shrink-0" style="background:${cat.color}18;color:${cat.color}">${items.length}件</span>
+        <span class="text-[11px] text-slate-400">${rate}%</span>
+        <span class="ml-auto text-slate-400 text-xs" id="${panelId}-arrow">▶</span>
+      </button>
+      <div id="${panelId}" class="hidden px-3 pb-3 space-y-1">${monthsHtml}</div>
     </div>`;
   }
 
