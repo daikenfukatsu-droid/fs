@@ -273,9 +273,7 @@
         <p class="text-xs text-slate-500 mt-0.5">現在の状態を保存して、積載率の推移を確認できます</p>
       </div>
       <div class="flex gap-2 flex-wrap items-center">
-        <select id="snapMemberFilter" onchange="setSnapMember(this.value)" class="px-2 py-1 text-xs border rounded">
-          <option value="">全体</option>
-        </select>
+        <label class="text-xs">担当者: <select id="snapMemberFilter" onchange="setSnapMember(this.value)" class="ml-1 border rounded px-2 py-1"><option value="">全員</option></select></label>
         <button onclick="saveSnapshot()" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold" style="background:#0284c7">📸 現在を保存</button>
         <button id="compareBtn" onclick="doCompare()" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold hidden" style="background:#7c3aed">📊 比較する</button>
         <button onclick="clearAllSnapshots()" class="px-3 py-1.5 text-xs bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200">全削除</button>
@@ -315,6 +313,16 @@
           </table>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Progress Chart -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-semibold text-slate-700 text-sm">📈 目標 vs 受注実績</h3>
+    </div>
+    <div style="height:220px">
+      <canvas id="progressChart"></canvas>
     </div>
   </div>
 
@@ -377,19 +385,6 @@
       </div>
       <!-- 達成可能性バッジ -->
       <div id="kpi-achieve-badge" class="mt-2 text-center text-xs font-bold px-2 py-1 rounded-lg"></div>
-    </div>
-  </div>
-
-  <!-- Progress Chart -->
-  <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="font-semibold text-slate-700 text-sm">📈 目標 vs 受注実績</h3>
-      <select id="chartMemberSelect" onchange="setChartMember(this.value)" class="px-2 py-1 text-xs border rounded">
-        <option value="">全体</option>
-      </select>
-    </div>
-    <div style="height:220px">
-      <canvas id="progressChart"></canvas>
     </div>
   </div>
 
@@ -466,6 +461,9 @@
         <label>ステージ: <select id="dealFilterStage" onchange="renderDealList()" class="ml-1 border rounded px-2 py-1">
           <option value="">全て</option><option value="E">E</option><option value="D">D</option><option value="C">C</option><option value="C+">C+</option><option value="B">B</option><option value="A">A</option><option value="S">S</option>
         </select></label>
+        <label>検討サービス: <select id="dealFilterService" onchange="renderDealList()" class="ml-1 border rounded px-2 py-1">
+          <option value="">全て</option><option value="新卒">新卒</option><option value="中途">中途</option><option value="新卒・中途">新卒・中途</option>
+        </select></label>
       </div>
     </div>
     <div class="overflow-x-auto max-h-96 overflow-y-auto">
@@ -479,6 +477,19 @@
         </thead>
         <tbody id="dealList"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- 失注分析 -->
+  <div class="bg-white rounded-xl shadow-sm p-5 mt-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold text-slate-700">失注分析（選択中期間）</h3>
+      <div class="flex gap-2 items-center text-xs">
+        <label>担当者: <select id="lostFilterMember" onchange="renderLostAnalysis()" class="ml-1 border rounded px-2 py-1"><option value="">全員</option></select></label>
+      </div>
+    </div>
+    <div id="lostAnalysisContent">
+      <p class="text-xs text-slate-400">データを読み込むと表示されます</p>
     </div>
   </div>
 
@@ -609,6 +620,7 @@ function toggleRules() {
 
 // ===== 定数 =====
 const MEMBERS = ['藤森 悠太','林 日向子','久保田 翔世','平井 良輝','梶山 勇亮','深澤 陸','廣澤 未来','山口 学','髙橋 柚基','大野 杏海','秋山 恵'];
+const FY2025_MEMBERS = ['藤森 悠太','外山 未来','石橋 尚子','織笠 大地','林 日向子','久保田 翔世','平井 良輝','梶山 勇亮','深澤 陸','佐々木 祐太朗','廣澤 未来','山口 学','髙橋 柚基'];
 const FY2025_MONTHS = ['2025/04','2025/05','2025/06','2025/07','2025/08','2025/09','2025/10','2025/11','2025/12','2026/01','2026/02','2026/03'];
 const FY2025_QUARTERS = {
   'Q1': {label:'Q1（4-6月）', months:['2025/04','2025/05','2025/06']},
@@ -647,8 +659,22 @@ const _TARGETS_BASE = {
   '2027/02': {'藤森 悠太':3500000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':3500000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':3000000,'大野 杏海':2500000,'秋山 恵':2500000},
   '2027/03': {'藤森 悠太':3500000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':3500000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':3000000,'山口 学':3500000,'髙橋 柚基':2000000,'大野 杏海':2500000,'秋山 恵':2000000}
 };
+const _FY2025_TARGETS_BASE = {
+  '2025/04': {'藤森 悠太':2000000,'外山 未来':0,'石橋 尚子':0,'織笠 大地':0,'林 日向子':2500000,'久保田 翔世':2500000,'平井 良輝':1000000,'梶山 勇亮':2500000,'深澤 陸':0,'佐々木 祐太朗':0,'廣澤 未来':0,'山口 学':0,'髙橋 柚基':0},
+  '2025/05': {'藤森 悠太':3500000,'外山 未来':0,'石橋 尚子':0,'織笠 大地':2500000,'林 日向子':2500000,'久保田 翔世':2500000,'平井 良輝':3000000,'梶山 勇亮':2500000,'深澤 陸':0,'佐々木 祐太朗':0,'廣澤 未来':0,'山口 学':0,'髙橋 柚基':0},
+  '2025/06': {'藤森 悠太':3500000,'外山 未来':0,'石橋 尚子':0,'織笠 大地':2500000,'林 日向子':2500000,'久保田 翔世':2500000,'平井 良輝':3500000,'梶山 勇亮':2500000,'深澤 陸':0,'佐々木 祐太朗':0,'廣澤 未来':0,'山口 学':0,'髙橋 柚基':0},
+  '2025/07': {'藤森 悠太':3500000,'外山 未来':0,'石橋 尚子':0,'織笠 大地':3200000,'林 日向子':3000000,'久保田 翔世':2500000,'平井 良輝':3500000,'梶山 勇亮':3000000,'深澤 陸':0,'佐々木 祐太朗':0,'廣澤 未来':0,'山口 学':0,'髙橋 柚基':0},
+  '2025/08': {'藤森 悠太':4500000,'外山 未来':0,'石橋 尚子':0,'織笠 大地':3000000,'林 日向子':3500000,'久保田 翔世':2500000,'平井 良輝':4500000,'梶山 勇亮':3500000,'深澤 陸':1000000,'佐々木 祐太朗':0,'廣澤 未来':0,'山口 学':0,'髙橋 柚基':0},
+  '2025/09': {'藤森 悠太':4500000,'外山 未来':0,'石橋 尚子':0,'織笠 大地':3200000,'林 日向子':3000000,'久保田 翔世':2500000,'平井 良輝':4500000,'梶山 勇亮':3000000,'深澤 陸':1500000,'佐々木 祐太朗':1000000,'廣澤 未来':0,'山口 学':0,'髙橋 柚基':0},
+  '2025/10': {'藤森 悠太':4500000,'外山 未来':0,'石橋 尚子':0,'織笠 大地':0,'林 日向子':3000000,'久保田 翔世':3000000,'平井 良輝':4500000,'梶山 勇亮':3000000,'深澤 陸':2500000,'佐々木 祐太朗':2500000,'廣澤 未来':0,'山口 学':0,'髙橋 柚基':0},
+  '2025/11': {'藤森 悠太':4500000,'外山 未来':0,'石橋 尚子':0,'織笠 大地':0,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':4500000,'梶山 勇亮':3500000,'深澤 陸':2500000,'佐々木 祐太朗':2500000,'廣澤 未来':0,'山口 学':0,'髙橋 柚基':0},
+  '2025/12': {'藤森 悠太':4500000,'外山 未来':0,'石橋 尚子':0,'織笠 大地':0,'林 日向子':4000000,'久保田 翔世':4000000,'平井 良輝':4500000,'梶山 勇亮':4000000,'深澤 陸':2500000,'佐々木 祐太朗':3500000,'廣澤 未来':700000,'山口 学':1000000,'髙橋 柚基':0},
+  '2026/01': {'藤森 悠太':4500000,'外山 未来':0,'石橋 尚子':0,'織笠 大地':0,'林 日向子':3500000,'久保田 翔世':4000000,'平井 良輝':4500000,'梶山 勇亮':4000000,'深澤 陸':2500000,'佐々木 祐太朗':0,'廣澤 未来':1500000,'山口 学':2000000,'髙橋 柚基':0},
+  '2026/02': {'藤森 悠太':4500000,'外山 未来':0,'石橋 尚子':0,'織笠 大地':0,'林 日向子':4000000,'久保田 翔世':4500000,'平井 良輝':4500000,'梶山 勇亮':3500000,'深澤 陸':2500000,'佐々木 祐太朗':0,'廣澤 未来':2000000,'山口 学':3000000,'髙橋 柚基':0},
+  '2026/03': {'藤森 悠太':4500000,'外山 未来':0,'石橋 尚子':0,'織笠 大地':0,'林 日向子':3500000,'久保田 翔世':4000000,'平井 良輝':4500000,'梶山 勇亮':3000000,'深澤 陸':2500000,'佐々木 祐太朗':0,'廣澤 未来':2000000,'山口 学':3000000,'髙橋 柚基':1000000},
+};
 const TARGETS = {};
-FY2025_MONTHS.forEach(m => TARGETS[m] = Object.fromEntries(MEMBERS.map(n => [n, 0]))); // FY2025は目標0
+FY2025_MONTHS.forEach(m => TARGETS[m] = Object.fromEntries(FY2025_MEMBERS.map(n => [n, (_FY2025_TARGETS_BASE[m] || {})[n] || 0])));
 FY_MONTHS.forEach(m => TARGETS[m] = _TARGETS_BASE[m] || Object.fromEntries(MEMBERS.map(n => [n, 0])));
 
 const JISSHI_MULT = 5, YOMI_MULT = 3;
@@ -895,7 +921,11 @@ const DATA_NAME_MAP = {
   '悠太 藤森':'藤森 悠太','日向子 林':'林 日向子','翔世 久保田':'久保田 翔世',
   '良輝 平井':'平井 良輝','勇亮 梶山':'梶山 勇亮','陸 深澤':'深澤 陸',
   '未来 廣澤':'廣澤 未来','学 山口':'山口 学','柚基 髙橋':'髙橋 柚基',
-  '杏海 大野':'大野 杏海','恵 秋山':'秋山 恵'
+  '杏海 大野':'大野 杏海','恵 秋山':'秋山 恵',
+  // FY2025メンバー（追加）
+  '未来 外山':'外山 未来','尚子 石橋':'石橋 尚子','大地 織笠':'織笠 大地','祐太朗 佐々木':'佐々木 祐太朗',
+  // 個人抽出なし・全体集計のみ
+  '大堅 深津':'深津 大堅'
 };
 
 function normalizeRow(row, hubspotId = null) {
@@ -922,6 +952,9 @@ function normalizeRow(row, hubspotId = null) {
   const shinStatus = String(find('【新卒】現状の管理方法','新卒現状','新卒の管理方法') || '').trim();
   const chuStatus = String(find('【中途】現状の管理方法','中途現状','中途の管理方法') || '').trim();
   const productRaw = String(find('商品','プロダクト','種別','タイプ','product') || '').trim();
+  const mishoshoReason = String(find('未商談化理由','field8__c') || '').trim();
+  const lostReason1 = String(find('失注理由1','field6__c') || '').trim();
+  const lostReason = lostReason1 || mishoshoReason; // 失注理由1優先、なければ未商談化理由
 
   let name = null;
   if (DATA_NAME_MAP[rawMember]) name = DATA_NAME_MAP[rawMember];
@@ -944,7 +977,7 @@ function normalizeRow(row, hubspotId = null) {
   const su = stageRaw.toUpperCase().replace(/\s/g,'');
   if (stageRaw.includes('失注')) {
     const lostLabel = LOST_STAGE_MAP[Object.keys(LOST_STAGE_MAP).find(k => stageRaw.includes(k))] || 'その他';
-    return { company, name, month, closeDay, amount: 0, estimated: false, stage: '失注', lostLabel, hubspotId: hubspotId||null };
+    return { company, name, month, closeDay, amount: 0, estimated: false, stage: '失注', lostLabel, lostReason, hubspotId: hubspotId||null };
   }
   let stage = null;
   if (su.startsWith('S')) stage = 'S';
@@ -991,7 +1024,7 @@ function normalizeRow(row, hubspotId = null) {
     }
   }
 
-  return { company, name, month, closeDay, appointDate, appointMonth, appointDay, amount, stage, product, estimated, hubspotId };
+  return { company, name, month, closeDay, appointDate, appointMonth, appointDay, amount, stage, product, estimated, hubspotId, lostReason };
 }
 
 function clearData() { pipeline = []; lostDeals = []; document.getElementById('fileStatus').textContent = ''; render(); }
@@ -1001,6 +1034,9 @@ function getFyData() {
   return currentFY === 'FY2025'
     ? { months: FY2025_MONTHS, quarters: FY2025_QUARTERS, halves: FY2025_HALVES }
     : { months: FY_MONTHS,     quarters: QUARTERS,        halves: HALVES        };
+}
+function getFyMembers() {
+  return currentFY === 'FY2025' ? FY2025_MEMBERS : MEMBERS;
 }
 
 function switchFY(fy) {
@@ -1118,7 +1154,8 @@ function aggregateTotals(pipe, months) {
   const t = { target:0, j:0, jc:0, y:0, yc:0, s:0, sc:0 };
 
   // MEMBERSの集計（目標含む）
-  MEMBERS.forEach(m => {
+  const fyMembers = getFyMembers();
+  fyMembers.forEach(m => {
     t.target += getTargetFor(m, months);
     const p = getPipelineFor(m, pipe, months);
     t.j += p.jisshi.amount; t.jc += p.jisshi.count;
@@ -1126,8 +1163,8 @@ function aggregateTotals(pipe, months) {
     t.s += p.s.amount;      t.sc += p.s.count;
   });
 
-  // MEMBERS外の担当者の案件も全体に加算（目標は0）
-  const memberSet = new Set(MEMBERS);
+  // FYメンバー外の担当者の案件も全体に加算（目標は0）
+  const memberSet = new Set(fyMembers);
   const extraRows = pipe.filter(r => !memberSet.has(r.name) && months.includes(r.month));
   const exSum = (stages) => extraRows.filter(r => stages.includes(r.stage)).reduce((s,r) => s+r.amount, 0);
   const exCnt = (stages) => extraRows.filter(r => stages.includes(r.stage)).length;
@@ -1209,7 +1246,7 @@ function render() {
   const totals = { target:0, j:0, jc:0, y:0, yc:0, s:0, sc:0, land:0, landE:0,
                    e:0, ec:0, d:0, dc:0, c:0, cc:0, cp:0, cpc:0, b:0, bc:0, a:0, ac:0 };
   // メンバーフィルター：スナップショット欄で選択中のメンバーに連動
-  const activeMembers = currentSnapMember ? [currentSnapMember] : MEMBERS;
+  const activeMembers = currentSnapMember ? [currentSnapMember] : getFyMembers();
   const rows = activeMembers.map(m => {
     const target = getTargetFor(m, months);
     const p = getPipelineFor(m, activePipeline, months);
@@ -1237,6 +1274,9 @@ function render() {
       lERate: target>0 ? (land+landE)/target : 0
     };
   });
+
+  // FY2025 年間表示のみ目標を3億に上書き
+  if (currentFY === 'FY2025' && currentMode === 'year') totals.target = 300000000;
 
   const tJneed = totals.target*JISSHI_MULT, tYneed = totals.target*YOMI_MULT;
   const tJrate = tJneed>0 ? totals.j/tJneed : 0;
@@ -1350,7 +1390,7 @@ function render() {
 
   const memberSel = document.getElementById('dealFilterMember');
   const cur = memberSel.value;
-  memberSel.innerHTML = '<option value="">全員</option>' + MEMBERS.map(m => `<option value="${m}">${m}</option>`).join('');
+  memberSel.innerHTML = '<option value="">全員</option>' + getFyMembers().map(m => `<option value="${m}">${m}</option>`).join('');
   // スナップショットメンバー選択に連動
   if (currentSnapMember) memberSel.value = currentSnapMember;
   else memberSel.value = cur;
@@ -1358,10 +1398,20 @@ function render() {
   renderSnapshots();
   renderECalendar();
   renderProgressChart();
+
+  // 失注分析メンバーセレクト更新
+  const lostMemberSel = document.getElementById('lostFilterMember');
+  if (lostMemberSel) {
+    const curLost = lostMemberSel.value;
+    lostMemberSel.innerHTML = '<option value="">全員</option>' + getFyMembers().map(m => `<option value="${m}">${m}</option>`).join('');
+    lostMemberSel.value = curLost;
+  }
+  renderLostAnalysis();
 }
 
 // ===== 目標 vs 受注実績グラフ =====
 let progressChart = null;
+
 let chartMember = '';
 
 function setChartMember(v) { chartMember = v; renderProgressChart(); }
@@ -1370,40 +1420,53 @@ function renderProgressChart() {
   const canvas = document.getElementById('progressChart');
   if (!canvas) return;
 
-  const months   = getMonthsForPeriod();
-  const member   = chartMember;
+  const months     = getMonthsForPeriod();
+  const member     = chartMember;
   const activePipe = getActivePipeline();
 
   // 担当者セレクトを更新
   const sel = document.getElementById('chartMemberSelect');
-  if (sel && sel.options.length <= 1) {
-    MEMBERS.forEach(m => {
+  if (sel) {
+    sel.innerHTML = '<option value="">全体</option>';
+    getFyMembers().forEach(m => {
       const o = document.createElement('option');
       o.value = m; o.textContent = m.split(' ')[0];
       sel.appendChild(o);
     });
+    sel.value = member;
   }
-  if (sel) sel.value = member;
 
-  // S案件を取得
+  // 当期S案件
   const sDeals = activePipe.filter(d =>
     d.stage === 'S' && months.includes(d.month) && (!member || d.name === member)
   );
 
-  // 目標計算
+  // 昨対月（1年前にずらす）
+  function toLastYear(m) {
+    const [y, mo] = m.split('/').map(Number);
+    return `${y-1}/${String(mo).padStart(2,'0')}`;
+  }
+  const lastYearMonths = months.map(toLastYear);
+  // 昨対S案件（全パイプラインから取得）
+  const lyDeals = pipeline.filter(d =>
+    d.stage === 'S' && lastYearMonths.includes(d.month) && (!member || d.name === member)
+  );
+  const hasLyData = lyDeals.length > 0;
+
+  // 目標計算（getFyMembers対応）
   function getTarget(m) {
     if (member) return TARGETS[m]?.[member] || 0;
-    return MEMBERS.reduce((s, mem) => s + (TARGETS[m]?.[mem] || 0), 0);
+    return getFyMembers().reduce((s, mem) => s + (TARGETS[m]?.[mem] || 0), 0);
   }
 
-  let labels = [], targetData = [], actualData = [], barData = [];
+  let labels = [], targetData = [], actualData = [], barData = [], lyData = [];
 
   if (currentMode === 'month') {
-    // 日次（月内の各日）
     const [yr, mo] = currentPeriod.split('/').map(Number);
     const daysInMonth = new Date(yr, mo, 0).getDate();
     const totalTarget = getTarget(currentPeriod);
     labels = Array.from({length: daysInMonth}, (_, i) => `${i+1}`);
+
     const daily = new Array(daysInMonth).fill(0);
     sDeals.filter(d => d.month === currentPeriod).forEach(d => {
       const idx = (d.closeDay || daysInMonth) - 1;
@@ -1414,9 +1477,18 @@ function renderProgressChart() {
     barData = daily;
     targetData = labels.map((_, i) => Math.round(totalTarget * (i+1) / daysInMonth));
 
+    // 昨対（同月・日次）
+    const lyMonth = toLastYear(currentPeriod);
+    const lyDailyDays = new Date(yr-1, mo, 0).getDate();
+    const lyDaily = new Array(daysInMonth).fill(0);
+    lyDeals.filter(d => d.month === lyMonth).forEach(d => {
+      const idx = Math.min((d.closeDay || lyDailyDays) - 1, daysInMonth - 1);
+      if (idx >= 0) lyDaily[idx] += d.amount;
+    });
+    let lyCum = 0;
+    lyData = lyDaily.map(v => { lyCum += v; return lyCum; });
+
   } else if (currentMode === 'quarter') {
-    // 週次（四半期内）
-    const fy = getFyData();
     const [sy, sm] = months[0].split('/').map(Number);
     const [ey, em] = months[months.length-1].split('/').map(Number);
     const startDate = new Date(sy, sm-1, 1);
@@ -1430,6 +1502,7 @@ function renderProgressChart() {
       d.setDate(d.getDate() + 7);
     }
     labels = weeks.map((_, i) => `W${i+1}`);
+
     const weekly = new Array(weeks.length).fill(0);
     sDeals.forEach(deal => {
       const [dm, dd2] = deal.month.split('/').map(Number);
@@ -1444,6 +1517,23 @@ function renderProgressChart() {
     barData = weekly;
     targetData = weeks.map((_, i) => Math.round(totalTarget * (i+1) / weeks.length));
 
+    // 昨対（同期間・週次）
+    const lyStartDate = new Date(sy-1, sm-1, 1);
+    const lyEndDate   = new Date(ey-1, em, 0);
+    const lyWeekly = new Array(weeks.length).fill(0);
+    lyDeals.forEach(deal => {
+      const [dm, dd2] = deal.month.split('/').map(Number);
+      const day = deal.closeDay || new Date(dm, dd2, 0).getDate();
+      const dt = new Date(dm, dd2-1, day);
+      // 昨対は1年後にずらして当期weekに合わせる
+      const dtShifted = new Date(dt); dtShifted.setFullYear(dtShifted.getFullYear() + 1);
+      for (let i = 0; i < weeks.length; i++) {
+        if (dtShifted >= weeks[i].start && dtShifted <= weeks[i].end) { lyWeekly[i] += deal.amount; break; }
+      }
+    });
+    let lyCum = 0;
+    lyData = lyWeekly.map(v => { lyCum += v; return lyCum; });
+
   } else {
     // 月次（半期・年間）
     labels = months.map(m => parseInt(m.split('/')[1]) + '月');
@@ -1454,6 +1544,13 @@ function renderProgressChart() {
     actualData = months.map(m => { cum += monthly[m]; return cum; });
     barData = months.map(m => monthly[m]);
     targetData = months.map(m => { tCum += getTarget(m); return tCum; });
+
+    // 昨対（同月インデックス）
+    const lyMonthly = {};
+    lastYearMonths.forEach(m => lyMonthly[m] = 0);
+    lyDeals.forEach(d => { if (lyMonthly[d.month] !== undefined) lyMonthly[d.month] += d.amount; });
+    let lyCum = 0;
+    lyData = lastYearMonths.map(m => { lyCum += lyMonthly[m]; return lyCum; });
   }
 
   if (progressChart) progressChart.destroy();
@@ -1469,7 +1566,7 @@ function renderProgressChart() {
           borderColor: '#10b981',
           borderWidth: 1,
           yAxisID: 'y',
-          order: 2,
+          order: 3,
         },
         {
           type: 'line',
@@ -1493,7 +1590,20 @@ function renderProgressChart() {
           pointRadius: 2,
           yAxisID: 'y',
           order: 0,
-        }
+        },
+        ...(hasLyData ? [{
+          type: 'line',
+          label: '昨対実績（累計）',
+          data: lyData,
+          borderColor: '#f59e0b',
+          borderDash: [3, 3],
+          backgroundColor: 'transparent',
+          tension: 0.3,
+          pointRadius: 2,
+          pointStyle: 'triangle',
+          yAxisID: 'y',
+          order: 2,
+        }] : [])
       ]
     },
     options: {
@@ -1512,17 +1622,100 @@ function renderProgressChart() {
   });
 }
 
+// ===== 失注分析 =====
+function renderLostAnalysis() {
+  const el = document.getElementById('lostAnalysisContent');
+  if (!el) return;
+
+  const months = getMonthsForPeriod();
+  const filterMember = document.getElementById('lostFilterMember')?.value || '';
+
+  // lostDeals から期間・担当者フィルタ
+  const lost = lostDeals.filter(d =>
+    months.includes(d.month) &&
+    (!filterMember || d.name === filterMember)
+  );
+
+  if (lost.length === 0) {
+    el.innerHTML = '<p class="text-xs text-slate-400 py-2">該当する失注データがありません</p>';
+    return;
+  }
+
+  const total = lost.length;
+  const pct = n => total > 0 ? Math.round(n / total * 100) : 0;
+
+  // カテゴリ別集計
+  const cats = {
+    '競合失注': lost.filter(d => d.lostLabel === '競合失注'),
+    'ATS導入なし': lost.filter(d => d.lostLabel === 'ATS導入なし'),
+    '音信不通': lost.filter(d => d.lostLabel === '音信不通'),
+    'その他': lost.filter(d => d.lostLabel === 'その他'),
+    '未ヨミ化': lost.filter(d => d.lostLabel === '未ヨミ化'),
+  };
+
+  // 理由別内訳（上位5件）
+  function reasonBreakdown(deals) {
+    const map = {};
+    deals.forEach(d => {
+      const r = (d.lostReason || '').trim() || '（理由未入力）';
+      map[r] = (map[r] || 0) + 1;
+    });
+    return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  }
+
+  const catDefs = [
+    { key: '競合失注',   label: '競合失注',   top: '#ef4444', num: '#dc2626', chip: 'background:#fee2e2;color:#b91c1c' },
+    { key: 'ATS導入なし', label: 'ATS導入なし', top: '#f97316', num: '#ea580c', chip: 'background:#ffedd5;color:#c2410c' },
+    { key: '音信不通',   label: '音信不通',   top: '#eab308', num: '#ca8a04', chip: 'background:#fef9c3;color:#854d0e' },
+    { key: 'その他',     label: 'その他失注', top: '#94a3b8', num: '#64748b', chip: 'background:#f1f5f9;color:#475569' },
+    { key: '未ヨミ化',   label: '未ヨミ化',   top: '#3b82f6', num: '#2563eb', chip: 'background:#dbeafe;color:#1d4ed8' },
+  ];
+
+  const cards = catDefs.map(def => {
+    const deals = cats[def.key] || [];
+    const count = deals.length;
+    const reasons = reasonBreakdown(deals);
+    const chips = reasons.length > 0
+      ? reasons.map(([r, n]) =>
+          `<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:2px 8px;border-radius:9999px;${def.chip}">${r}&nbsp;<b>${n}</b></span>`
+        ).join('')
+      : `<span style="font-size:11px;color:#cbd5e1">理由データなし</span>`;
+
+    return `
+      <div style="border:1px solid #e2e8f0;border-top:3px solid ${def.top};border-radius:12px;padding:14px 16px;background:white;">
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">${def.label}</div>
+        <div style="font-size:22px;font-weight:600;color:${def.num};line-height:1.2;">
+          ${count}<span style="font-size:13px;font-weight:400;color:#94a3b8;margin-left:4px;">件</span>
+        </div>
+        <div style="font-size:11px;color:#cbd5e1;margin-bottom:10px;">全体の ${pct(count)}%</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">${chips}</div>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <span style="font-size:13px;color:#64748b;">失注合計</span>
+      <span style="font-size:26px;font-weight:700;color:#1e293b;">
+        ${total}<span style="font-size:14px;font-weight:400;color:#94a3b8;margin-left:4px;">件</span>
+      </span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">${cards}</div>
+  `;
+}
+
 function renderDealList(activePipe) {
   const tbody = document.getElementById('dealList');
   if (!tbody) return;
   const months = getMonthsForPeriod();
   const filterMember = document.getElementById('dealFilterMember').value;
   const filterStage = document.getElementById('dealFilterStage').value;
+  const filterService = document.getElementById('dealFilterService')?.value || '';
   const STAGE_ORDER = {'S':1,'A':2,'B':3,'C+':4,'C':5,'D':6};
   const filtered = (activePipe || getActivePipeline())
     .filter(p => months.includes(p.month))
     .filter(p => !filterMember || p.name === filterMember)
     .filter(p => !filterStage || p.stage === filterStage)
+    .filter(p => !filterService || p.product === filterService)
     .sort((a,b) => (STAGE_ORDER[a.stage]||99) - (STAGE_ORDER[b.stage]||99) || b.amount - a.amount);
   const stageColor = { 'S':'stage-s','A':'stage-a','B':'stage-b','C+':'stage-cp','C':'stage-c','D':'stage-d','E':'stage-e' };
   tbody.innerHTML = filtered.length === 0
@@ -1680,7 +1873,7 @@ function renderECalendar() {
   const sel = document.getElementById('eCalMemberFilter');
   if (sel) {
     const cur = sel.value;
-    sel.innerHTML = '<option value="">全員</option>' + MEMBERS.map(m => `<option value="${m}">${m}</option>`).join('');
+    sel.innerHTML = '<option value="">全員</option>' + getFyMembers().map(m => `<option value="${m}">${m}</option>`).join('');
     sel.value = cur || eCalMember;
   }
 
@@ -1953,7 +2146,7 @@ function renderSnapshots() {
   const sel = document.getElementById('snapMemberFilter');
   if (sel) {
     const cur = currentSnapMember;
-    sel.innerHTML = '<option value="">全体</option>' + MEMBERS.map(m => `<option value="${m}">${m}</option>`).join('');
+    sel.innerHTML = '<option value="">全員</option>' + getFyMembers().map(m => `<option value="${m}">${m}</option>`).join('');
     sel.value = cur;
   }
 
