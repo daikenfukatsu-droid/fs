@@ -512,7 +512,13 @@
           </div>
         </div>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex rounded-lg overflow-hidden border" style="border-color:#e2e8f0">
+          <button id="calTab-0" onclick="setCalTab(0)" class="px-3 py-1 text-xs font-semibold" style="background:#0284c7;color:white">全て</button>
+          <button id="calTab-1" onclick="setCalTab(1)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0ea5e9;border-color:#e2e8f0">1回目</button>
+          <button id="calTab-2" onclick="setCalTab(2)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#f97316;border-color:#e2e8f0">2回目</button>
+          <button id="calTab-3" onclick="setCalTab(3)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#8b5cf6;border-color:#e2e8f0">3回目</button>
+        </div>
         <span id="eCalTotalBadge" class="text-xs font-semibold px-3 py-1 rounded-full" style="background:#dbeafe;color:#0284c7"></span>
         <select id="eCalMemberFilter" onchange="setECalMember(this.value)" class="px-2 py-1 text-xs border rounded">
           <option value="">全員</option>
@@ -1887,6 +1893,26 @@ let eCalViewMonth = (()=>{
 })();
 const E_CAL_MAX = 3; // 1日の最大表示件数
 let eCalExpandedDays = new Set(); // 展開中の日付 "YYYY/MM/DD"
+let eCalTab = 0; // 0=全て 1=1回目 2=2回目 3=3回目
+
+function setCalTab(t) {
+  eCalTab = t;
+  eCalExpandedDays.clear();
+  // ボタンスタイル更新
+  const TAB_COLORS = { 0: '#0284c7', 1: '#0ea5e9', 2: '#f97316', 3: '#8b5cf6' };
+  [0,1,2,3].forEach(i => {
+    const btn = document.getElementById('calTab-' + i);
+    if (!btn) return;
+    if (i === t) {
+      btn.style.background = TAB_COLORS[i];
+      btn.style.color = 'white';
+    } else {
+      btn.style.background = 'white';
+      btn.style.color = TAB_COLORS[i];
+    }
+  });
+  renderECalendar();
+}
 
 function toggleECalDay(dateStr) {
   if (eCalExpandedDays.has(dateStr)) {
@@ -1968,16 +1994,28 @@ function renderECalendar() {
   // 3回目: ステージ問わず、appt3Month がこの月 & 日付あり
   const eDeals3 = allDeals.filter(d => d.appt3Month === eCalViewMonth && d.appt3Day);
 
-  const totalCount = eDeals1.length + eDealsNoDate.length + eDeals2.length + eDeals3.length;
+  const count1 = eDeals1.length + eDealsNoDate.length;
+  const count2 = eDeals2.length;
+  const count3 = eDeals3.length;
+  const totalCount = count1 + count2 + count3;
+  const displayCount = eCalTab === 0 ? totalCount : eCalTab === 1 ? count1 : eCalTab === 2 ? count2 : count3;
   const badge = document.getElementById('eCalTotalBadge');
-  if (badge) badge.textContent = `${mo}月 合計 ${totalCount}件（1回目:${eDeals1.length+eDealsNoDate.length} 2回目:${eDeals2.length} 3回目:${eDeals3.length}）`;
+  const TAB_BADGE_COLORS = { 0: {bg:'#dbeafe',col:'#0284c7'}, 1: {bg:'#e0f2fe',col:'#0ea5e9'}, 2: {bg:'#fff7ed',col:'#f97316'}, 3: {bg:'#f5f3ff',col:'#8b5cf6'} };
+  const bc = TAB_BADGE_COLORS[eCalTab];
+  if (badge) {
+    badge.textContent = eCalTab === 0
+      ? `${mo}月 合計 ${totalCount}件（1回目:${count1} 2回目:${count2} 3回目:${count3}）`
+      : `${mo}月 ${CAL_COLORS[eCalTab]?.label || ''}${displayCount}件`;
+    badge.style.background = bc.bg;
+    badge.style.color = bc.col;
+  }
 
-  // 日ごとのエントリをまとめる [{deal, type}]
+  // 日ごとのエントリをまとめる [{deal, type}]（eCalTabでフィルタ）
   function getDayEntries(dayNum) {
     const entries = [];
-    eDeals1.filter(d => d.appointDay === dayNum).forEach(d => entries.push({ d, type: 1 }));
-    eDeals2.filter(d => d.appt2Day === dayNum).forEach(d => entries.push({ d, type: 2 }));
-    eDeals3.filter(d => d.appt3Day === dayNum).forEach(d => entries.push({ d, type: 3 }));
+    if (eCalTab === 0 || eCalTab === 1) eDeals1.filter(d => d.appointDay === dayNum).forEach(d => entries.push({ d, type: 1 }));
+    if (eCalTab === 0 || eCalTab === 2) eDeals2.filter(d => d.appt2Day === dayNum).forEach(d => entries.push({ d, type: 2 }));
+    if (eCalTab === 0 || eCalTab === 3) eDeals3.filter(d => d.appt3Day === dayNum).forEach(d => entries.push({ d, type: 3 }));
     return entries;
   }
 
@@ -2046,10 +2084,10 @@ function renderECalendar() {
   html += `</div></div>`;
 
   html += `<div class="mt-2 flex items-center gap-4 text-xs text-slate-500 px-1">
-    <span>この月の合計 <b class="text-slate-700">${totalCount}件</b></span>
-    <span style="color:${CAL_COLORS[1].main}">● 1回目 ${eDeals1.length+eDealsNoDate.length}件</span>
-    <span style="color:${CAL_COLORS[2].main}">● 2回目 ${eDeals2.length}件</span>
-    <span style="color:${CAL_COLORS[3].main}">● 3回目 ${eDeals3.length}件</span>
+    <span>表示中 <b class="text-slate-700">${displayCount}件</b></span>
+    ${eCalTab === 0 || eCalTab === 1 ? `<span style="color:${CAL_COLORS[1].main}">● 1回目 ${count1}件</span>` : ''}
+    ${eCalTab === 0 || eCalTab === 2 ? `<span style="color:${CAL_COLORS[2].main}">● 2回目 ${count2}件</span>` : ''}
+    ${eCalTab === 0 || eCalTab === 3 ? `<span style="color:${CAL_COLORS[3].main}">● 3回目 ${count3}件</span>` : ''}
   </div>`;
 
   cal.innerHTML = html;
