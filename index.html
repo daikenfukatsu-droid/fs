@@ -320,6 +320,12 @@
   <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
     <div class="flex items-center justify-between mb-3">
       <h3 class="font-semibold text-slate-700 text-sm">📈 目標 vs 受注実績</h3>
+      <div class="flex items-center gap-2">
+        <select id="chartMemberSelect" onchange="setChartMember(this.value)" class="text-xs border rounded px-2 py-1">
+          <option value="">全体</option>
+        </select>
+        <span id="progressChartPeriodLabel" class="text-xs font-semibold px-3 py-1 rounded-full" style="background:#e0f2fe;color:#0284c7"></span>
+      </div>
     </div>
     <div style="height:220px">
       <canvas id="progressChart"></canvas>
@@ -1423,6 +1429,23 @@ function renderProgressChart() {
   const months     = getMonthsForPeriod();
   const member     = chartMember;
   const activePipe = getActivePipeline();
+
+  // 期間ラベル更新
+  const periodLabelEl = document.getElementById('progressChartPeriodLabel');
+  if (periodLabelEl) {
+    const fy = getFyData();
+    let modeLabel = '';
+    if (currentMode === 'month') {
+      modeLabel = `月別: ${parseInt(currentPeriod.split('/')[1])}月`;
+    } else if (currentMode === 'quarter') {
+      modeLabel = `四半期: ${fy.quarters[currentPeriod]?.label || currentPeriod}`;
+    } else if (currentMode === 'half') {
+      modeLabel = `半期: ${fy.halves[currentPeriod]?.label || currentPeriod}`;
+    } else {
+      modeLabel = `年間: ${currentFY}`;
+    }
+    periodLabelEl.textContent = modeLabel;
+  }
 
   // 担当者セレクトを更新
   const sel = document.getElementById('chartMemberSelect');
