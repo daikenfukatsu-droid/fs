@@ -503,7 +503,14 @@
   <div class="bg-white rounded-xl shadow-sm p-5 mt-6">
     <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
       <div>
-        <h3 class="font-semibold text-slate-700 text-sm">📅 ステージE 実施予定カレンダー</h3>
+        <div>
+          <h3 class="font-semibold text-slate-700 text-sm">📅 商談カレンダー</h3>
+          <div class="flex items-center gap-3 mt-1">
+            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0ea5e9"></span><span class="text-slate-500">1回目（初回アポ・E案件）</span></span>
+            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#f97316"></span><span class="text-slate-500">2回目商談</span></span>
+            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#8b5cf6"></span><span class="text-slate-500">3回目商談</span></span>
+          </div>
+        </div>
       </div>
       <div class="flex items-center gap-2">
         <span id="eCalTotalBadge" class="text-xs font-semibold px-3 py-1 rounded-full" style="background:#dbeafe;color:#0284c7"></span>
@@ -960,7 +967,9 @@ function normalizeRow(row, hubspotId = null) {
   const productRaw = String(find('商品','プロダクト','種別','タイプ','product') || '').trim();
   const mishoshoReason = String(find('未商談化理由','field8__c') || '').trim();
   const lostReason1 = String(find('失注理由1','field6__c') || '').trim();
-  const lostReason = lostReason1 || mishoshoReason; // 失注理由1優先、なければ未商談化理由
+  const lostReason = lostReason1 || mishoshoReason;
+  const appoint2Raw = find('FS2回目商談実施日','fs2_______') || null;
+  const appoint3Raw = find('FS3回目商談実施日','fs3_______') || null;
 
   let name = null;
   if (DATA_NAME_MAP[rawMember]) name = DATA_NAME_MAP[rawMember];
@@ -1011,26 +1020,41 @@ function normalizeRow(row, hubspotId = null) {
     estimated = true;
   }
 
-  // FS初回アポ実施日のパース
-  let appointDate = null; // "YYYY/MM/DD"
-  let appointMonth = null; // "YYYY/MM"
-  let appointDay = null;   // 日(数値)
-  if (appointRaw) {
-    if (appointRaw instanceof Date && !isNaN(appointRaw)) {
-      appointDate = `${appointRaw.getFullYear()}/${String(appointRaw.getMonth()+1).padStart(2,'0')}/${String(appointRaw.getDate()).padStart(2,'0')}`;
-      appointMonth = `${appointRaw.getFullYear()}/${String(appointRaw.getMonth()+1).padStart(2,'0')}`;
-      appointDay = appointRaw.getDate();
-    } else {
-      const m = String(appointRaw).match(/(\d{4})[\/\-年]\s*(\d{1,2})[\/\-月]\s*(\d{1,2})/);
-      if (m) {
-        appointDate = `${m[1]}/${String(m[2]).padStart(2,'0')}/${String(m[3]).padStart(2,'0')}`;
-        appointMonth = `${m[1]}/${String(m[2]).padStart(2,'0')}`;
-        appointDay = parseInt(m[3], 10);
-      }
+  // 日付パース共通関数
+  function parseApptDate(raw) {
+    if (!raw) return { date: null, month: null, day: null };
+    if (raw instanceof Date && !isNaN(raw)) {
+      return {
+        date:  `${raw.getFullYear()}/${String(raw.getMonth()+1).padStart(2,'0')}/${String(raw.getDate()).padStart(2,'0')}`,
+        month: `${raw.getFullYear()}/${String(raw.getMonth()+1).padStart(2,'0')}`,
+        day:   raw.getDate()
+      };
     }
+    const m = String(raw).match(/(\d{4})[\/\-年]\s*(\d{1,2})[\/\-月]\s*(\d{1,2})/);
+    if (m) {
+      return {
+        date:  `${m[1]}/${String(m[2]).padStart(2,'0')}/${String(m[3]).padStart(2,'0')}`,
+        month: `${m[1]}/${String(m[2]).padStart(2,'0')}`,
+        day:   parseInt(m[3], 10)
+      };
+    }
+    return { date: null, month: null, day: null };
   }
 
-  return { company, name, month, closeDay, appointDate, appointMonth, appointDay, amount, stage, product, estimated, hubspotId, lostReason };
+  // FS初回アポ実施日のパース
+  const appt1 = parseApptDate(appointRaw);
+  const appointDate  = appt1.date;
+  const appointMonth = appt1.month;
+  const appointDay   = appt1.day;
+
+  // FS2回目・3回目商談実施日のパース
+  const appt2 = parseApptDate(appoint2Raw);
+  const appt3 = parseApptDate(appoint3Raw);
+
+  return { company, name, month, closeDay, appointDate, appointMonth, appointDay,
+           appt2Date: appt2.date, appt2Month: appt2.month, appt2Day: appt2.day,
+           appt3Date: appt3.date, appt3Month: appt3.month, appt3Day: appt3.day,
+           amount, stage, product, estimated, hubspotId, lostReason };
 }
 
 function clearData() { pipeline = []; lostDeals = []; document.getElementById('fileStatus').textContent = ''; render(); }
@@ -1875,12 +1899,14 @@ function toggleECalDay(dateStr) {
 
 function setECalMember(v) { eCalMember = v; eCalExpandedDays.clear(); renderECalendar(); }
 function eCalPrevMonth() {
-  const idx = FY_MONTHS.indexOf(eCalViewMonth);
-  if (idx > 0) { eCalViewMonth = FY_MONTHS[idx - 1]; eCalExpandedDays.clear(); renderECalendar(); }
+  const allM = [...FY2025_MONTHS, ...FY_MONTHS];
+  const idx = allM.indexOf(eCalViewMonth);
+  if (idx > 0) { eCalViewMonth = allM[idx - 1]; eCalExpandedDays.clear(); renderECalendar(); }
 }
 function eCalNextMonth() {
-  const idx = FY_MONTHS.indexOf(eCalViewMonth);
-  if (idx >= 0 && idx < FY_MONTHS.length - 1) { eCalViewMonth = FY_MONTHS[idx + 1]; eCalExpandedDays.clear(); renderECalendar(); }
+  const allM = [...FY2025_MONTHS, ...FY_MONTHS];
+  const idx = allM.indexOf(eCalViewMonth);
+  if (idx >= 0 && idx < allM.length - 1) { eCalViewMonth = allM[idx + 1]; eCalExpandedDays.clear(); renderECalendar(); }
 }
 function eCalGoToday() {
   const now = new Date();
@@ -1888,11 +1914,18 @@ function eCalGoToday() {
   if (FY_MONTHS.includes(m)) { eCalViewMonth = m; renderECalendar(); }
 }
 
+// 商談カレンダー 色定義
+const CAL_COLORS = {
+  1: { main: '#0ea5e9', bg: '#e0f2fe', label: '1回目' },
+  2: { main: '#f97316', bg: '#fff7ed', label: '2回目' },
+  3: { main: '#8b5cf6', bg: '#f5f3ff', label: '3回目' },
+};
+
 function renderECalendar() {
   const cal = document.getElementById('eCalendar');
   if (!cal) return;
 
-  // Populate member filter
+  // メンバーフィルター更新
   const sel = document.getElementById('eCalMemberFilter');
   if (sel) {
     const cur = sel.value;
@@ -1900,25 +1933,21 @@ function renderECalendar() {
     sel.value = cur || eCalMember;
   }
 
-  // Clamp eCalViewMonth to FY range
-  if (!FY_MONTHS.includes(eCalViewMonth)) eCalViewMonth = FY_MONTHS[0];
+  // FY範囲にクランプ
+  const allFyMonths = [...FY2025_MONTHS, ...FY_MONTHS];
+  if (!allFyMonths.includes(eCalViewMonth)) eCalViewMonth = FY_MONTHS[0];
   const [yr, mo] = eCalViewMonth.split('/').map(Number);
 
-  // Update label
   const lbl = document.getElementById('eCalMonthLabel');
   if (lbl) lbl.textContent = `${yr}年 ${mo}月`;
-
-  // Navigation button state
-  const idx = FY_MONTHS.indexOf(eCalViewMonth);
-  // (leave buttons always visible for simplicity)
 
   const today = new Date();
   const todayStr = `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}`;
 
-  // スナップショット閲覧中はそのデータ、そうでなければ現在データを使用
   const calPipeline = getActivePipeline();
+  const allDeals = calPipeline.filter(d => !eCalMember || d.name === eCalMember);
 
-  // スナップショットバナー更新
+  // スナップショットバナー
   const snapBanner = document.getElementById('eCalSnapBanner');
   const snapLabelEl = document.getElementById('eCalSnapLabel');
   if (snapBanner && snapLabelEl) {
@@ -1930,41 +1959,56 @@ function renderECalendar() {
     }
   }
 
-  // Filter E deals: アポ実施日がこの月のもの、またはアポ日なしでクローズ月がこの月のもの
-  const allEDeals = calPipeline.filter(d => d.stage === 'E' && (!eCalMember || d.name === eCalMember));
+  // 各商談回ごとにこの月の案件を収集
+  // 1回目: E案件のみ（アポ実施日 or クローズ月がこの月）
+  const eDeals1 = allDeals.filter(d => d.stage === 'E' && d.appointMonth === eCalViewMonth);
+  const eDealsNoDate = allDeals.filter(d => d.stage === 'E' && !d.appointDate && d.month === eCalViewMonth);
+  // 2回目: ステージ問わず、appt2Month がこの月 & 日付あり
+  const eDeals2 = allDeals.filter(d => d.appt2Month === eCalViewMonth && d.appt2Day);
+  // 3回目: ステージ問わず、appt3Month がこの月 & 日付あり
+  const eDeals3 = allDeals.filter(d => d.appt3Month === eCalViewMonth && d.appt3Day);
 
-  // E合計バッジ：表示中の月に該当するE案件数
+  const totalCount = eDeals1.length + eDealsNoDate.length + eDeals2.length + eDeals3.length;
   const badge = document.getElementById('eCalTotalBadge');
-  const monthECount = allEDeals.filter(d =>
-    d.appointMonth === eCalViewMonth || (!d.appointDate && d.month === eCalViewMonth)
-  ).length;
-  if (badge) badge.textContent = `${parseInt(eCalViewMonth.split('/')[1])}月 E案件 ${monthECount}件`;
+  if (badge) badge.textContent = `${mo}月 合計 ${totalCount}件（1回目:${eDeals1.length+eDealsNoDate.length} 2回目:${eDeals2.length} 3回目:${eDeals3.length}）`;
 
-  // アポ実施日がこの月に該当するもの
-  const eDealsAppt = allEDeals.filter(d => d.appointMonth === eCalViewMonth);
-  // アポ実施日がなく、クローズ月がこの月のもの（未設定扱い）
-  const eDealsNoApptThisMonth = allEDeals.filter(d => !d.appointDate && d.month === eCalViewMonth);
-  const eDeals = [...eDealsAppt, ...eDealsNoApptThisMonth];
-  const dealsWithDay = eDealsAppt.filter(d => d.appointDay);
-  const dealsNoDay = eDealsNoApptThisMonth;
+  // 日ごとのエントリをまとめる [{deal, type}]
+  function getDayEntries(dayNum) {
+    const entries = [];
+    eDeals1.filter(d => d.appointDay === dayNum).forEach(d => entries.push({ d, type: 1 }));
+    eDeals2.filter(d => d.appt2Day === dayNum).forEach(d => entries.push({ d, type: 2 }));
+    eDeals3.filter(d => d.appt3Day === dayNum).forEach(d => entries.push({ d, type: 3 }));
+    return entries;
+  }
 
-  // Build calendar grid
-  const firstDay = new Date(yr, mo - 1, 1).getDay(); // 0=Sun
+  // カードHTML生成（共通）
+  function entryCard(d, type) {
+    const c = CAL_COLORS[type];
+    const pb = PRODUCT_BADGE[d.product] || { bg: '#f1f5f9', text: '#475569' };
+    const shortName = d.name ? d.name.split(' ').slice(-1)[0] : '';
+    const hubUrl = d.hubspotId ? `href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener"` : '';
+    return `<div class="rounded p-1 mb-0.5 text-[10px] leading-tight" style="background:${c.bg};border-left:3px solid ${c.main}">
+      <a ${hubUrl} class="font-medium block truncate hover:underline" style="color:#1e293b" title="${d.company}">${d.company || '-'}</a>
+      <div class="flex items-center justify-between mt-0.5 flex-wrap gap-0.5">
+        <span class="font-semibold" style="color:${c.main}">${shortName}</span>
+        ${d.product ? `<span class="rounded-full px-1" style="background:${pb.bg};color:${pb.text}">${d.product}</span>` : ''}
+      </div>
+    </div>`;
+  }
+
+  // カレンダーグリッド
+  const firstDay = new Date(yr, mo - 1, 1).getDay();
   const daysInMonth = new Date(yr, mo, 0).getDate();
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
 
-  // Header row
   let html = `<div class="border rounded-xl overflow-hidden" style="border-color:#e2e8f0">`;
-  // Day-of-week header
   html += `<div class="grid grid-cols-7 border-b" style="border-color:#e2e8f0;background:#f8fafc">`;
   WEEK_LABELS.forEach((w, i) => {
     const col = i === 0 ? '#dc2626' : i === 6 ? '#0284c7' : '#475569';
     html += `<div class="text-center py-2 text-xs font-semibold" style="color:${col}">${w}</div>`;
   });
-  html += `</div>`;
+  html += `</div><div class="grid grid-cols-7">`;
 
-  // Calendar cells
-  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
-  html += `<div class="grid grid-cols-7">`;
   for (let i = 0; i < totalCells; i++) {
     const dayNum = i - firstDay + 1;
     const isValid = dayNum >= 1 && dayNum <= daysInMonth;
@@ -1974,40 +2018,26 @@ function renderECalendar() {
     const isSun = dow === 0, isSat = dow === 6;
     const isPast = isValid && dateStr < todayStr;
 
-    const dayDeals = isValid ? dealsWithDay.filter(d => d.appointDay === dayNum) : [];
-    const hasDeals = dayDeals.length > 0;
+    const dayEntries = isValid ? getDayEntries(dayNum) : [];
     const isExpanded = isValid && eCalExpandedDays.has(dateStr);
-    const visibleDeals = isExpanded ? dayDeals : dayDeals.slice(0, E_CAL_MAX);
-    const hiddenCount = dayDeals.length - E_CAL_MAX;
+    const visibleEntries = isExpanded ? dayEntries : dayEntries.slice(0, E_CAL_MAX);
+    const hiddenCount = dayEntries.length - E_CAL_MAX;
 
-    let cellBg = isToday ? '#eff6ff' : 'white';
-    let numColor = isToday ? '#0284c7' : isSun ? '#dc2626' : isSat ? '#0284c7' : isPast ? '#cbd5e1' : '#374151';
+    const cellBg = isToday ? '#eff6ff' : 'white';
+    const numColor = isToday ? 'white' : isSun ? '#dc2626' : isSat ? '#0284c7' : isPast ? '#cbd5e1' : '#374151';
     const borderR = i % 7 !== 6 ? 'border-r' : '';
     const borderB = i < totalCells - 7 ? 'border-b' : '';
 
     html += `<div class="${borderR} ${borderB}" style="border-color:#f1f5f9;min-height:80px;background:${cellBg};padding:4px">`;
     if (isValid) {
       html += `<div class="flex items-center gap-1 mb-1">
-        <span class="text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full ${isToday ? 'text-white' : ''}" style="${isToday ? 'background:#0284c7;' : ''}color:${isToday ? 'white' : numColor}">${dayNum}</span>
-        ${hasDeals ? `<span class="text-[9px] font-semibold rounded-full px-1" style="background:#dbeafe;color:#0284c7">${dayDeals.length}件</span>` : ''}
+        <span class="text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full" style="${isToday ? 'background:#0284c7;' : ''}color:${numColor}">${dayNum}</span>
+        ${dayEntries.length > 0 ? `<span class="text-[9px] font-semibold rounded-full px-1" style="background:#f1f5f9;color:#475569">${dayEntries.length}件</span>` : ''}
       </div>`;
-      visibleDeals.forEach(d => {
-        const pb = PRODUCT_BADGE[d.product] || { bg: '#f1f5f9', text: '#475569' };
-        const mc = memberColor(d.name);
-        const shortName = d.name ? d.name.split(' ').slice(-1)[0] : '';
-        const hubUrl = d.hubspotId ? `href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener"` : '';
-        html += `<div class="rounded p-1 mb-0.5 text-[10px] leading-tight" style="background:${mc}15;border-left:3px solid ${mc}">
-          <a ${hubUrl} class="font-medium block truncate hover:underline" style="color:#1e293b" title="${d.company}">${d.company || '-'}</a>
-          <div class="flex items-center justify-between mt-0.5 flex-wrap gap-0.5">
-            <span class="font-semibold" style="color:${mc}">${shortName}</span>
-            ${d.product ? `<span class="rounded-full px-1" style="background:${pb.bg};color:${pb.text}">${d.product}</span>` : ''}
-          </div>
-        </div>`;
-      });
-      // 展開ボタン
+      visibleEntries.forEach(({ d, type }) => { html += entryCard(d, type); });
       if (!isExpanded && hiddenCount > 0) {
         html += `<button onclick="toggleECalDay('${dateStr}')" class="w-full mt-0.5 text-[9px] font-semibold rounded py-0.5 hover:opacity-80" style="background:#dbeafe;color:#0284c7">＋${hiddenCount}件 もっと見る</button>`;
-      } else if (isExpanded && dayDeals.length > E_CAL_MAX) {
+      } else if (isExpanded && dayEntries.length > E_CAL_MAX) {
         html += `<button onclick="toggleECalDay('${dateStr}')" class="w-full mt-0.5 text-[9px] font-semibold rounded py-0.5 hover:opacity-80" style="background:#f1f5f9;color:#64748b">折りたたむ ▲</button>`;
       }
     }
@@ -2015,30 +2045,30 @@ function renderECalendar() {
   }
   html += `</div></div>`;
 
-  // Month total bar
-  const monthTotal = eDeals.reduce((s,d)=>s+d.amount,0);
-  html += `<div class="mt-2 flex items-center justify-between text-xs text-slate-500 px-1">
-    <span>この月のE案件 合計 <b class="text-slate-700">${eDeals.length}件</b></span>
-    <span>合計金額 <b class="text-slate-700">${fmt(monthTotal)}</b></span>
+  html += `<div class="mt-2 flex items-center gap-4 text-xs text-slate-500 px-1">
+    <span>この月の合計 <b class="text-slate-700">${totalCount}件</b></span>
+    <span style="color:${CAL_COLORS[1].main}">● 1回目 ${eDeals1.length+eDealsNoDate.length}件</span>
+    <span style="color:${CAL_COLORS[2].main}">● 2回目 ${eDeals2.length}件</span>
+    <span style="color:${CAL_COLORS[3].main}">● 3回目 ${eDeals3.length}件</span>
   </div>`;
 
   cal.innerHTML = html;
 
-  // No-day deals section
+  // 日付未設定のE案件（1回目のみ）
   const sec = document.getElementById('eCalNoDaySection');
   const lst = document.getElementById('eCalNoDayList');
   if (sec && lst) {
-    if (dealsNoDay.length > 0) {
+    if (eDealsNoDate.length > 0) {
       sec.classList.remove('hidden');
-      lst.innerHTML = dealsNoDay.map(d => {
-        const mc = memberColor(d.name);
+      lst.innerHTML = eDealsNoDate.map(d => {
+        const c = CAL_COLORS[1];
         const pb = PRODUCT_BADGE[d.product] || { bg: '#f1f5f9', text: '#475569' };
         const shortName = d.name ? d.name.split(' ').slice(-1)[0] : '';
         const hubUrl = d.hubspotId ? `href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener"` : '';
-        return `<div class="rounded-lg p-2 text-[10px] border" style="background:#fafafa;border-color:#e2e8f0;min-width:120px">
+        return `<div class="rounded-lg p-2 text-[10px] border" style="background:${c.bg};border-color:${c.main};min-width:120px">
           <a ${hubUrl} class="font-medium block truncate hover:underline" style="color:#1e293b" title="${d.company}">${d.company || '-'}</a>
           <div class="flex items-center gap-1 mt-0.5">
-            <span class="font-semibold" style="color:${mc}">${shortName}</span>
+            <span class="font-semibold" style="color:${c.main}">${shortName}</span>
             ${d.product ? `<span class="rounded-full px-1" style="background:${pb.bg};color:${pb.text}">${d.product}</span>` : ''}
           </div>
         </div>`;
