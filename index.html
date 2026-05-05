@@ -349,25 +349,24 @@
       </div>
       <div class="w-full bg-slate-100 rounded-full h-2 mt-1"><div id="kpi-s-bar" class="progress-bar h-2 rounded-full bg-emerald-500" style="width: 0%"></div></div>
     </div>
-    <div class="kpi-card bg-white rounded-xl shadow-sm p-5 border-l-4" style="border-color:#0284c7">
-      <p class="text-xs text-slate-500">実施積載（D+C+C++B+A）</p>
-      <p id="kpi-jisshi-amount" class="text-xl font-bold text-slate-800 mt-1">¥0</p>
-      <p id="kpi-jisshi-need" class="text-xs text-slate-400">必要: ¥0</p>
-      <div class="flex items-center justify-between mt-2">
-        <span id="kpi-jisshi-rate" class="text-lg font-bold" style="color:#0284c7">0%</span>
-        <span id="kpi-jisshi-count" class="text-xs text-slate-500">0件</span>
+    <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 col-span-2" style="border-color:#0284c7">
+      <div class="flex items-center justify-between mb-2">
+        <p id="kpi-sekisai-label" class="text-xs text-slate-500 font-semibold">積載</p>
+        <div class="flex gap-1">
+          <button id="sekisai-btn-D"  onclick="toggleSekisaiStage('D')"  class="px-2 py-0.5 text-[11px] font-bold rounded border transition-colors">D</button>
+          <button id="sekisai-btn-C"  onclick="toggleSekisaiStage('C')"  class="px-2 py-0.5 text-[11px] font-bold rounded border transition-colors">C</button>
+          <button id="sekisai-btn-CP" onclick="toggleSekisaiStage('C+')" class="px-2 py-0.5 text-[11px] font-bold rounded border transition-colors">C+</button>
+          <button id="sekisai-btn-B"  onclick="toggleSekisaiStage('B')"  class="px-2 py-0.5 text-[11px] font-bold rounded border transition-colors">B</button>
+          <button id="sekisai-btn-A"  onclick="toggleSekisaiStage('A')"  class="px-2 py-0.5 text-[11px] font-bold rounded border transition-colors">A</button>
+        </div>
       </div>
-      <div class="w-full bg-slate-100 rounded-full h-2 mt-1"><div id="kpi-jisshi-bar" class="progress-bar h-2 rounded-full" style="width:0%;background:#0284c7"></div></div>
-    </div>
-    <div class="kpi-card bg-white rounded-xl shadow-sm p-5 border-l-4 border-emerald-400">
-      <p class="text-xs text-slate-500">ヨミ積載（C+C++B+A）</p>
-      <p id="kpi-yomi-amount" class="text-xl font-bold text-slate-800 mt-1">¥0</p>
-      <p id="kpi-yomi-need" class="text-xs text-slate-400">必要: ¥0</p>
+      <p id="kpi-sekisai-amount" class="text-xl font-bold text-slate-800">¥0</p>
+      <p id="kpi-sekisai-need" class="text-xs text-slate-400">必要: ¥0</p>
       <div class="flex items-center justify-between mt-2">
-        <span id="kpi-yomi-rate" class="text-lg font-bold text-emerald-600">0%</span>
-        <span id="kpi-yomi-count" class="text-xs text-slate-500">0件</span>
+        <span id="kpi-sekisai-rate" class="text-lg font-bold" style="color:#0284c7">0%</span>
+        <span id="kpi-sekisai-count" class="text-xs text-slate-500">0件</span>
       </div>
-      <div class="w-full bg-slate-100 rounded-full h-2 mt-1"><div id="kpi-yomi-bar" class="progress-bar h-2 rounded-full bg-emerald-400" style="width:0%"></div></div>
+      <div class="w-full bg-slate-100 rounded-full h-2 mt-1"><div id="kpi-sekisai-bar" class="progress-bar h-2 rounded-full" style="width:0%;background:#0284c7"></div></div>
     </div>
     <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 border-violet-400">
       <div class="flex items-center justify-between mb-1">
@@ -410,89 +409,75 @@
 
   <!-- Charts -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+
+    <!-- 実施積載率 -->
     <div class="bg-white rounded-xl shadow-sm p-5">
-      <h3 class="font-semibold text-slate-700 mb-3 text-sm">FSメンバー別 実施積載率（目標×5）</h3>
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-slate-700 text-sm">FSメンバー別 実施積載率（目標×5）</h3>
+        <button onclick="openChartDetailModal('jisshi')" class="text-[11px] font-semibold px-2 py-0.5 rounded border border-sky-300 text-sky-600 hover:bg-sky-50 transition-colors">詳細</button>
+      </div>
       <canvas id="jisshiChart" height="320"></canvas>
     </div>
+
+    <!-- ヨミ積載率 -->
     <div class="bg-white rounded-xl shadow-sm p-5">
-      <h3 class="font-semibold text-slate-700 mb-3 text-sm">FSメンバー別 ヨミ積載率（目標×3）</h3>
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-slate-700 text-sm">FSメンバー別 ヨミ積載率（目標×3）</h3>
+        <button onclick="openChartDetailModal('yomi')" class="text-[11px] font-semibold px-2 py-0.5 rounded border border-amber-300 text-amber-600 hover:bg-amber-50 transition-colors">詳細</button>
+      </div>
       <canvas id="yomiChart" height="320"></canvas>
     </div>
+
+    <!-- 着地予想 -->
     <div class="bg-white rounded-xl shadow-sm p-5">
-      <h3 class="font-semibold text-slate-700 mb-3 text-sm">FSメンバー別 売上着地予想（達成予想%）</h3>
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold text-slate-700 text-sm">FSメンバー別 売上着地予想（達成予想%）</h3>
+        <button onclick="openChartDetailModal('landing')" class="text-[11px] font-semibold px-2 py-0.5 rounded border border-violet-300 text-violet-600 hover:bg-violet-50 transition-colors">詳細</button>
+      </div>
       <canvas id="landingChart" height="320"></canvas>
     </div>
+
   </div>
 
-  <!-- Member Detail Table -->
-  <div class="bg-white rounded-xl shadow-sm p-5">
-    <h3 class="font-semibold text-slate-700 mb-3">FSメンバー別 詳細</h3>
-    <div>
-      <table class="w-full text-xs">
-        <thead class="bg-slate-50 text-slate-600">
-          <tr>
-            <th class="px-1 py-2 text-left" rowspan="2">担当者</th>
-            <th class="px-1 py-2 text-right" rowspan="2">売上目標</th>
-            <th class="px-1 py-2 text-center" style="background:#e0f2fe;color:#0284c7" colspan="5">実施基準：目標×5</th>
-            <th class="px-1 py-2 text-center" style="background:#d1fae5;color:#059669" colspan="5">ヨミ基準：目標×3</th>
-            <th class="px-1 py-2 text-center bg-violet-50 text-violet-700" colspan="2">着地予想</th>
-          </tr>
-          <tr>
-            <th class="px-1 py-2 text-right" style="background:#e0f2fe">必要額</th>
-            <th class="px-1 py-2 text-right" style="background:#e0f2fe">必要件数</th>
-            <th class="px-1 py-2 text-right" style="background:#e0f2fe">積載額</th>
-            <th class="px-1 py-2 text-right" style="background:#e0f2fe">件数</th>
-            <th class="px-1 py-2 text-right" style="background:#e0f2fe">充足率</th>
-            <th class="px-1 py-2 text-right" style="background:#d1fae5">必要額</th>
-            <th class="px-1 py-2 text-right" style="background:#d1fae5">必要件数</th>
-            <th class="px-1 py-2 text-right" style="background:#d1fae5">積載額</th>
-            <th class="px-1 py-2 text-right" style="background:#d1fae5">件数</th>
-            <th class="px-1 py-2 text-right" style="background:#d1fae5">充足率</th>
-            <th class="px-1 py-2 text-right bg-violet-50">予想額</th>
-            <th class="px-1 py-2 text-right bg-violet-50">達成予想</th>
-          </tr>
-        </thead>
-        <tbody id="memberTable"></tbody>
-        <tfoot class="bg-slate-100 font-semibold text-xs"><tr id="totalRow"></tr></tfoot>
-      </table>
-    </div>
-  </div>
-
-  <!-- Deal List -->
-  <div class="bg-white rounded-xl shadow-sm p-5 mt-6">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="font-semibold text-slate-700">案件一覧（選択中期間）</h3>
-      <div class="flex gap-2 items-center text-xs">
-        <label>担当者: <select id="dealFilterMember" onchange="renderDealList()" class="ml-1 border rounded px-2 py-1"><option value="">全員</option></select></label>
-        <label>ステージ: <select id="dealFilterStage" onchange="renderDealList()" class="ml-1 border rounded px-2 py-1">
-          <option value="">全て</option><option value="E">E</option><option value="D">D</option><option value="C">C</option><option value="C+">C+</option><option value="B">B</option><option value="A">A</option><option value="S">S</option>
-        </select></label>
-        <label>検討サービス: <select id="dealFilterService" onchange="renderDealList()" class="ml-1 border rounded px-2 py-1">
-          <option value="">全て</option><option value="新卒">新卒</option><option value="中途">中途</option><option value="新卒・中途">新卒・中途</option>
-        </select></label>
+  <!-- 失注詳細モーダル -->
+  <div id="lostDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center" style="background:rgba(15,23,42,0.5)" onclick="if(event.target===this)closeLostDetailModal()">
+    <div class="bg-white rounded-2xl shadow-2xl mx-4 overflow-hidden flex flex-col" style="width:min(720px,96vw);max-height:85vh;">
+      <div id="lostDetailModal-header" class="flex items-center justify-between px-5 py-3 flex-shrink-0">
+        <span id="lostDetailModal-title" class="font-bold text-sm"></span>
+        <button onclick="closeLostDetailModal()" class="text-slate-400 hover:text-slate-700 text-xl leading-none">✕</button>
       </div>
+      <div id="lostDetailModal-body" class="overflow-y-auto px-5 pb-5" style="flex:1;"></div>
     </div>
-    <div class="overflow-x-auto max-h-96 overflow-y-auto">
-      <table class="min-w-full text-xs">
-        <thead class="bg-slate-50 text-slate-600 sticky top-0">
-          <tr>
-            <th class="px-2 py-2 text-left">企業名</th><th class="px-2 py-2 text-left">担当者</th>
-            <th class="px-2 py-2 text-center">ステージ</th><th class="px-2 py-2 text-center">月</th>
-            <th class="px-2 py-2 text-center">検討サービス</th><th class="px-2 py-2 text-right">金額</th>
-          </tr>
-        </thead>
-        <tbody id="dealList"></tbody>
-      </table>
+  </div>
+
+  <!-- グラフ詳細モーダル -->
+  <div id="chartDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center" style="background:rgba(15,23,42,0.45)">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 flex flex-col" style="max-height:85vh;">
+      <div id="chartDetailModal-header" class="flex items-center justify-between px-5 py-3 flex-shrink-0">
+        <span id="chartDetailModal-title" class="font-semibold text-sm"></span>
+        <button onclick="closeChartDetailModal()" class="text-slate-400 hover:text-slate-700 text-lg leading-none">✕</button>
+      </div>
+      <div class="px-5 pb-5 overflow-y-auto" style="flex:1;">
+        <div id="chartDetailModal-body"></div>
+      </div>
     </div>
   </div>
 
   <!-- 失注分析 -->
   <div class="bg-white rounded-xl shadow-sm p-5 mt-6">
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center justify-between mb-3">
       <h3 class="font-semibold text-slate-700">失注分析（選択中期間）</h3>
       <div class="flex gap-2 items-center text-xs">
         <label>担当者: <select id="lostFilterMember" onchange="renderLostAnalysis()" class="ml-1 border rounded px-2 py-1"><option value="">全員</option></select></label>
       </div>
+    </div>
+    <!-- 検討/対象サービス フィルター -->
+    <div class="flex gap-1.5 mb-4 flex-wrap">
+      <button id="lostSvcBtn-all"    onclick="setLostSvcFilter('all')"    class="px-3 py-1 text-xs font-semibold rounded-full border transition-colors">全て</button>
+      <button id="lostSvcBtn-shin"   onclick="setLostSvcFilter('shin')"   class="px-3 py-1 text-xs font-semibold rounded-full border transition-colors">新卒</button>
+      <button id="lostSvcBtn-chu"    onclick="setLostSvcFilter('chu')"    class="px-3 py-1 text-xs font-semibold rounded-full border transition-colors">中途</button>
+      <button id="lostSvcBtn-both"   onclick="setLostSvcFilter('both')"   class="px-3 py-1 text-xs font-semibold rounded-full border transition-colors">新卒・中途</button>
+      <button id="lostSvcBtn-unkn"   onclick="setLostSvcFilter('unkn')"   class="px-3 py-1 text-xs font-semibold rounded-full border transition-colors">未ヒアリング</button>
     </div>
     <div id="lostAnalysisContent">
       <p class="text-xs text-slate-400">データを読み込むと表示されます</p>
@@ -820,6 +805,9 @@ const LOST_STAGE_MAP = {
 };
 let currentMode = 'month';
 let currentFY = 'FY2026'; // 'FY2025' | 'FY2026'
+let sekisaiStages = new Set(['D','C','C+','B','A']); // 積載KPI選択ステージ
+let _chartDetailRows = [];   // グラフ詳細アコーディオン用データ
+let _chartDetailTotals = {}; // 同上（合計行）
 let currentPeriod = '2026/05';
 let jisshiChart = null, yomiChart = null, landingChart = null, trendChart = null;
 let snapshots = [];
@@ -852,6 +840,8 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSnapshots();
   loadWinRates();
   renderPeriodTabs();
+  updateSekisaiBtnStyles();
+  setLostSvcFilter('all');
   render();
   // ページ読み込み時に自動でスプレッドシートからデータ取得
   fetchFromSheets();
@@ -947,6 +937,78 @@ const DATA_NAME_MAP = {
   '大堅 深津':'深津 大堅'
 };
 
+// ===== 管理方法判定ヘルパー（normalizeRowより前に定義） =====
+const _MGMT_UNKNOWN_VALS = new Set([
+  '', '未ヒアリング', '不明（未ヒアリングも含む）', '不明（聞けていないも含む）',
+  '無し', '途', '（値なし）', 'その他', '過去データ（不明）'
+]);
+function _isMgmtUnknown(v) {
+  if (!v) return true;
+  const t = v.trim();
+  return _MGMT_UNKNOWN_VALS.has(t) || t.startsWith('不明');
+}
+function _effectiveMgmt(replaceVal, currentVal) {
+  if (!_isMgmtUnknown(replaceVal)) return replaceVal.trim();
+  if (!_isMgmtUnknown(currentVal)) return currentVal.trim();
+  return '';
+}
+// 媒体上管理グループに該当するキーワード
+const _MEDIA_KEYWORDS = [
+  'MIWS', '媒体上管理', 'AP系ATS', 'リクナビHRtech', 'riksak', 'Riksak',
+  'その他無料ATS', '他機関システム', 'BPO', 'RPO'
+];
+function _classifyMgmt(val) {
+  if (!val || _isMgmtUnknown(val)) return 'unknown';
+  const v = val.trim();
+  if (v.includes('採用一括かんりくん'))                     return 'kanrikun';
+  if (/[Ee]xcel|スプレッドシート/.test(v))                  return 'excel';
+  if (_MEDIA_KEYWORDS.some(k => v.includes(k)))             return 'media';
+  return 'ats';
+}
+const _MGMT_PRIORITY = ['ats','kanrikun','excel','media','unknown'];
+function getDealMgmtCategory(deal) {
+  const svc = deal.product || '';
+  const hasShin = !svc || svc.includes('新卒');
+  const hasChu  = !svc || svc.includes('中途');
+  const cats = [];
+  if (hasShin) cats.push(_classifyMgmt(_effectiveMgmt(deal.replaceNew||'', deal.shinStatus||'')));
+  if (hasChu)  cats.push(_classifyMgmt(_effectiveMgmt(deal.replaceChu||'', deal.chuStatus||'')));
+  for (const p of _MGMT_PRIORITY) { if (cats.includes(p)) return p; }
+  return 'unknown';
+}
+
+// 日付パース共通関数（トップレベル）
+function parseApptDate(raw) {
+  if (!raw) return { date: null, month: null, day: null };
+  if (raw instanceof Date && !isNaN(raw)) {
+    return {
+      date:  `${raw.getFullYear()}/${String(raw.getMonth()+1).padStart(2,'0')}/${String(raw.getDate()).padStart(2,'0')}`,
+      month: `${raw.getFullYear()}/${String(raw.getMonth()+1).padStart(2,'0')}`,
+      day:   raw.getDate()
+    };
+  }
+  const s = String(raw).trim();
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)) {
+    const d = new Date(s);
+    if (!isNaN(d)) {
+      return {
+        date:  `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`,
+        month: `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}`,
+        day:   d.getDate()
+      };
+    }
+  }
+  const m = s.match(/(\d{4})[\/\-年]\s*(\d{1,2})[\/\-月]\s*(\d{1,2})/);
+  if (m) {
+    return {
+      date:  `${m[1]}/${String(m[2]).padStart(2,'0')}/${String(m[3]).padStart(2,'0')}`,
+      month: `${m[1]}/${String(m[2]).padStart(2,'0')}`,
+      day:   parseInt(m[3], 10)
+    };
+  }
+  return { date: null, month: null, day: null };
+}
+
 function normalizeRow(row, hubspotId = null) {
   const keys = Object.keys(row);
   const find = (...cands) => {
@@ -974,6 +1036,9 @@ function normalizeRow(row, hubspotId = null) {
   const mishoshoReason = String(find('未商談化理由','field8__c') || '').trim();
   const lostReason1 = String(find('失注理由1','field6__c') || '').trim();
   const lostReason = lostReason1 || mishoshoReason;
+  const replaceNew  = String(find('リプレイス（新卒）') || '').trim();
+  const replaceChu  = String(find('リプレイス（中途）') || '').trim();
+  const nyusaki     = String(find('導入先') || '').trim();
   const appoint2Raw = find('FS2回目商談実施日','fs2_______') || null;
   const appoint3Raw = find('FS3回目商談実施日','fs3_______') || null;
 
@@ -998,7 +1063,24 @@ function normalizeRow(row, hubspotId = null) {
   const su = stageRaw.toUpperCase().replace(/\s/g,'');
   if (stageRaw.includes('失注')) {
     const lostLabel = LOST_STAGE_MAP[Object.keys(LOST_STAGE_MAP).find(k => stageRaw.includes(k))] || 'その他';
-    return { company, name, month, closeDay, amount: 0, estimated: false, stage: '失注', lostLabel, lostReason, hubspotId: hubspotId||null };
+    // 失注案件もproductを判定（管理方法分析で新卒/中途を切り分けるため）
+    const cj2 = (targetSvc + ' ' + shinStatus + ' ' + chuStatus);
+    const hs2 = cj2.includes('新卒') || !_isMgmtUnknown(shinStatus);
+    const hc2 = cj2.includes('中途') || !_isMgmtUnknown(chuStatus);
+    let lostProduct = null;
+    if (cj2.includes('セット') || cj2.includes('新卒・中途')) lostProduct = '新卒・中途';
+    else if (hs2 && hc2) lostProduct = '新卒・中途';
+    else if (hs2) lostProduct = '新卒';
+    else if (hc2) lostProduct = '中途';
+    const lostAppt1 = parseApptDate(appointRaw);
+    let lostAmt = Number(String(amountRaw || '').replace(/[,¥\s]/g,'')) || 0;
+    let lostEst = false;
+    if (lostAmt === 0 && lostProduct) { lostAmt = PRODUCT_ESTIMATES[lostProduct] || DEFAULT_ESTIMATE; lostEst = true; }
+    else if (lostAmt === 0) { lostAmt = DEFAULT_ESTIMATE; lostEst = true; }
+    return { company, name, month, closeDay, amount: lostAmt, estimated: lostEst, stage: '失注',
+             lostLabel, lostReason, hubspotId: hubspotId||null,
+             product: lostProduct, shinStatus, chuStatus, replaceNew, replaceChu, nyusaki,
+             appointDate: lostAppt1.date };
   }
   let stage = null;
   if (su.startsWith('S')) stage = 'S';
@@ -1024,27 +1106,6 @@ function normalizeRow(row, hubspotId = null) {
   if (amount === 0 && ['E','D','C','C+','B','A','S'].includes(stage)) {
     amount = product ? PRODUCT_ESTIMATES[product] : DEFAULT_ESTIMATE;
     estimated = true;
-  }
-
-  // 日付パース共通関数
-  function parseApptDate(raw) {
-    if (!raw) return { date: null, month: null, day: null };
-    if (raw instanceof Date && !isNaN(raw)) {
-      return {
-        date:  `${raw.getFullYear()}/${String(raw.getMonth()+1).padStart(2,'0')}/${String(raw.getDate()).padStart(2,'0')}`,
-        month: `${raw.getFullYear()}/${String(raw.getMonth()+1).padStart(2,'0')}`,
-        day:   raw.getDate()
-      };
-    }
-    const m = String(raw).match(/(\d{4})[\/\-年]\s*(\d{1,2})[\/\-月]\s*(\d{1,2})/);
-    if (m) {
-      return {
-        date:  `${m[1]}/${String(m[2]).padStart(2,'0')}/${String(m[3]).padStart(2,'0')}`,
-        month: `${m[1]}/${String(m[2]).padStart(2,'0')}`,
-        day:   parseInt(m[3], 10)
-      };
-    }
-    return { date: null, month: null, day: null };
   }
 
   // FS初回アポ実施日のパース
@@ -1329,21 +1390,7 @@ function render() {
   sb.style.width = Math.min(tSrate*100, 100) + '%';
   sb.className = 'progress-bar h-2 rounded-full ' + barColor(tSrate);
 
-  document.getElementById('kpi-jisshi-amount').textContent = fmt(totals.j);
-  document.getElementById('kpi-jisshi-need').textContent = `必要: ${fmt(tJneed)}`;
-  document.getElementById('kpi-jisshi-rate').textContent = pct(tJrate);
-  document.getElementById('kpi-jisshi-count').textContent = totals.jc + '件';
-  const jb = document.getElementById('kpi-jisshi-bar');
-  jb.style.width = Math.min(tJrate*100, 100) + '%';
-  jb.className = 'progress-bar h-2 rounded-full ' + barColor(tJrate);
-
-  document.getElementById('kpi-yomi-amount').textContent = fmt(totals.y);
-  document.getElementById('kpi-yomi-need').textContent = `必要: ${fmt(tYneed)}`;
-  document.getElementById('kpi-yomi-rate').textContent = pct(tYrate);
-  document.getElementById('kpi-yomi-count').textContent = totals.yc + '件';
-  const yb = document.getElementById('kpi-yomi-bar');
-  yb.style.width = Math.min(tYrate*100, 100) + '%';
-  yb.className = 'progress-bar h-2 rounded-full ' + barColor(tYrate);
+  renderSekisaiKpi(totals);
 
   const avgBizRatio = months.reduce((s,m) => s + getBizDaysRatio(m), 0) / months.length;
   // BASE (D以上)
@@ -1378,58 +1425,29 @@ function render() {
   document.getElementById('cnt-a').textContent = `${totals.ac}件 / ${fmt(totals.a)}`;
   document.getElementById('cnt-s').textContent = `${totals.sc}件 / ${fmt(totals.s)}`;
 
-  const NEED_UNIT = 700000;
-  const needCount = (needAmt, target) => target === 0 ? '—' : Math.round(needAmt / NEED_UNIT);
-  const tbody = document.getElementById('memberTable');
-  tbody.innerHTML = rows.map(r => {
-    const jRC = r.target===0 ? 'text-slate-400' : r.jRate>=1?'text-emerald-600':r.jRate>=0.6?'text-sky-600':'text-slate-400';
-    const yRC = r.target===0 ? 'text-slate-400' : r.yRate>=1?'text-emerald-600':r.yRate>=0.6?'text-sky-600':'text-slate-400';
-    const lRC = r.target===0 ? 'text-slate-400' : landColor(r.lRate);
-    return `<tr class="border-b hover:bg-slate-50">
-      <td class="px-1 py-2">${r.name}</td>
-      <td class="px-1 py-2 text-right">${fmt(r.target)}</td>
-      <td class="px-1 py-2 text-right text-slate-500">${fmt(r.jNeed)}</td>
-      <td class="px-1 py-2 text-right text-slate-500">${needCount(r.jNeed, r.target)}${r.target>0?'件':''}</td>
-      <td class="px-1 py-2 text-right font-semibold">${fmt(r.jisshi.amount)}</td>
-      <td class="px-1 py-2 text-right">${r.jisshi.count}</td>
-      <td class="px-1 py-2 text-right font-bold ${jRC}">${r.target>0?pct(r.jRate):'—'}</td>
-      <td class="px-1 py-2 text-right text-slate-500">${fmt(r.yNeed)}</td>
-      <td class="px-1 py-2 text-right text-slate-500">${needCount(r.yNeed, r.target)}${r.target>0?'件':''}</td>
-      <td class="px-1 py-2 text-right font-semibold">${fmt(r.yomi.amount)}</td>
-      <td class="px-1 py-2 text-right">${r.yomi.count}</td>
-      <td class="px-1 py-2 text-right font-bold ${yRC}">${r.target>0?pct(r.yRate):'—'}</td>
-      <td class="px-1 py-2 text-right font-semibold text-violet-700">${fmt(r.land)}</td>
-      <td class="px-1 py-2 text-right font-bold ${lRC}">${r.target>0?pct(r.lRate):'—'}</td>
-    </tr>`;
-  }).join('');
-
-  document.getElementById('totalRow').innerHTML = `
-    <td class="px-1 py-2">合計</td>
-    <td class="px-1 py-2 text-right">${fmt(totals.target)}</td>
-    <td class="px-1 py-2 text-right">${fmt(tJneed)}</td>
-    <td class="px-1 py-2 text-right">${Math.round(tJneed/NEED_UNIT)}件</td>
-    <td class="px-1 py-2 text-right">${fmt(totals.j)}</td>
-    <td class="px-1 py-2 text-right">${totals.jc}</td>
-    <td class="px-1 py-2 text-right text-blue-700">${pct(tJrate)}</td>
-    <td class="px-1 py-2 text-right">${fmt(tYneed)}</td>
-    <td class="px-1 py-2 text-right">${Math.round(tYneed/NEED_UNIT)}件</td>
-    <td class="px-1 py-2 text-right">${fmt(totals.y)}</td>
-    <td class="px-1 py-2 text-right">${totals.yc}</td>
-    <td class="px-1 py-2 text-right text-amber-700">${pct(tYrate)}</td>
-    <td class="px-1 py-2 text-right text-violet-700">${fmt(totals.land)}</td>
-    <td class="px-1 py-2 text-right text-violet-700">${pct(tLrate)}</td>
-`;
+  // メンバー詳細データを保存（アコーディオンテーブル用）
+  _chartDetailRows   = rows;
+  _chartDetailTotals = { ...totals, tJneed, tYneed, tJrate, tYrate, tLrate };
+  // モーダルが開いていれば再描画
+  const modal = document.getElementById('chartDetailModal');
+  if (modal && !modal.classList.contains('hidden')) {
+    const title = document.getElementById('chartDetailModal-title')?.textContent || '';
+    const type = title.includes('実施') ? 'jisshi' : title.includes('ヨミ') ? 'yomi' : 'landing';
+    renderChartDetailTable(type, 'chartDetailModal-body');
+  }
 
   drawChart('jisshiChart', jisshiChart, rows.map(r=>r.name), rows.map(r=>r.jRate*100), '#3b82f6', ref => jisshiChart = ref);
   drawChart('yomiChart', yomiChart, rows.map(r=>r.name), rows.map(r=>r.yRate*100), '#f59e0b', ref => yomiChart = ref);
   drawChart('landingChart', landingChart, rows.map(r=>r.name), rows.map(r=>r.lRate*100), '#8b5cf6', ref => landingChart = ref, '達成予想');
 
   const memberSel = document.getElementById('dealFilterMember');
-  const cur = memberSel.value;
-  memberSel.innerHTML = '<option value="">全員</option>' + getFyMembers().map(m => `<option value="${m}">${m}</option>`).join('');
-  // スナップショットメンバー選択に連動
-  if (currentSnapMember) memberSel.value = currentSnapMember;
-  else memberSel.value = cur;
+  if (memberSel) {
+    const cur = memberSel.value;
+    memberSel.innerHTML = '<option value="">全員</option>' + getFyMembers().map(m => `<option value="${m}">${m}</option>`).join('');
+    // スナップショットメンバー選択に連動
+    if (currentSnapMember) memberSel.value = currentSnapMember;
+    else memberSel.value = cur;
+  }
   renderDealList(activePipeline);
   renderSnapshots();
   renderECalendar();
@@ -1675,6 +1693,282 @@ function renderProgressChart() {
   });
 }
 
+// 失注詳細データを保持（renderLostAnalysis実行時に更新）
+let _lostDetailByMgmt   = {};
+let _lostDetailMgmtDefs = [];
+const LOST_CAT_DEFS_GLOBAL = [
+  { key: '競合失注',    color: '#ef4444', textColor: '#b91c1c', bg: '#fee2e2' },
+  { key: 'ATS導入なし', color: '#f97316', textColor: '#c2410c', bg: '#ffedd5' },
+  { key: '音信不通',    color: '#eab308', textColor: '#854d0e', bg: '#fef9c3' },
+  { key: 'その他',      color: '#94a3b8', textColor: '#475569', bg: '#f1f5f9' },
+  { key: '未ヨミ化',    color: '#3b82f6', textColor: '#1d4ed8', bg: '#dbeafe' },
+];
+
+function _calcLeadTime(deal) {
+  if (!deal.appointDate || !deal.month || !deal.closeDay) return '—';
+  const closeStr = `${deal.month}/${String(deal.closeDay).padStart(2,'0')}`;
+  const a = new Date(deal.appointDate.replace(/\//g,'-')).getTime();
+  const c = new Date(closeStr.replace(/\//g,'-')).getTime();
+  if (isNaN(a) || isNaN(c) || c < a) return '—';
+  return Math.round((c - a) / 86400000) + '日';
+}
+
+let _lostDetailCurrentMgmt = null;
+
+function openLostDetailModal(mgmtKey) {
+  const modal  = document.getElementById('lostDetailModal');
+  const title  = document.getElementById('lostDetailModal-title');
+  const header = document.getElementById('lostDetailModal-header');
+  const body   = document.getElementById('lostDetailModal-body');
+  if (!modal || !body) return;
+
+  const gDef  = _lostDetailMgmtDefs.find(g => g.key === mgmtKey);
+  const deals = _lostDetailByMgmt[mgmtKey] || [];
+  if (!gDef || !deals.length) return;
+
+  _lostDetailCurrentMgmt = mgmtKey;
+  title.textContent       = gDef.label + `（${deals.length}件）`;
+  title.style.color       = gDef.color;
+  header.style.background = gDef.lightBg;
+
+  // タブUI
+  body.innerHTML = `
+    <div style="display:flex;gap:6px;margin-bottom:14px;border-bottom:2px solid #f1f5f9;padding-bottom:0;">
+      <button id="lostTab-list"   onclick="switchLostTab('list','${mgmtKey}')"
+        style="padding:6px 16px;font-size:12px;font-weight:700;border:none;border-bottom:2px solid ${gDef.color};color:${gDef.color};background:transparent;cursor:pointer;margin-bottom:-2px;">一覧</button>
+      <button id="lostTab-matrix" onclick="switchLostTab('matrix','${mgmtKey}')"
+        style="padding:6px 16px;font-size:12px;font-weight:700;border:none;border-bottom:2px solid transparent;color:#94a3b8;background:transparent;cursor:pointer;margin-bottom:-2px;">マトリクス</button>
+    </div>
+    <div id="lostTabContent-list">${_buildLostListHtml(deals, gDef)}</div>
+    <div id="lostTabContent-matrix" style="display:none;">${_buildLostMatrixHtml(deals, gDef)}</div>
+  `;
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function switchLostTab(tab, mgmtKey) {
+  const gDef = _lostDetailMgmtDefs.find(g => g.key === mgmtKey);
+  if (!gDef) return;
+  ['list','matrix'].forEach(t => {
+    const btn     = document.getElementById('lostTab-' + t);
+    const content = document.getElementById('lostTabContent-' + t);
+    if (!btn || !content) return;
+    const active = t === tab;
+    btn.style.borderBottomColor = active ? gDef.color : 'transparent';
+    btn.style.color             = active ? gDef.color : '#94a3b8';
+    content.style.display       = active ? 'block' : 'none';
+  });
+}
+
+function _buildLostListHtml(deals, gDef) {
+  const sections = LOST_CAT_DEFS_GLOBAL.map(lc => {
+    const catDeals = deals.filter(d => d.lostLabel === lc.key);
+    if (!catDeals.length) return '';
+
+    const byMember = {};
+    catDeals.forEach(d => {
+      const m = d.name || '不明';
+      if (!byMember[m]) byMember[m] = [];
+      byMember[m].push(d);
+    });
+
+    // カラム幅定義（モーダル幅680px基準）
+    const COL_W = { company:'155px', amt:'68px', lt:'72px', mgmt:'135px', svc:'68px', nyu:'140px' };
+    const thStyle = (align='left') =>
+      `padding:3px 6px;text-align:${align};font-weight:600;font-size:10px;color:#64748b;` +
+      `background:#f8fafc;border-bottom:2px solid #e2e8f0;white-space:nowrap;`;
+    const tdBase = (align='left', color='#334155', extra='') =>
+      `padding:3px 6px;font-size:11px;color:${color};text-align:${align};${extra}`;
+    const ellipsis = 'max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+
+    const memberBlocks = Object.entries(byMember)
+      .sort((a, b) => b[1].length - a[1].length)
+      .map(([member, mDeals]) => {
+        const rows = mDeals.map((d, i) => {
+          const hubUrl = d.hubspotId
+            ? `href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener"`
+            : '';
+          const lt  = _calcLeadTime(d);
+          const amt = fmt(d.amount) + (d.estimated ? '*' : '');
+          const svc = d.product || '—';
+          const hasShin = !d.product || d.product.includes('新卒');
+          const hasChu  = !d.product || d.product.includes('中途');
+          const mgmtShin = hasShin ? _effectiveMgmt(d.replaceNew||'', d.shinStatus||'') : '';
+          const mgmtChu  = hasChu  ? _effectiveMgmt(d.replaceChu||'', d.chuStatus||'')  : '';
+          const mgmtVal  = [mgmtShin, mgmtChu].filter(Boolean).join(' / ') || '—';
+          const nyuVal   = (d.nyusaki || '').trim() || '—';
+          const rowBg    = i % 2 === 0 ? 'background:#fff;' : 'background:#f8fafc;';
+          return `<tr style="${rowBg}border-bottom:1px solid #f1f5f9;">
+            <td style="${tdBase('left','#334155', ellipsis)}" title="${d.company||''}">
+              ${hubUrl
+                ? `<a ${hubUrl} style="color:#0284c7;font-weight:500;text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                     onmouseover="this.style.textDecoration='underline'"
+                     onmouseout="this.style.textDecoration='none'">${d.company||'—'}</a>`
+                : `<span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.company||'—'}</span>`}
+            </td>
+            <td style="${tdBase('right','#475569')}">${amt}</td>
+            <td style="${tdBase('right','#7c3aed')}">${lt}</td>
+            <td style="${tdBase('left','#475569', ellipsis)}" title="${mgmtVal}">${mgmtVal}</td>
+            <td style="${tdBase('center','#0369a1')}">${svc}</td>
+            <td style="${tdBase('left','#dc2626', ellipsis)}" title="${nyuVal}">${nyuVal}</td>
+          </tr>`;
+        }).join('');
+        return `
+          <div style="margin:6px 0 4px 0;">
+            <div style="font-size:11px;font-weight:700;color:#475569;padding:3px 0 2px;display:flex;align-items:center;gap:4px;">
+              <span style="color:#cbd5e1;">┣</span> ${member}
+              <span style="font-size:10px;font-weight:400;color:#94a3b8;">${mDeals.length}件</span>
+            </div>
+            <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+              <colgroup>
+                <col style="width:${COL_W.company}">
+                <col style="width:${COL_W.amt}">
+                <col style="width:${COL_W.lt}">
+                <col style="width:${COL_W.mgmt}">
+                <col style="width:${COL_W.svc}">
+                <col style="width:${COL_W.nyu}">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th style="${thStyle('left')}">取引名</th>
+                  <th style="${thStyle('right')}">金額</th>
+                  <th style="${thStyle('right')}">リードタイム</th>
+                  <th style="${thStyle('left')}">現状の管理方法</th>
+                  <th style="${thStyle('center')}">検討サービス</th>
+                  <th style="${thStyle('left')}">導入先</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
+      }).join('');
+
+    return `
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:${lc.bg};margin-bottom:4px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:${lc.color};flex-shrink:0;"></span>
+          <span style="font-size:12px;font-weight:700;color:${lc.textColor};">${lc.key}</span>
+          <span style="font-size:11px;color:${lc.textColor};opacity:0.7;">${catDeals.length}件</span>
+        </div>
+        ${memberBlocks}
+      </div>`;
+  }).filter(Boolean).join('');
+  return sections + `<p style="font-size:10px;color:#cbd5e1;margin-top:8px;">* 概算金額</p>`;
+}
+
+function _buildLostMatrixHtml(deals, gDef) {
+  const total   = deals.length;
+  if (!total) return '<p style="font-size:12px;color:#94a3b8;">データなし</p>';
+  const pct = n => total > 0 ? (n / total * 100).toFixed(0) + '%' : '—';
+
+  // 担当者一覧（件数降順）
+  const memberMap = {};
+  deals.forEach(d => { const m = d.name||'不明'; memberMap[m] = (memberMap[m]||0)+1; });
+  const members = Object.entries(memberMap).sort((a,b)=>b[1]-a[1]).map(([m])=>m);
+
+  // ヘッダー行
+  const catKeys = LOST_CAT_DEFS_GLOBAL.map(lc => lc.key);
+  const catColors = Object.fromEntries(LOST_CAT_DEFS_GLOBAL.map(lc => [lc.key, lc.color]));
+
+  const headerCells = catKeys.map(k =>
+    `<th style="padding:6px 8px;font-size:10px;font-weight:700;text-align:center;white-space:nowrap;color:${catColors[k]};">${k}</th>`
+  ).join('');
+
+  // データ行（担当者ごと）
+  const dataRows = members.map(m => {
+    const mDeals = deals.filter(d => (d.name||'不明') === m);
+    const cells  = catKeys.map(k => {
+      const n   = mDeals.filter(d => d.lostLabel === k).length;
+      const p   = pct(n);
+      const col = n > 0 ? catColors[k] : '#e2e8f0';
+      const bg  = n > 0 ? (parseInt(p)>=30?'#fee2e2':parseInt(p)>=15?'#fef9c3':'#f8fafc') : 'transparent';
+      return `<td style="padding:6px 8px;text-align:center;font-size:11px;font-weight:${n>0?'700':'400'};color:${col};background:${bg};border-radius:4px;">
+        ${n > 0 ? p : '—'}
+      </td>`;
+    }).join('');
+    const rowPct = pct(mDeals.length);
+    return `<tr>
+      <td style="padding:6px 8px;font-size:11px;font-weight:600;color:#475569;white-space:nowrap;border-right:1px solid #f1f5f9;">${m}</td>
+      ${cells}
+      <td style="padding:6px 8px;text-align:center;font-size:11px;font-weight:700;color:${gDef.color};border-left:1px solid #f1f5f9;">${rowPct}</td>
+    </tr>`;
+  }).join('');
+
+  // 合計行
+  const totalCells = catKeys.map(k => {
+    const n = deals.filter(d => d.lostLabel === k).length;
+    return `<td style="padding:6px 8px;text-align:center;font-size:11px;font-weight:700;color:${catColors[k]};border-top:2px solid #e2e8f0;">${pct(n)}</td>`;
+  }).join('');
+
+  return `
+    <div style="overflow-x:auto;">
+      <p style="font-size:11px;color:#94a3b8;margin-bottom:8px;">各セルの値 = グループ全体（${total}件）に対する割合</p>
+      <table style="width:100%;border-collapse:separate;border-spacing:2px;">
+        <thead>
+          <tr style="background:#f8fafc;">
+            <th style="padding:6px 8px;font-size:10px;text-align:left;color:#94a3b8;font-weight:500;">担当者</th>
+            ${headerCells}
+            <th style="padding:6px 8px;font-size:10px;font-weight:700;text-align:center;color:${gDef.color};border-left:1px solid #f1f5f9;">合計</th>
+          </tr>
+        </thead>
+        <tbody>${dataRows}</tbody>
+        <tfoot>
+          <tr style="background:#f8fafc;">
+            <td style="padding:6px 8px;font-size:11px;font-weight:700;color:#475569;border-top:2px solid #e2e8f0;">合計</td>
+            ${totalCells}
+            <td style="padding:6px 8px;text-align:center;font-size:11px;font-weight:700;color:${gDef.color};border-top:2px solid #e2e8f0;">100%</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
+}
+
+function closeLostDetailModal() {
+  const modal = document.getElementById('lostDetailModal');
+  if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+// ===== 失注分析 サービスフィルター =====
+let lostSvcFilter = 'all'; // 'all' | 'shin' | 'chu' | 'both' | 'unkn'
+
+const LOST_SVC_BTN_STYLES = {
+  all:  { active: '#0284c7', activeBg: '#e0f2fe' },
+  shin: { active: '#0ea5e9', activeBg: '#e0f2fe' },
+  chu:  { active: '#f97316', activeBg: '#fff7ed' },
+  both: { active: '#8b5cf6', activeBg: '#f5f3ff' },
+  unkn: { active: '#94a3b8', activeBg: '#f1f5f9' },
+};
+
+function setLostSvcFilter(key) {
+  lostSvcFilter = key;
+  ['all','shin','chu','both','unkn'].forEach(k => {
+    const btn = document.getElementById('lostSvcBtn-' + k);
+    if (!btn) return;
+    if (k === key) {
+      const s = LOST_SVC_BTN_STYLES[k];
+      btn.style.background   = s.activeBg;
+      btn.style.color        = s.active;
+      btn.style.borderColor  = s.active;
+    } else {
+      btn.style.background  = 'white';
+      btn.style.color       = '#94a3b8';
+      btn.style.borderColor = '#e2e8f0';
+    }
+  });
+  renderLostAnalysis();
+}
+
+function _matchLostSvc(deal) {
+  const p = deal.product || null;
+  if (lostSvcFilter === 'all')  return true;
+  if (lostSvcFilter === 'shin') return p === '新卒';
+  if (lostSvcFilter === 'chu')  return p === '中途';
+  if (lostSvcFilter === 'both') return p === '新卒・中途';
+  if (lostSvcFilter === 'unkn') return !p;
+  return true;
+}
+
 // ===== 失注分析 =====
 function renderLostAnalysis() {
   const el = document.getElementById('lostAnalysisContent');
@@ -1682,11 +1976,8 @@ function renderLostAnalysis() {
 
   const months = getMonthsForPeriod();
   const filterMember = document.getElementById('lostFilterMember')?.value || '';
-
-  // lostDeals から期間・担当者フィルタ
   const lost = lostDeals.filter(d =>
-    months.includes(d.month) &&
-    (!filterMember || d.name === filterMember)
+    months.includes(d.month) && (!filterMember || d.name === filterMember) && _matchLostSvc(d)
   );
 
   if (lost.length === 0) {
@@ -1697,51 +1988,86 @@ function renderLostAnalysis() {
   const total = lost.length;
   const pct = n => total > 0 ? Math.round(n / total * 100) : 0;
 
-  // カテゴリ別集計
-  const cats = {
-    '競合失注': lost.filter(d => d.lostLabel === '競合失注'),
-    'ATS導入なし': lost.filter(d => d.lostLabel === 'ATS導入なし'),
-    '音信不通': lost.filter(d => d.lostLabel === '音信不通'),
-    'その他': lost.filter(d => d.lostLabel === 'その他'),
-    '未ヨミ化': lost.filter(d => d.lostLabel === '未ヨミ化'),
-  };
-
-  // 理由別内訳（上位5件）
-  function reasonBreakdown(deals) {
-    const map = {};
-    deals.forEach(d => {
-      const r = (d.lostReason || '').trim() || '（理由未入力）';
-      map[r] = (map[r] || 0) + 1;
-    });
-    return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  }
-
-  const catDefs = [
-    { key: '競合失注',   label: '競合失注',   top: '#ef4444', num: '#dc2626', chip: 'background:#fee2e2;color:#b91c1c' },
-    { key: 'ATS導入なし', label: 'ATS導入なし', top: '#f97316', num: '#ea580c', chip: 'background:#ffedd5;color:#c2410c' },
-    { key: '音信不通',   label: '音信不通',   top: '#eab308', num: '#ca8a04', chip: 'background:#fef9c3;color:#854d0e' },
-    { key: 'その他',     label: 'その他失注', top: '#94a3b8', num: '#64748b', chip: 'background:#f1f5f9;color:#475569' },
-    { key: '未ヨミ化',   label: '未ヨミ化',   top: '#3b82f6', num: '#2563eb', chip: 'background:#dbeafe;color:#1d4ed8' },
+  // 管理方法グループ定義
+  const MGMT_DEFS = [
+    { key: 'excel',    label: 'Excel / スプレッドシート', color: '#0284c7', lightBg: '#e0f2fe' },
+    { key: 'ats',      label: '他社管理システム',         color: '#7c3aed', lightBg: '#f5f3ff' },
+    { key: 'kanrikun', label: '採用一括かんりくん',       color: '#059669', lightBg: '#d1fae5' },
+    { key: 'media',    label: '媒体上管理',               color: '#d97706', lightBg: '#fef3c7' },
+    { key: 'unknown',  label: '管理方法不明',             color: '#94a3b8', lightBg: '#f1f5f9' },
   ];
 
-  const cards = catDefs.map(def => {
-    const deals = cats[def.key] || [];
+  // 失注カテゴリ定義
+  const LOST_CAT_DEFS = [
+    { key: '競合失注',    color: '#ef4444', textColor: '#b91c1c', bg: '#fee2e2' },
+    { key: 'ATS導入なし', color: '#f97316', textColor: '#c2410c', bg: '#ffedd5' },
+    { key: '音信不通',    color: '#eab308', textColor: '#854d0e', bg: '#fef9c3' },
+    { key: 'その他',      color: '#94a3b8', textColor: '#475569', bg: '#f1f5f9' },
+    { key: '未ヨミ化',    color: '#3b82f6', textColor: '#1d4ed8', bg: '#dbeafe' },
+  ];
+
+  // 管理方法でグループ化
+  const byMgmt = {};
+  MGMT_DEFS.forEach(g => { byMgmt[g.key] = []; });
+  lost.forEach(d => { byMgmt[getDealMgmtCategory(d)].push(d); });
+
+  // ポップアップ用にグローバル保存
+  _lostDetailByMgmt   = byMgmt;
+  _lostDetailMgmtDefs = MGMT_DEFS;
+
+  const activeGroups = MGMT_DEFS.filter(g => byMgmt[g.key].length > 0);
+
+  const cards = activeGroups.map(g => {
+    const deals = byMgmt[g.key];
     const count = deals.length;
-    const reasons = reasonBreakdown(deals);
-    const chips = reasons.length > 0
-      ? reasons.map(([r, n]) =>
-          `<span style="display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:2px 8px;border-radius:9999px;${def.chip}">${r}&nbsp;<b>${n}</b></span>`
-        ).join('')
-      : `<span style="font-size:11px;color:#cbd5e1">理由データなし</span>`;
+
+    // 失注カテゴリ内訳（2階層目）
+    const catRows = LOST_CAT_DEFS.map(lc => {
+      const catDeals = deals.filter(d => d.lostLabel === lc.key);
+      if (!catDeals.length) return '';
+
+      // 競合失注のみ 導入先内訳（3階層目）
+      let nyusakiHtml = '';
+      if (lc.key === '競合失注') {
+        const nmap = {};
+        catDeals.forEach(d => {
+          const n = (d.nyusaki || '').trim() || '（不明）';
+          nmap[n] = (nmap[n] || 0) + 1;
+        });
+        const topN = Object.entries(nmap).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        nyusakiHtml = `<div style="margin:4px 0 2px 16px;display:flex;flex-direction:column;gap:2px;">` +
+          topN.map(([n, c]) =>
+            `<div style="display:flex;justify-content:space-between;font-size:10px;color:#64748b;">
+               <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;">↳ ${n}</span>
+               <span style="font-weight:700;margin-left:4px;color:#ef4444;">${c}件</span>
+             </div>`
+          ).join('') + `</div>`;
+      }
+
+      return `
+        <div style="padding:5px 0;border-bottom:1px solid #f1f5f9;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:${lc.textColor};">
+              <span style="width:7px;height:7px;border-radius:50%;background:${lc.color};flex-shrink:0;"></span>
+              ${lc.key}
+            </span>
+            <span style="font-size:12px;font-weight:700;color:#1e293b;">${catDeals.length}件</span>
+          </div>
+          ${nyusakiHtml}
+        </div>`;
+    }).filter(Boolean).join('');
 
     return `
-      <div style="border:1px solid #e2e8f0;border-top:3px solid ${def.top};border-radius:12px;padding:14px 16px;background:white;">
-        <div style="font-size:11px;color:#94a3b8;margin-bottom:4px;">${def.label}</div>
-        <div style="font-size:22px;font-weight:600;color:${def.num};line-height:1.2;">
-          ${count}<span style="font-size:13px;font-weight:400;color:#94a3b8;margin-left:4px;">件</span>
+      <div style="background:white;border:1px solid #e2e8f0;border-top:3px solid ${g.color};border-radius:12px;padding:14px 16px;min-width:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:11px;font-weight:700;color:${g.color};">${g.label}</span>
+          <button onclick="openLostDetailModal('${g.key}')"
+            style="font-size:10px;font-weight:600;padding:1px 8px;border-radius:9999px;border:1px solid ${g.color};color:${g.color};background:white;cursor:pointer;white-space:nowrap;">詳細</button>
         </div>
-        <div style="font-size:11px;color:#cbd5e1;margin-bottom:10px;">全体の ${pct(count)}%</div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;">${chips}</div>
+        <div style="font-size:22px;font-weight:700;color:#1e293b;line-height:1.1;margin-bottom:10px;">
+          ${count}<span style="font-size:13px;font-weight:400;color:#94a3b8;margin-left:3px;">件</span>
+        </div>
+        <div>${catRows || '<span style="font-size:11px;color:#cbd5e1;">内訳なし</span>'}</div>
       </div>`;
   }).join('');
 
@@ -1752,7 +2078,7 @@ function renderLostAnalysis() {
         ${total}<span style="font-size:14px;font-weight:400;color:#94a3b8;margin-left:4px;">件</span>
       </span>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">${cards}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">${cards}</div>
   `;
 }
 
@@ -1760,8 +2086,8 @@ function renderDealList(activePipe) {
   const tbody = document.getElementById('dealList');
   if (!tbody) return;
   const months = getMonthsForPeriod();
-  const filterMember = document.getElementById('dealFilterMember').value;
-  const filterStage = document.getElementById('dealFilterStage').value;
+  const filterMember = document.getElementById('dealFilterMember')?.value || '';
+  const filterStage = document.getElementById('dealFilterStage')?.value || '';
   const filterService = document.getElementById('dealFilterService')?.value || '';
   const STAGE_ORDER = {'S':1,'A':2,'B':3,'C+':4,'C':5,'D':6};
   const filtered = (activePipe || getActivePipeline())
@@ -1894,6 +2220,287 @@ let eCalViewMonth = (()=>{
 const E_CAL_MAX = 3; // 1日の最大表示件数
 let eCalExpandedDays = new Set(); // 展開中の日付 "YYYY/MM/DD"
 let eCalTab = 0; // 0=全て 1=1回目 2=2回目 3=3回目
+
+// ===== グラフ詳細モーダル =====
+const CHART_DETAIL_COLORS = {
+  jisshi:  { bg: '#e0f2fe', text: '#0284c7', label: 'FSメンバー別 実施積載（目標×5）' },
+  yomi:    { bg: '#fef3c7', text: '#d97706', label: 'FSメンバー別 ヨミ積載（目標×3）' },
+  landing: { bg: '#f5f3ff', text: '#7c3aed', label: 'FSメンバー別 売上着地予想' },
+};
+
+function openChartDetailModal(type) {
+  const modal  = document.getElementById('chartDetailModal');
+  const header = document.getElementById('chartDetailModal-header');
+  const title  = document.getElementById('chartDetailModal-title');
+  const col    = CHART_DETAIL_COLORS[type];
+  title.textContent      = col.label;
+  title.style.color      = col.text;
+  header.style.background = col.bg;
+  renderChartDetailTable(type, 'chartDetailModal-body');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeChartDetailModal() {
+  const modal = document.getElementById('chartDetailModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+
+function toggleChartMemberDeals(memberName, type) {
+  const mid     = 'cdm-' + memberName.replace(/[^a-zA-Z0-9぀-鿿]/g, '_');
+  const subRow  = document.getElementById('cd-sub-' + mid);
+  const togBtn  = document.getElementById('cd-tog-' + mid);
+  if (!subRow) return;
+
+  const isOpen = subRow.style.display !== 'none';
+  if (isOpen) {
+    subRow.style.display = 'none';
+    if (togBtn) { togBtn.textContent = '▶'; togBtn.style.color = '#94a3b8'; }
+    return;
+  }
+
+  // --- 案件取得 ---
+  const months = getMonthsForPeriod();
+  const stages = type === 'jisshi' ? ['D','C','C+','B','A'] : ['C','C+','B','A'];
+  const deals  = getActivePipeline()
+    .filter(d => d.name === memberName && months.includes(d.month) && stages.includes(d.stage))
+    .sort((a, b) => a.month < b.month ? -1 : a.month > b.month ? 1 : b.amount - a.amount);
+
+  const STAGE_CLR = { A:'#ef4444', B:'#f97316', 'C+':'#eab308', C:'#22c55e', D:'#94a3b8', E:'#cbd5e1' };
+
+  const dealRows = deals.map((d, i) => {
+    const bg = i % 2 === 0 ? '#ffffff' : '#f1f5f9';
+    const hubAttr = d.hubspotId
+      ? `href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener"`
+      : '';
+    const stgCol  = STAGE_CLR[d.stage] || '#94a3b8';
+    const closeDisp = d.month
+      ? (parseInt(d.month.split('/')[1]) + '月') + (d.closeDay ? d.closeDay + '日' : '')
+      : '—';
+    const svc = d.product || '—';
+    const amt = fmt(d.amount);
+    // 次回商談日: 3回目優先 → 2回目（date形式: YYYY/MM/DD）
+    const fmtAppt = (dateStr, color) => {
+      if (!dateStr) return null;
+      const p = dateStr.match(/\d{4}[\/\-](\d{2})[\/\-](\d{2})/);
+      return p ? `<span style="color:${color};">${parseInt(p[1])}/${parseInt(p[2])}</span>` : null;
+    };
+    let nxtDate = fmtAppt(d.appt3Date, '#8b5cf6') || fmtAppt(d.appt2Date, '#f97316') || '—';
+    const companyCell = hubAttr
+      ? `<a ${hubAttr} style="color:#0284c7;text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+           onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${d.company||'—'}</a>`
+      : `<span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.company||'—'}</span>`;
+    return `<tr style="background:${bg};border-bottom:1px solid #e8eef4;">
+      <td style="padding:3px 6px;font-size:11px;max-width:0;overflow:hidden;" title="${(d.company||'').replace(/"/g,'')}">${companyCell}</td>
+      <td style="padding:3px 6px;font-size:11px;text-align:center;">
+        <span style="background:${stgCol}22;color:${stgCol};font-weight:700;padding:1px 6px;border-radius:4px;font-size:10px;white-space:nowrap;">${d.stage}</span>
+      </td>
+      <td style="padding:3px 6px;font-size:11px;text-align:center;color:#475569;white-space:nowrap;">${closeDisp}</td>
+      <td style="padding:3px 6px;font-size:11px;text-align:center;color:#0369a1;white-space:nowrap;">${svc}</td>
+      <td style="padding:3px 6px;font-size:11px;text-align:right;color:#334155;white-space:nowrap;">${amt}</td>
+      <td style="padding:3px 6px;font-size:11px;text-align:center;white-space:nowrap;">${nxtDate}</td>
+    </tr>`;
+  }).join('');
+
+  const content = document.getElementById('cd-sub-content-' + mid);
+  if (content) {
+    content.innerHTML = deals.length === 0
+      ? `<p style="font-size:11px;color:#94a3b8;padding:8px 0;">該当案件なし</p>`
+      : `<table style="width:100%;border-collapse:collapse;table-layout:fixed;margin-top:4px;border-radius:6px;overflow:hidden;">
+          <colgroup>
+            <col style="width:36%">
+            <col style="width:10%">
+            <col style="width:14%">
+            <col style="width:14%">
+            <col style="width:14%">
+            <col style="width:12%">
+          </colgroup>
+          <thead>
+            <tr style="background:#e2e8f0;">
+              <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#475569;text-align:left;border-bottom:1px solid #cbd5e1;">企業名</th>
+              <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#475569;text-align:center;border-bottom:1px solid #cbd5e1;">ステージ</th>
+              <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#475569;text-align:center;border-bottom:1px solid #cbd5e1;">クローズ月</th>
+              <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#475569;text-align:center;border-bottom:1px solid #cbd5e1;">検討サービス</th>
+              <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#475569;text-align:right;border-bottom:1px solid #cbd5e1;">金額</th>
+              <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#475569;text-align:center;border-bottom:1px solid #cbd5e1;">次回商談日</th>
+            </tr>
+          </thead>
+          <tbody>${dealRows}</tbody>
+        </table>
+        <p style="font-size:10px;color:#94a3b8;margin-top:4px;">次回商談日: <span style="color:#f97316;">橙=2回目</span> / <span style="color:#8b5cf6;">紫=3回目</span></p>`;
+  }
+
+  subRow.style.display = '';
+  if (togBtn) { togBtn.textContent = '▼'; togBtn.style.color = '#0284c7'; }
+}
+
+// 背景クリックで閉じる
+document.addEventListener('click', e => {
+  const modal = document.getElementById('chartDetailModal');
+  if (modal && e.target === modal) closeChartDetailModal();
+});
+
+function renderChartDetailTable(type, containerId) {
+  const id = containerId || ('chartDetailTable-' + type);
+  const container = document.getElementById(id);
+  if (!container || !_chartDetailRows.length) return;
+  const rows = _chartDetailRows;
+  const t    = _chartDetailTotals;
+  const NEED_UNIT = 700000;
+  const nc = (need, target) => target === 0 ? '—' : Math.round(need / NEED_UNIT) + '件';
+  const rateClass = (r, target) => target === 0 ? 'text-slate-400' : r >= 1 ? 'text-emerald-600' : r >= 0.6 ? 'text-sky-600' : 'text-slate-400';
+  const col = CHART_DETAIL_COLORS[type];
+
+  let thead = '', bodyRows = '', footRow = '';
+
+  if (type === 'jisshi' || type === 'yomi') {
+    const isJ = type === 'jisshi';
+    const multLabel = isJ ? '(×5)' : '(×3)';
+    const needKey   = isJ ? 'jNeed' : 'yNeed';
+    const dataKey   = isJ ? 'jisshi' : 'yomi';
+    const rateKey   = isJ ? 'jRate' : 'yRate';
+    thead = `<tr style="background:${col.bg};color:${col.text}">
+      <th style="width:28px;padding:6px 4px;"></th>
+      <th class="px-2 py-1.5 text-left text-[11px]">担当者</th>
+      <th class="px-2 py-1.5 text-right text-[11px]">売上目標</th>
+      <th class="px-2 py-1.5 text-right text-[11px]">必要額${multLabel}</th>
+      <th class="px-2 py-1.5 text-right text-[11px]">必要件数</th>
+      <th class="px-2 py-1.5 text-right text-[11px]">積載額</th>
+      <th class="px-2 py-1.5 text-right text-[11px]">件数</th>
+      <th class="px-2 py-1.5 text-right text-[11px]">充足率</th>
+    </tr>`;
+    bodyRows = rows.map(r => {
+      const mid = 'cdm-' + r.name.replace(/[^a-zA-Z0-9぀-鿿]/g, '_');
+      return `<tr class="border-b hover:bg-slate-50 text-xs" id="cd-row-${mid}">
+        <td style="width:28px;padding:4px 4px;text-align:center;">
+          <button onclick="toggleChartMemberDeals('${r.name.replace(/'/g,"\\'")}','${type}')"
+                  id="cd-tog-${mid}"
+                  style="background:none;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer;padding:0 5px;font-size:10px;color:#94a3b8;line-height:1.8;transition:all .15s;"
+                  onmouseover="this.style.background='#f1f5f9'"
+                  onmouseout="this.style.background='none'">▶</button>
+        </td>
+        <td class="px-2 py-1.5 font-medium">${r.name}</td>
+        <td class="px-2 py-1.5 text-right text-slate-500">${fmt(r.target)}</td>
+        <td class="px-2 py-1.5 text-right text-slate-500">${fmt(r[needKey])}</td>
+        <td class="px-2 py-1.5 text-right text-slate-500">${nc(r[needKey], r.target)}</td>
+        <td class="px-2 py-1.5 text-right font-semibold">${fmt(r[dataKey].amount)}</td>
+        <td class="px-2 py-1.5 text-right">${r[dataKey].count}</td>
+        <td class="px-2 py-1.5 text-right font-bold ${rateClass(r[rateKey], r.target)}">${r.target > 0 ? pct(r[rateKey]) : '—'}</td>
+      </tr>
+      <tr id="cd-sub-${mid}" style="display:none;">
+        <td colspan="8" style="padding:0 8px 6px 36px;background:#f8fafc;">
+          <div id="cd-sub-content-${mid}"></div>
+        </td>
+      </tr>`;
+    }).join('');
+    const totals2 = isJ
+      ? { need: t.tJneed, amt: t.j, cnt: t.jc, rate: t.tJrate }
+      : { need: t.tYneed, amt: t.y, cnt: t.yc, rate: t.tYrate };
+    footRow = `<tr class="text-xs font-bold" style="background:${col.bg};color:${col.text}">
+      <td class="px-2 py-1.5" colspan="2">合計</td>
+      <td class="px-2 py-1.5 text-right">${fmt(t.target)}</td>
+      <td class="px-2 py-1.5 text-right">${fmt(totals2.need)}</td>
+      <td class="px-2 py-1.5 text-right">${nc(totals2.need, t.target)}</td>
+      <td class="px-2 py-1.5 text-right">${fmt(totals2.amt)}</td>
+      <td class="px-2 py-1.5 text-right">${totals2.cnt}</td>
+      <td class="px-2 py-1.5 text-right">${pct(totals2.rate)}</td>
+    </tr>`;
+
+  } else if (type === 'landing') {
+    thead = `<tr style="background:${col.bg};color:${col.text}">
+      <th class="px-2 py-1.5 text-left text-[11px]">担当者</th>
+      <th class="px-2 py-1.5 text-right text-[11px]">売上目標</th>
+      <th class="px-2 py-1.5 text-right text-[11px]">予想着地額</th>
+      <th class="px-2 py-1.5 text-right text-[11px]">達成予想%</th>
+    </tr>`;
+    bodyRows = rows.map(r => {
+      const lRC = r.target === 0 ? 'text-slate-400' : landColor(r.lRate);
+      return `<tr class="border-b hover:bg-slate-50 text-xs">
+        <td class="px-2 py-1.5 font-medium">${r.name}</td>
+        <td class="px-2 py-1.5 text-right text-slate-500">${fmt(r.target)}</td>
+        <td class="px-2 py-1.5 text-right font-semibold text-violet-700">${fmt(r.land)}</td>
+        <td class="px-2 py-1.5 text-right font-bold ${lRC}">${r.target > 0 ? pct(r.lRate) : '—'}</td>
+      </tr>`;
+    }).join('');
+    footRow = `<tr class="text-xs font-bold" style="background:${col.bg};color:${col.text}">
+      <td class="px-2 py-1.5">合計</td>
+      <td class="px-2 py-1.5 text-right">${fmt(t.target)}</td>
+      <td class="px-2 py-1.5 text-right">${fmt(t.land)}</td>
+      <td class="px-2 py-1.5 text-right">${pct(t.tLrate)}</td>
+    </tr>`;
+  }
+
+  container.innerHTML = `
+    <table class="w-full text-xs border-collapse">
+      <thead>${thead}</thead>
+      <tbody>${bodyRows}</tbody>
+      <tfoot>${footRow}</tfoot>
+    </table>`;
+}
+
+// ===== 積載 KPI (merged card) =====
+const SEKISAI_BTN_MAP = { 'D':'sekisai-btn-D', 'C':'sekisai-btn-C', 'C+':'sekisai-btn-CP', 'B':'sekisai-btn-B', 'A':'sekisai-btn-A' };
+let _lastSekisaiTotals = null;
+
+function updateSekisaiBtnStyles() {
+  Object.entries(SEKISAI_BTN_MAP).forEach(([stage, id]) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    if (sekisaiStages.has(stage)) {
+      btn.style.background = '#0284c7'; btn.style.color = 'white'; btn.style.borderColor = '#0284c7';
+    } else {
+      btn.style.background = 'white'; btn.style.color = '#94a3b8'; btn.style.borderColor = '#e2e8f0';
+    }
+  });
+}
+
+function toggleSekisaiStage(s) {
+  if (sekisaiStages.has(s)) {
+    if (sekisaiStages.size > 1) sekisaiStages.delete(s);
+  } else {
+    sekisaiStages.add(s);
+  }
+  updateSekisaiBtnStyles();
+  if (_lastSekisaiTotals) renderSekisaiKpi(_lastSekisaiTotals);
+}
+
+function renderSekisaiKpi(totals) {
+  _lastSekisaiTotals = totals;
+  const STAGE_DATA = {
+    'D':  { amt: totals.d,  cnt: totals.dc  },
+    'C':  { amt: totals.c,  cnt: totals.cc  },
+    'C+': { amt: totals.cp, cnt: totals.cpc },
+    'B':  { amt: totals.b,  cnt: totals.bc  },
+    'A':  { amt: totals.a,  cnt: totals.ac  },
+  };
+  let amount = 0, count = 0;
+  sekisaiStages.forEach(s => { if (STAGE_DATA[s]) { amount += STAGE_DATA[s].amt; count += STAGE_DATA[s].cnt; } });
+
+  const hasD = sekisaiStages.has('D');
+  const allSelected  = ['D','C','C+','B','A'].every(s => sekisaiStages.has(s)) && sekisaiStages.size === 5;
+  const yomiSelected = !hasD && ['C','C+','B','A'].every(s => sekisaiStages.has(s)) && sekisaiStages.size === 4;
+
+  let label, mult;
+  if      (allSelected)  { label = '実施積載'; mult = JISSHI_MULT; }
+  else if (yomiSelected) { label = 'ヨミ積載'; mult = YOMI_MULT;   }
+  else                   { label = 'カスタム積載'; mult = hasD ? JISSHI_MULT : YOMI_MULT; }
+
+  const need = totals.target * mult;
+  const rate = need > 0 ? amount / need : (amount > 0 ? 1 : 0);
+
+  document.getElementById('kpi-sekisai-label').textContent  = label;
+  document.getElementById('kpi-sekisai-amount').textContent = fmt(amount);
+  document.getElementById('kpi-sekisai-need').textContent   = `必要: ${fmt(need)}`;
+  document.getElementById('kpi-sekisai-rate').textContent   = pct(rate);
+  document.getElementById('kpi-sekisai-count').textContent  = count + '件';
+  const bar = document.getElementById('kpi-sekisai-bar');
+  if (bar) {
+    bar.style.width    = Math.min(rate * 100, 100) + '%';
+    bar.className      = 'progress-bar h-2 rounded-full ' + barColor(rate);
+    bar.style.background = '';
+  }
+}
 
 function setCalTab(t) {
   eCalTab = t;
