@@ -37,19 +37,39 @@
 <body class="bg-slate-50 min-h-screen">
 <div class="max-w-7xl mx-auto p-6">
 
-  <!-- Header -->
+  <!-- Header (Tabs) -->
   <div class="mb-6">
-    <div class="rounded-xl px-6 py-4 mb-3 flex items-center justify-between" style="background-color:#0284c7">
-      <div>
-        <a href="https://docs.google.com/spreadsheets/d/1pKeHjAtMsakwgzAiUbk2zIsqVgP_D1UrPZLDHT0HVYs/edit?gid=490263780#gid=490263780" target="_blank" rel="noopener" class="text-xl font-bold text-white hover:underline">FS案件管理ダッシュボード ↗</a>
+    <div class="rounded-xl mb-3 overflow-hidden flex" style="background-color:#0284c7">
+      <button id="dashTab-fs" type="button" onclick="switchDashboard('fs')"
+        class="flex-1 px-6 py-4 text-left transition-colors hover:bg-sky-700 focus:outline-none">
+        <div class="flex items-center gap-2">
+          <span class="text-xl font-bold text-white">FS案件管理ダッシュボード</span>
+          <a href="https://docs.google.com/spreadsheets/d/1pKeHjAtMsakwgzAiUbk2zIsqVgP_D1UrPZLDHT0HVYs/edit?gid=490263780#gid=490263780"
+             target="_blank" rel="noopener" onclick="event.stopPropagation()"
+             class="text-white text-base hover:opacity-80" title="スプレッドシートを開く">↗</a>
+        </div>
         <p class="text-indigo-200 text-xs mt-0.5">🏆 ギネスを狙え</p>
-      </div>
+      </button>
+      <div class="w-px bg-sky-300/50"></div>
+      <button id="dashTab-is" type="button" onclick="switchDashboard('is')"
+        class="flex-1 px-6 py-4 text-left transition-colors hover:bg-sky-700 focus:outline-none">
+        <div class="flex items-center gap-2">
+          <span class="text-xl font-bold text-white">IS案件管理ダッシュボード</span>
+          <a href="#" target="_blank" rel="noopener" onclick="event.stopPropagation()"
+             class="text-white text-base hover:opacity-80" title="リンク未設定">↗</a>
+        </div>
+        <p class="text-indigo-200 text-xs mt-0.5">準備中</p>
+      </button>
     </div>
+  </div><!-- /.mb-6 (header tabs only) -->
+
+  <!-- FS ダッシュボードコンテンツ（ルール + 全FS機能を包む） -->
+  <div id="dashboardContent-fs">
     <div class="text-xs text-slate-600 bg-white rounded-lg p-3">
       <!-- 折りたたみルール一覧 -->
       <div>
         <button onclick="toggleRules()" class="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 text-[11px] font-semibold">
-          <span id="rulesArrow">▶</span> 詳細ルール一覧（全13項目）
+          <span id="rulesArrow">▶</span> 詳細ルール一覧（全15項目）
         </button>
         <div id="rulesPanel" class="hidden mt-3 space-y-4 text-[11px] text-slate-600">
 
@@ -79,6 +99,7 @@
               <tbody>
                 <tr><td class="border border-slate-200 px-2 py-1 font-semibold" style="color:#0284c7">実施積載</td><td class="border border-slate-200 px-2 py-1">D+C+C++B+A</td><td class="border border-slate-200 px-2 py-1">目標 × <b>5倍</b></td></tr>
                 <tr><td class="border border-slate-200 px-2 py-1 font-semibold text-emerald-600">ヨミ積載</td><td class="border border-slate-200 px-2 py-1">C+C++B+A</td><td class="border border-slate-200 px-2 py-1">目標 × <b>3倍</b></td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold text-amber-600">カスタム積載</td><td class="border border-slate-200 px-2 py-1">任意組み合わせ</td><td class="border border-slate-200 px-2 py-1">D含む→×5倍 / 含まず→×3倍</td></tr>
                 <tr><td class="border border-slate-200 px-2 py-1 font-semibold text-emerald-700">受注実績</td><td class="border border-slate-200 px-2 py-1">S</td><td class="border border-slate-200 px-2 py-1">目標達成</td></tr>
                 <tr><td class="border border-slate-200 px-2 py-1 font-semibold" style="color:#94a3b8">E案件</td><td class="border border-slate-200 px-2 py-1">E</td><td class="border border-slate-200 px-2 py-1 text-slate-400">積載に含めない（件数・金額は表示）</td></tr>
               </tbody>
@@ -179,6 +200,7 @@
             <ul class="space-y-0.5 text-slate-500 list-disc list-inside">
               <li>現在のパイプライン状態を手動保存して経過追跡</li>
               <li>データは <b>GAS（Googleスプレッドシート）</b> に保存 → チーム全員が同じデータを参照</li>
+              <li>HubSpotの最新データは <b>5分ごとに自動同期</b>（手動更新は「データ更新」ボタン）</li>
               <li>ブラウザのlocalStorageにも自動バックアップ → コード更新後も消えない</li>
               <li>削除にはパスワード保護（4文字以上）</li>
               <li>スナップショット選択中はグラフ・表・カレンダー全てがそのデータに切り替わる</li>
@@ -220,7 +242,37 @@
 
           <!-- 13 -->
           <div>
-            <p class="font-bold text-slate-700 mb-1">13. 将来実装予定（未着手）</p>
+            <p class="font-bold text-slate-700 mb-1">13. 失注分析（2軸クロス集計）</p>
+            <table class="w-full border-collapse text-[11px]">
+              <thead><tr class="bg-slate-50"><th class="border border-slate-200 px-2 py-1 text-left">軸</th><th class="border border-slate-200 px-2 py-1 text-left">分類</th></tr></thead>
+              <tbody>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">管理方法（縦）</td><td class="border border-slate-200 px-2 py-1">Excel/スプレッドシート、他社管理システム、採用一括かんりくん、媒体上管理、管理方法不明</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">失注カテゴリ（横）</td><td class="border border-slate-200 px-2 py-1">競合失注、ATS導入なし、音信不通、未ヨミ化、その他</td></tr>
+              </tbody>
+            </table>
+            <ul class="mt-1 space-y-0.5 text-slate-500 list-disc list-inside">
+              <li>選択中の期間に該当する失注案件のみを集計</li>
+              <li>サービス別フィルター（全て / 新卒 / 中途 / 新卒・中途 / 未ヒアリング）対応</li>
+              <li>担当者別フィルターでメンバー単位の傾向を確認可能</li>
+            </ul>
+          </div>
+
+          <!-- 14 -->
+          <div>
+            <p class="font-bold text-slate-700 mb-1">14. 期間切り替え</p>
+            <table class="w-full border-collapse text-[11px]">
+              <thead><tr class="bg-slate-50"><th class="border border-slate-200 px-2 py-1 text-left">軸</th><th class="border border-slate-200 px-2 py-1 text-left">選択肢</th></tr></thead>
+              <tbody>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">FY</td><td class="border border-slate-200 px-2 py-1">FY2025（2025/04〜2026/03）／FY2026（2026/04〜2027/03）</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">表示モード</td><td class="border border-slate-200 px-2 py-1">月 / 四半期（Q1〜Q4）/ 半期（H1・H2）/ 年（FY）</td></tr>
+              </tbody>
+            </table>
+            <p class="text-slate-400 mt-1">期間切替に応じて KPI・グラフ・案件リスト・カレンダー・失注分析が連動。FY2025年間表示時のみ目標を3億で固定。</p>
+          </div>
+
+          <!-- 15 -->
+          <div>
+            <p class="font-bold text-slate-700 mb-1">15. 将来実装予定（未着手）</p>
             <ul class="space-y-0.5 text-slate-500 list-disc list-inside">
               <li>スナップショット10件以上蓄積後：担当者別・検討サービス別の勝率を自動学習</li>
               <li>リードソース別E案件受注率の個別設定UI</li>
@@ -231,13 +283,20 @@
         </div>
       </div>
     </div>
-  </div>
 
   <!-- Upload Zone -->
   <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
     <div class="flex items-center justify-between mb-3">
       <div>
-        <h2 class="font-semibold text-slate-700">パイプラインデータ読み込み</h2>
+        <h2 class="font-semibold text-slate-700">
+          <a href="https://docs.google.com/spreadsheets/d/1m3qxU1A1VwMuB6BAMHiyINdg2ePRoQxxPVtRE-w3csY/edit?gid=226183199#gid=226183199"
+             target="_blank" rel="noopener"
+             class="hover:underline inline-flex items-center gap-1"
+             style="color:#0284c7;"
+             title="同期元スプレッドシートを開く">
+            パイプラインデータ読み込み <span class="text-xs">↗</span>
+          </a>
+        </h2>
         <p class="text-xs text-slate-500 mt-1">HubSpotのデータをGASが自動同期します。「データ更新」で最新を取得。</p>
       </div>
       <div class="flex gap-2 items-center">
@@ -529,6 +588,243 @@
   </div>
 
   <p class="text-xs text-slate-400 mt-4 mb-2 text-center">データは本ブラウザ内のみで処理されます（サーバー送信なし）</p>
+  </div><!-- /dashboardContent-fs -->
+
+  <!-- IS ダッシュボードコンテンツ -->
+  <div id="dashboardContent-is" class="hidden">
+    <!-- IS パイプラインデータ読み込み -->
+    <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
+      <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
+        <div>
+          <h2 class="font-semibold text-slate-700">
+            <a href="https://docs.google.com/spreadsheets/d/1yE_zvzh1mB9rOqIV3Lw_jXtjVUWb1Yorx_xQY5hLc5Q/edit?usp=sharing"
+               target="_blank" rel="noopener" class="hover:underline" style="color:#0284c7">
+              IS パイプラインデータ読み込み ↗
+            </a>
+          </h2>
+          <p class="text-xs text-slate-500 mt-1">リサイクルコンタクト_Yes / No スプシから GAS が自動同期します。「データ更新」で最新を取得。</p>
+        </div>
+        <div class="flex gap-2 items-center">
+          <button onclick="fetchFromSheets()" id="isFetchBtn"
+            class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold flex items-center gap-1"
+            style="background:#0284c7">
+            <span id="isFetchBtnIcon">🔄</span> データ更新
+          </button>
+          <span id="isFileStatus" class="text-xs text-slate-500"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 期間表示 -->
+    <p class="text-[11px] text-slate-400 mb-3">期間: <span id="isPeriodLabel" class="font-semibold text-slate-600">—</span> ／ <span class="text-emerald-600">独立</span>: FSタブとは別に切替可能</p>
+
+    <!-- IS リスト保有数 KPIカード -->
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-4 border-l-4 relative" style="border-left-color:#0ea5e9">
+      <button onclick="openIsListModal()"
+        class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-500 text-sky-600 hover:bg-sky-50">詳細</button>
+      <p class="text-xs text-slate-500 mb-1">📋 IS 保有リスト数</p>
+      <div class="flex items-baseline gap-3">
+        <p class="text-2xl font-bold text-slate-700"><span id="is-list-total">0</span><span class="text-sm font-normal text-slate-400 ml-1">社</span></p>
+        <p class="text-[11px] text-slate-500">
+          <span style="color:#0284c7;font-weight:600">リサイクル <span id="is-list-yes">0</span></span>
+          <span class="text-slate-300 mx-1">/</span>
+          <span style="color:#10b981;font-weight:600">新規 <span id="is-list-no">0</span></span>
+        </p>
+      </div>
+      <p class="text-[10px] text-slate-400 mt-1" id="is-list-note">担当者ごとの保有数を可視化（会社IDで重複統合）</p>
+    </div>
+
+    <!-- IS リスト保有数 詳細モーダル（3階層） -->
+    <div id="isListModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-start justify-center z-50 py-8 overflow-y-auto">
+      <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-3xl mx-4">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b" style="border-bottom-color:#0ea5e9">
+          <div class="flex items-center gap-2">
+            <button id="isListBack" onclick="isListBackToLevel1()" class="hidden text-slate-400 hover:text-slate-600 text-sm">‹ 戻る</button>
+            <h3 id="isListModalTitle" class="font-semibold text-slate-800 text-lg">📋 IS 保有リスト詳細</h3>
+          </div>
+          <button onclick="closeIsListModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+        </div>
+        <div id="isListModalBody" class="text-sm text-slate-700"></div>
+      </div>
+    </div>
+
+    <!-- IS View Mode Tabs（FSと独立） -->
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
+      <div class="flex gap-2 mb-3 items-center flex-wrap">
+        <span class="text-xs text-slate-500 font-semibold mr-2">表示単位:</span>
+        <button onclick="setView('month')" id="is-view-month" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-active">月別</button>
+        <button onclick="setView('quarter')" id="is-view-quarter" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">四半期</button>
+        <button onclick="setView('half')" id="is-view-half" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">半期</button>
+        <button onclick="setView('year')" id="is-view-year" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">年間</button>
+        <div class="ml-auto flex items-center gap-1 border rounded-lg overflow-hidden text-xs font-semibold">
+          <button id="is-fy-btn-2025" onclick="switchFY('FY2025')" class="px-3 py-1.5 bg-slate-100 text-slate-500 hover:bg-slate-200">FY2025</button>
+          <button id="is-fy-btn-2026" onclick="switchFY('FY2026')" class="px-3 py-1.5 text-white" style="background:#0284c7">FY2026</button>
+        </div>
+      </div>
+      <div class="flex gap-1 flex-wrap" id="is-periodTabs"></div>
+    </div>
+
+    <!-- IS KPIカード（ファネル順: アポ取得数 → アポ実施数 → ヨミ化数 → 受注貢献） -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      <!-- アポ取得数 -->
+      <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#8b5cf6">
+        <button onclick="openIsKpiDetailModal('apo')"
+          class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-violet-500 text-violet-600 hover:bg-violet-50">詳細</button>
+        <p class="text-xs text-slate-500 mb-1">📞 アポ取得数</p>
+        <div class="flex items-baseline gap-2">
+          <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-apo-count">0</span><span class="text-sm font-normal text-slate-400 ml-1">件</span></p>
+          <p class="text-xs text-slate-500">/ <span id="is-kpi-apo-target">0</span></p>
+        </div>
+        <div class="mt-1.5 h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div id="is-kpi-apo-bar" class="progress-bar h-2 rounded-full bg-violet-500" style="width:0%"></div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">達成率 <span id="is-kpi-apo-rate" class="font-semibold">0%</span></p>
+      </div>
+      <!-- アポ実施数（実施済み=濃い橙 / 実施予定E=薄い橙の内訳バー） -->
+      <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#f59e0b">
+        <button onclick="openIsKpiDetailModal('jisshi')"
+          class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-amber-500 text-amber-600 hover:bg-amber-50">詳細</button>
+        <p class="text-xs text-slate-500 mb-1">🤝 アポ実施数</p>
+        <div class="flex items-baseline gap-2">
+          <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-jisshi-count">0</span><span class="text-sm font-normal text-slate-400 ml-1">件</span></p>
+          <p class="text-xs text-slate-500">/ <span id="is-kpi-jisshi-target">0</span></p>
+        </div>
+        <p class="text-[10px] mt-0.5">
+          <span style="color:#b45309;font-weight:600">済 <span id="is-kpi-jisshi-done">0</span></span>
+          <span class="text-slate-300 mx-1">|</span>
+          <span style="color:#fbbf24;font-weight:600">予定 <span id="is-kpi-jisshi-planned">0</span></span>
+        </p>
+        <div class="mt-1.5 h-2 bg-slate-100 rounded-full overflow-hidden flex">
+          <div id="is-kpi-jisshi-bar-done" class="h-2" style="background:#b45309;width:0%;transition:width 0.6s"></div>
+          <div id="is-kpi-jisshi-bar-planned" class="h-2" style="background:#fcd34d;width:0%;transition:width 0.6s"></div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">達成率 <span id="is-kpi-jisshi-rate" class="font-semibold">0%</span></p>
+      </div>
+      <!-- ヨミ化数 -->
+      <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#0284c7">
+        <button onclick="openIsKpiDetailModal('yomi')"
+          class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-500 text-sky-600 hover:bg-sky-50">詳細</button>
+        <p class="text-xs text-slate-500 mb-1">📋 ヨミ化数</p>
+        <div class="flex items-baseline gap-2">
+          <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-yomi-count">0</span><span class="text-sm font-normal text-slate-400 ml-1">件</span></p>
+          <p class="text-xs text-slate-500">/ <span id="is-kpi-yomi-target">0</span></p>
+        </div>
+        <div class="mt-1.5 h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div id="is-kpi-yomi-bar" class="progress-bar h-2 rounded-full bg-sky-500" style="width:0%"></div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">達成率 <span id="is-kpi-yomi-rate" class="font-semibold">0%</span></p>
+      </div>
+      <!-- 受注貢献 -->
+      <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#10b981">
+        <button onclick="openIsKpiDetailModal('contrib')"
+          class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-emerald-500 text-emerald-600 hover:bg-emerald-50">詳細</button>
+        <p class="text-xs text-slate-500 mb-1">🏆 受注貢献</p>
+        <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-contrib-amount">¥0</span></p>
+        <p class="text-xs text-slate-400 mt-0.5"><span id="is-kpi-contrib-count">0</span>件</p>
+        <p class="text-[10px] text-amber-600 mt-1" id="is-kpi-contrib-note"></p>
+      </div>
+    </div>
+
+    <p class="text-[11px] text-slate-400 mb-2">※ 目標値は埋め込み済（FY2025/FY2026）。実績は HubSpot同期データから「アポ作成日」「FS初回アポ実施日」「ヨミ/未ヨミ決着日」「クローズ日」を基準に集計しています。</p>
+
+    <!-- IS 個人状況テーブル -->
+    <div class="bg-white rounded-xl shadow-sm p-5 mt-4 mb-6">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h3 class="font-semibold text-slate-700 text-sm">📊 担当者別 状況テーブル</h3>
+        <p class="text-[10px] text-slate-400">数値クリックで詳細表示</p>
+      </div>
+      <div class="overflow-x-auto">
+        <table id="isMemberTable" class="w-full text-[11px] border-collapse">
+          <thead>
+            <!-- グループヘッダー（IS配色: 各列に固有色） -->
+            <tr class="text-white text-[10px]">
+              <th rowspan="2" class="px-2 py-2 text-left whitespace-nowrap font-semibold sticky left-0 z-10 align-middle" style="background:#0284c7">担当者/月間</th>
+              <th colspan="3" class="px-2 py-1.5 text-center font-semibold border-l border-white/30" style="background:#8b5cf6">アポ取得数</th>
+              <th colspan="3" class="px-2 py-1.5 text-center font-semibold border-l border-white/30" style="background:#f59e0b">アポ実施数</th>
+              <th colspan="4" class="px-2 py-1.5 text-center font-semibold border-l border-white/30" style="background:#0284c7">ヨミ化数</th>
+              <th colspan="2" class="px-2 py-1.5 text-center font-semibold border-l border-white/30" style="background:#10b981">受注貢献</th>
+            </tr>
+            <tr class="text-slate-700 text-[10px]">
+              <th class="px-2 py-1.5 text-center font-semibold" style="background:#ede9fe">目標</th>
+              <th class="px-2 py-1.5 text-center font-semibold" style="background:#ede9fe">実績</th>
+              <th class="px-2 py-1.5 text-center font-semibold" style="background:#ede9fe">達成率</th>
+              <th class="px-2 py-1.5 text-center font-semibold border-l border-slate-300" style="background:#fef3c7">目標</th>
+              <th class="px-2 py-1.5 text-center font-semibold" style="background:#fef3c7">実績</th>
+              <th class="px-2 py-1.5 text-center font-semibold" style="background:#fef3c7">達成率</th>
+              <th class="px-2 py-1.5 text-center font-semibold border-l border-slate-300" style="background:#e0f2fe">目標</th>
+              <th class="px-2 py-1.5 text-center font-semibold" style="background:#e0f2fe">実績</th>
+              <th class="px-2 py-1.5 text-center font-semibold" style="background:#e0f2fe">達成率</th>
+              <th class="px-2 py-1.5 text-center font-semibold" style="background:#e0f2fe">ヨミ化率</th>
+              <th class="px-2 py-1.5 text-center font-semibold border-l border-slate-300" style="background:#d1fae5">件数</th>
+              <th class="px-2 py-1.5 text-center font-semibold" style="background:#d1fae5">金額</th>
+            </tr>
+          </thead>
+          <tbody id="isMemberTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- IS 実績詳細モーダル -->
+    <div id="isMetricDetailModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-start justify-center z-50 py-8 overflow-y-auto">
+      <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-3xl mx-4">
+        <div id="isMetricDetailHeader" class="flex items-center justify-between mb-4 pb-3 border-b">
+          <h3 id="isMetricDetailTitle" class="font-semibold text-slate-800 text-lg">詳細</h3>
+          <button onclick="closeIsMetricDetail()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+        </div>
+        <div id="isMetricDetailBody" class="text-sm text-slate-700"></div>
+      </div>
+    </div>
+
+    <!-- IS 商談カレンダー -->
+    <div class="bg-white rounded-xl shadow-sm p-5 mt-6">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <div>
+          <h3 class="font-semibold text-slate-700 text-sm">📅 IS 商談カレンダー</h3>
+          <div class="flex items-center gap-3 mt-1">
+            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0ea5e9"></span><span class="text-slate-500">1回目（初回アポ・E案件）</span></span>
+            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#f97316"></span><span class="text-slate-500">2回目商談</span></span>
+            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#8b5cf6"></span><span class="text-slate-500">3回目商談</span></span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <div class="flex rounded-lg overflow-hidden border" style="border-color:#e2e8f0">
+            <button id="isCalTab-0" onclick="setIsCalTab(0)" class="px-3 py-1 text-xs font-semibold" style="background:#0284c7;color:white">全て</button>
+            <button id="isCalTab-1" onclick="setIsCalTab(1)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0ea5e9;border-color:#e2e8f0">1回目</button>
+            <button id="isCalTab-2" onclick="setIsCalTab(2)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#f97316;border-color:#e2e8f0">2回目</button>
+            <button id="isCalTab-3" onclick="setIsCalTab(3)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#8b5cf6;border-color:#e2e8f0">3回目</button>
+          </div>
+          <span id="isCalTotalBadge" class="text-xs font-semibold px-3 py-1 rounded-full" style="background:#dbeafe;color:#0284c7"></span>
+          <select id="isCalMemberFilter" onchange="setIsCalMember(this.value)" class="px-2 py-1 text-xs border rounded">
+            <option value="">全員</option>
+          </select>
+        </div>
+      </div>
+      <!-- Month Navigation -->
+      <div class="flex items-center justify-center gap-4 mb-4">
+        <button onclick="isCalPrevMonth()" class="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 font-bold">‹</button>
+        <span id="isCalMonthLabel" class="text-sm font-bold text-slate-700 w-28 text-center"></span>
+        <button onclick="isCalNextMonth()" class="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 font-bold">›</button>
+      </div>
+      <div id="isCalendar"></div>
+      <!-- E deals without date -->
+      <div id="isCalNoDaySection" class="hidden mt-4">
+        <p class="text-xs font-semibold text-slate-500 mb-2">📌 アポ実施日未設定のE案件（クローズ予定月：この月）</p>
+        <div id="isCalNoDayList" class="flex flex-wrap gap-2"></div>
+      </div>
+      <p class="text-[11px] text-slate-400 mt-3">※ 担当者フィルターは「レコード作成者」基準</p>
+    </div>
+  </div>
+
+  <!-- IS KPI 詳細モーダル（レコード作成者 × 案件） -->
+  <div id="isKpiDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center" style="background:rgba(15,23,42,0.5)" onclick="if(event.target===this)closeIsKpiDetailModal()">
+    <div class="bg-white rounded-xl shadow-xl flex flex-col" style="width:min(720px,92vw);max-height:88vh;">
+      <div id="isKpiDetailModal-header" class="flex items-center justify-between px-5 py-3 flex-shrink-0">
+        <span id="isKpiDetailModal-title" class="font-bold text-sm"></span>
+        <button onclick="closeIsKpiDetailModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
+      </div>
+      <div id="isKpiDetailModal-body" class="overflow-y-auto px-5 pb-5" style="flex:1;"></div>
+    </div>
+  </div>
 
 </div>
 
@@ -700,9 +996,197 @@ let customWinRates = {}; // localStorage から上書き読み込み
 const E_WIN_RATE_KEY = 'fs-e-win-rate-v1';
 let eWinRate = 0.10; // E案件の最終受注率（初期値10%）
 
+// ============================================================
+// IS ダッシュボード 月次目標（アポ件数 / 実施 / ヨミ化）
+//   IS_TARGETS[member]['YYYY/MM'] = [apo, jisshi, yomi]
+// ============================================================
+const IS_TARGETS = {
+  '池田 美亜': { '2025/04':[30,30,20], '2025/05':[30,30,20], '2025/06':[25,25,16], '2025/07':[39,39,25], '2025/08':[40,40,26], '2025/09':[33,33,21], '2025/10':[30,30,20], '2025/11':[30,30,20], '2025/12':[30,30,20], '2026/01':[30,30,20], '2026/02':[30,30,20], '2026/03':[30,30,20] },
+  '駒田 智士': { '2025/04':[17,17,9], '2025/05':[17,17,9], '2025/06':[20,20,11], '2025/07':[27,27,15], '2025/08':[27,27,15], '2025/09':[27,27,15], '2025/10':[25,25,14], '2025/11':[25,25,14], '2025/12':[27,27,15], '2026/01':[25,25,14], '2026/02':[25,25,14], '2026/03':[27,27,15], '2026/04':[25,25,10], '2026/05':[25,25,10], '2026/06':[25,25,10], '2026/07':[25,25,10], '2026/08':[25,25,10], '2026/09':[25,25,10], '2026/10':[25,25,10], '2026/11':[25,25,10], '2026/12':[25,25,10], '2027/01':[25,25,10], '2027/02':[25,25,10], '2027/03':[25,25,10] },
+  '吉住 碧斗': { '2025/04':[17,17,9], '2025/05':[17,17,9], '2025/06':[20,20,11], '2025/07':[27,27,15], '2025/08':[27,27,15], '2025/09':[27,27,15], '2025/10':[25,25,14], '2025/11':[25,25,14], '2025/12':[27,27,15], '2026/01':[25,25,14], '2026/02':[25,25,14], '2026/03':[27,27,15], '2026/04':[25,25,10], '2026/05':[25,25,10], '2026/06':[25,25,10], '2026/07':[25,25,10], '2026/08':[25,25,10], '2026/09':[25,25,10], '2026/10':[25,25,10], '2026/11':[25,25,10], '2026/12':[25,25,10], '2027/01':[25,25,10], '2027/02':[25,25,10], '2027/03':[25,25,10] },
+  '深澤 陸': { '2025/04':[17,17,9], '2025/05':[17,17,9], '2025/06':[20,20,11], '2025/07':[15,15,8], '2025/08':[15,15,8], '2025/09':[15,15,8], '2025/10':[0,0,0], '2025/11':[0,0,0], '2025/12':[0,0,0], '2026/01':[0,0,0], '2026/02':[0,0,0], '2026/03':[0,0,0] },
+  '本島 翼': { '2025/04':[17,17,9], '2025/05':[17,17,9], '2025/06':[20,20,11], '2025/07':[25,25,14], '2025/08':[25,25,14], '2025/09':[25,25,14], '2025/10':[20,20,11], '2025/11':[20,20,11], '2025/12':[25,25,14], '2026/01':[20,20,11], '2026/02':[20,20,11], '2026/03':[25,25,14] },
+  '長谷部 琴音': { '2025/04':[17,17,9], '2025/05':[17,17,9], '2025/06':[20,20,11], '2025/07':[25,25,14], '2025/08':[25,25,14], '2025/09':[25,25,14], '2025/10':[20,20,11], '2025/11':[20,20,11], '2025/12':[25,25,14], '2026/01':[0,0,0], '2026/02':[0,0,0], '2026/03':[0,0,0] },
+  '田中 俊也': { '2025/04':[7,7,4], '2025/05':[10,10,6], '2025/06':[10,10,6], '2025/07':[15,15,8], '2025/08':[15,15,8], '2025/09':[17,17,9], '2025/10':[15,15,8], '2025/11':[15,15,8], '2025/12':[17,17,9], '2026/01':[15,15,8], '2026/02':[15,15,8], '2026/03':[17,17,9], '2026/04':[20,20,8], '2026/05':[20,20,8], '2026/06':[20,20,8], '2026/07':[20,20,8], '2026/08':[20,20,8], '2026/09':[20,20,8], '2026/10':[20,20,8], '2026/11':[20,20,8], '2026/12':[20,20,8], '2027/01':[20,20,8], '2027/02':[20,20,8], '2027/03':[20,20,8] },
+  '宇野澤 彰子': { '2025/04':[7,7,4], '2025/05':[10,10,6], '2025/06':[10,10,6], '2025/07':[0,0,0], '2025/08':[0,0,0], '2025/09':[0,0,0], '2025/10':[0,0,0], '2025/11':[0,0,0], '2025/12':[0,0,0], '2026/01':[0,0,0], '2026/02':[0,0,0], '2026/03':[0,0,0] },
+  '廣澤 未来': { '2025/04':[7,7,4], '2025/05':[10,10,6], '2025/06':[10,10,6], '2025/07':[15,15,8], '2025/08':[15,15,8], '2025/09':[17,17,9], '2025/10':[0,0,0], '2025/11':[0,0,0], '2025/12':[0,0,0], '2026/01':[0,0,0], '2026/02':[0,0,0], '2026/03':[0,0,0] },
+  '大野 杏海': { '2025/04':[7,7,4], '2025/05':[10,10,6], '2025/06':[10,10,6], '2025/07':[15,15,8], '2025/08':[15,15,8], '2025/09':[17,17,9], '2025/10':[20,20,11], '2025/11':[20,20,11], '2025/12':[20,20,11], '2026/01':[21,21,12], '2026/02':[26,26,14], '2026/03':[21,21,12] },
+  '柴原 かやね': { '2025/04':[7,7,4], '2025/05':[10,10,6], '2025/06':[10,10,6], '2025/07':[15,15,8], '2025/08':[15,15,8], '2025/09':[17,17,9], '2025/10':[15,15,8], '2025/11':[15,15,8], '2025/12':[17,17,9], '2026/01':[15,15,8], '2026/02':[15,15,8], '2026/03':[17,17,9] },
+  '大井 駿空': { '2025/04':[7,7,4], '2025/05':[10,10,6], '2025/06':[10,10,6], '2025/07':[15,15,8], '2025/08':[15,15,8], '2025/09':[17,17,9], '2025/10':[15,15,8], '2025/11':[15,15,8], '2025/12':[17,17,9], '2026/01':[15,15,8], '2026/02':[15,15,8], '2026/03':[17,17,9], '2026/04':[20,20,8], '2026/05':[20,20,8], '2026/06':[20,20,8], '2026/07':[20,20,8], '2026/08':[20,20,8], '2026/09':[20,20,8], '2026/10':[20,20,8], '2026/11':[20,20,8], '2026/12':[20,20,8], '2027/01':[20,20,8], '2027/02':[20,20,8], '2027/03':[20,20,8] },
+  '小島 萌': { '2025/04':[7,7,4], '2025/05':[10,10,6], '2025/06':[10,10,6], '2025/07':[15,15,8], '2025/08':[15,15,8], '2025/09':[17,17,9], '2025/10':[15,15,8], '2025/11':[15,15,8], '2025/12':[17,17,9], '2026/01':[0,0,0], '2026/02':[0,0,0], '2026/03':[0,0,0] },
+  'JobSpringAgent 事務局': { '2025/04':[20,20,2], '2025/05':[20,20,2], '2025/06':[20,20,2], '2025/07':[20,20,2], '2025/08':[20,20,2], '2025/09':[20,20,2], '2025/10':[20,20,2], '2025/11':[20,20,2], '2025/12':[20,20,2], '2026/01':[40,40,4], '2026/02':[40,40,4], '2026/03':[40,40,4] },
+  '西 倖平': { '2025/04':[0,0,0], '2025/05':[0,0,0], '2025/06':[0,0,0], '2025/07':[0,0,0], '2025/08':[5,5,3], '2025/09':[15,15,8], '2025/10':[15,15,8], '2025/11':[15,15,8], '2025/12':[15,15,8], '2026/01':[15,15,8], '2026/02':[15,15,8], '2026/03':[15,15,8] },
+  '田代 大和': { '2025/04':[0,0,0], '2025/05':[0,0,0], '2025/06':[0,0,0], '2025/07':[0,0,0], '2025/08':[0,0,0], '2025/09':[0,0,0], '2025/10':[5,5,3], '2025/11':[15,15,8], '2025/12':[15,15,8], '2026/01':[15,15,8], '2026/02':[15,15,8], '2026/03':[15,15,8] },
+  '福永 将也': { '2025/04':[0,0,0], '2025/05':[0,0,0], '2025/06':[0,0,0], '2025/07':[0,0,0], '2025/08':[0,0,0], '2025/09':[0,0,0], '2025/10':[0,0,0], '2025/11':[5,5,3], '2025/12':[15,15,8], '2026/01':[15,15,8], '2026/02':[15,15,8], '2026/03':[15,15,8], '2026/04':[20,20,8], '2026/05':[20,20,8], '2026/06':[20,20,8], '2026/07':[20,20,8], '2026/08':[20,20,8], '2026/09':[20,20,8], '2026/10':[20,20,8], '2026/11':[20,20,8], '2026/12':[20,20,8], '2027/01':[20,20,8], '2027/02':[20,20,8], '2027/03':[20,20,8] },
+  '大山 耕太郎': { '2025/04':[0,0,0], '2025/05':[0,0,0], '2025/06':[0,0,0], '2025/07':[0,0,0], '2025/08':[0,0,0], '2025/09':[0,0,0], '2025/10':[0,0,0], '2025/11':[0,0,0], '2025/12':[0,0,0], '2026/01':[5,5,3], '2026/02':[15,15,8], '2026/03':[15,15,8], '2026/04':[20,20,8], '2026/05':[20,20,8], '2026/06':[20,20,8], '2026/07':[20,20,8], '2026/08':[20,20,8], '2026/09':[20,20,8], '2026/10':[20,20,8], '2026/11':[20,20,8], '2026/12':[20,20,8], '2027/01':[20,20,8], '2027/02':[20,20,8], '2027/03':[20,20,8] },
+  '谷原 葵衣': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[15,15,6], '2026/11':[15,15,6], '2026/12':[15,15,6], '2027/01':[15,15,6], '2027/02':[15,15,6], '2027/03':[15,15,6] },
+  '中村 雅': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[15,15,6], '2026/11':[15,15,6], '2026/12':[15,15,6], '2027/01':[15,15,6], '2027/02':[15,15,6], '2027/03':[15,15,6] },
+  '高橋 玲衣': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[15,15,6], '2026/11':[15,15,6], '2026/12':[15,15,6], '2027/01':[15,15,6], '2027/02':[15,15,6], '2027/03':[15,15,6] },
+  '近藤 璃空': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[15,15,6], '2026/11':[15,15,6], '2026/12':[15,15,6], '2027/01':[15,15,6], '2027/02':[15,15,6], '2027/03':[15,15,6] },
+  '宇佐美 朱莉': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[15,15,6], '2026/11':[15,15,6], '2026/12':[15,15,6], '2027/01':[15,15,6], '2027/02':[15,15,6], '2027/03':[15,15,6] },
+  '開発 茉子': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[15,15,6], '2026/11':[15,15,6], '2026/12':[15,15,6], '2027/01':[15,15,6], '2027/02':[15,15,6], '2027/03':[15,15,6] },
+  '前田 朱梨': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[15,15,6], '2026/11':[15,15,6], '2026/12':[15,15,6], '2027/01':[15,15,6], '2027/02':[15,15,6], '2027/03':[15,15,6] },
+  '吉井 琉杏': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[15,15,6], '2026/11':[15,15,6], '2026/12':[15,15,6], '2027/01':[15,15,6], '2027/02':[15,15,6], '2027/03':[15,15,6] },
+  '宮原 亘輝': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[15,15,6], '2026/11':[15,15,6], '2026/12':[15,15,6], '2027/01':[15,15,6], '2027/02':[15,15,6], '2027/03':[15,15,6] },
+  '川上 陸斗': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[15,15,6], '2026/11':[15,15,6], '2026/12':[15,15,6], '2027/01':[15,15,6], '2027/02':[15,15,6], '2027/03':[15,15,6] },
+  '久保 智花': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[15,15,6], '2026/11':[15,15,6], '2026/12':[15,15,6], '2027/01':[15,15,6], '2027/02':[15,15,6], '2027/03':[15,15,6] },
+  '降籏 唯斗': { '2026/04':[10,5,2], '2026/05':[10,10,4], '2026/06':[15,15,6], '2026/07':[20,20,8], '2026/08':[20,20,8], '2026/09':[20,20,8], '2026/10':[20,20,8], '2026/11':[20,20,8], '2026/12':[20,20,8], '2027/01':[20,20,8], '2027/02':[20,20,8], '2027/03':[20,20,8] },
+};
+
+const IS_MEMBERS_FY2025 = ["駒田 智士", "吉住 碧斗", "田中 俊也", "大井 駿空", "福永 将也", "大山 耕太郎", "谷原 葵衣", "中村 雅", "宮原 亘輝", "JobSpringAgent 事務局", "池田 美亜", "本島 翼", "西 倖平", "田代 大和", "深澤 陸", "長谷部 琴音", "宇野澤 彰子", "廣澤 未来", "大野 杏海", "柴原 かやね", "小島 萌"];
+const IS_MEMBERS_FY2026 = ["駒田 智士", "吉住 碧斗", "田中 俊也", "大井 駿空", "福永 将也", "大山 耕太郎", "谷原 葵衣", "中村 雅", "高橋 玲衣", "近藤 璃空", "宇佐美 朱莉", "開発 茉子", "前田 朱梨", "吉井 琉杏", "宮原 亘輝", "降籏 唯斗", "川上 陸斗", "久保 智花", "JobSpringAgent 事務局", "池田 美亜", "本島 翼", "西 倖平", "田代 大和"];
+
+function getIsTargetFor(member, monthStr) {
+  const t = (IS_TARGETS[member] || {})[monthStr];
+  return t ? { apo: t[0], jisshi: t[1], yomi: t[2] } : { apo: 0, jisshi: 0, yomi: 0 };
+}
+
+function getIsMembers() {
+  return currentFY === 'FY2025' ? IS_MEMBERS_FY2025 : IS_MEMBERS_FY2026;
+}
+
+// ============================================================
+// IS 全体目標（月次・チーム合計）
+//   FY2025: アポ取得=アポ実施。ヨミ化は アポ実施×35% で自動算出
+//   FY2026: アポ取得/アポ実施/ヨミ発生 を直接指定
+// ============================================================
+const IS_TOTAL_TARGETS = {
+  // FY2025
+  '2025/04': { apo: 286, jisshi: 286 },
+  '2025/05': { apo: 426, jisshi: 426 },
+  '2025/06': { apo: 395, jisshi: 395 },
+  '2025/07': { apo: 348, jisshi: 348 },
+  '2025/08': { apo: 257, jisshi: 257 },
+  '2025/09': { apo: 295, jisshi: 295 },
+  '2025/10': { apo: 300, jisshi: 300 },
+  '2025/11': { apo: 313, jisshi: 313 },
+  '2025/12': { apo: 333, jisshi: 333 },
+  '2026/01': { apo: 299, jisshi: 299 },
+  '2026/02': { apo: 278, jisshi: 278 },
+  '2026/03': { apo: 267, jisshi: 267 },
+  // FY2026
+  '2026/04': { apo: 338, jisshi: 338, yomi: 136 },
+  '2026/05': { apo: 361, jisshi: 361, yomi: 143 },
+  '2026/06': { apo: 393, jisshi: 393, yomi: 155 },
+  '2026/07': { apo: 379, jisshi: 379, yomi: 150 },
+  '2026/08': { apo: 377, jisshi: 377, yomi: 152 },
+  '2026/09': { apo: 384, jisshi: 384, yomi: 155 },
+  '2026/10': { apo: 354, jisshi: 354, yomi: 145 },
+  '2026/11': { apo: 376, jisshi: 376, yomi: 155 },
+  '2026/12': { apo: 400, jisshi: 400, yomi: 165 },
+  '2027/01': { apo: 433, jisshi: 433, yomi: 174 },
+  '2027/02': { apo: 441, jisshi: 441, yomi: 179 },
+  '2027/03': { apo: 397, jisshi: 397, yomi: 163 },
+};
+
+// 選択期間の合計目標を返す
+function getIsTotalTargets(months) {
+  let apo = 0, jisshi = 0, yomi = 0;
+  months.forEach(m => {
+    const t = IS_TOTAL_TARGETS[m];
+    if (!t) return;
+    apo    += t.apo || 0;
+    jisshi += t.jisshi || 0;
+    // ヨミ化が未定義なら アポ実施×35% で補完（FY2025対応）
+    yomi   += (t.yomi !== undefined) ? t.yomi : Math.round((t.jisshi || 0) * 0.35);
+  });
+  return { apo, jisshi, yomi };
+}
+
 function loadWinRates() {
   // データは fetchFromSheets() で取得するため no-op
 }
+
+// ===== ダッシュボードタブ切替（FS/ISで期間状態を独立管理） =====
+const DASH_TAB_KEY = 'fs-dashboard-active-tab-v1';
+const TAB_STATE_KEY = 'fs-dashboard-tab-state-v1';
+let activeTab = 'fs';
+const TAB_STATE = {
+  fs: { mode: 'month', fy: 'FY2026', period: '2026/05' },
+  is: { mode: 'month', fy: 'FY2026', period: '2026/05' }
+};
+// localStorageから復元
+try {
+  const saved = JSON.parse(localStorage.getItem(TAB_STATE_KEY) || '{}');
+  if (saved.fs) Object.assign(TAB_STATE.fs, saved.fs);
+  if (saved.is) Object.assign(TAB_STATE.is, saved.is);
+} catch (e) {}
+
+function _saveTabStateToStorage() {
+  try { localStorage.setItem(TAB_STATE_KEY, JSON.stringify(TAB_STATE)); } catch (e) {}
+}
+function _saveCurrentToActiveTab() {
+  TAB_STATE[activeTab] = {
+    mode: currentMode, fy: currentFY, period: currentPeriod
+  };
+  _saveTabStateToStorage();
+}
+function _restoreFromTab(tab) {
+  const s = TAB_STATE[tab] || TAB_STATE.fs;
+  currentMode = s.mode;
+  currentFY = s.fy;
+  currentPeriod = s.period;
+}
+
+function switchDashboard(tab) {
+  if (tab !== 'fs' && tab !== 'is') tab = 'fs';
+  // 切替前に現タブの状態を保存
+  if (typeof currentMode !== 'undefined') _saveCurrentToActiveTab();
+  activeTab = tab;
+  _restoreFromTab(tab);
+
+  ['fs', 'is'].forEach(t => {
+    const content = document.getElementById('dashboardContent-' + t);
+    const btn     = document.getElementById('dashTab-' + t);
+    if (content) content.classList.toggle('hidden', t !== tab);
+    if (btn) {
+      if (t === tab) {
+        btn.style.background = '#0369a1';
+        btn.style.opacity = '1';
+      } else {
+        btn.style.background = '';
+        btn.style.opacity = '0.6';
+      }
+    }
+  });
+  try { localStorage.setItem(DASH_TAB_KEY, tab); } catch (e) {}
+
+  // 切替先のタブUIに状態を反映＋再描画
+  if (typeof syncPeriodUI === 'function') syncPeriodUI();
+  if (typeof renderPeriodTabs === 'function') renderPeriodTabs();
+  if (typeof render === 'function') render();
+}
+
+// 期間UIを現在の状態に同期（FS/IS両方の表示単位ボタン・FYボタンを更新）
+function syncPeriodUI() {
+  const prefix = activeTab === 'is' ? 'is-' : '';
+  // 表示単位ボタン
+  ['month','quarter','half','year'].forEach(k => {
+    const el = document.getElementById(prefix + 'view-' + k);
+    if (!el) return;
+    if (k === currentMode) { el.classList.remove('tab-inactive'); el.classList.add('tab-active'); }
+    else { el.classList.remove('tab-active'); el.classList.add('tab-inactive'); }
+  });
+  // FYボタン
+  ['FY2025','FY2026'].forEach(f => {
+    const btn = document.getElementById(prefix + 'fy-btn-' + f.replace('FY',''));
+    if (!btn) return;
+    if (f === currentFY) {
+      btn.style.background = '#0284c7'; btn.style.color = 'white';
+      btn.classList.remove('bg-slate-100','text-slate-500');
+    } else {
+      btn.style.background = ''; btn.style.color = '';
+      btn.classList.add('bg-slate-100','text-slate-500');
+    }
+  });
+}
+
+// 初期化（ロード後にlocalStorageから復元）
+window.addEventListener('DOMContentLoaded', () => {
+  let saved = 'fs';
+  try { saved = localStorage.getItem(DASH_TAB_KEY) || 'fs'; } catch (e) {}
+  switchDashboard(saved);
+});
 function getWinRate(stage, product) {
   if (stage === 'E') return 0;
   if (stage === 'S') return 1.0;
@@ -711,6 +1195,61 @@ function getWinRate(stage, product) {
   if (custom && custom[prod] !== undefined) return custom[prod];
   const def = WIN_RATES_DEFAULT[stage] || {};
   return def[prod] !== undefined ? def[prod] : (def['default'] || 0);
+}
+
+// ============================================================
+// リードソース分類（大項目→中項目→小項目）
+// ============================================================
+const LEAD_SOURCE_TREE = [
+  { major: 'SDR', minors: [
+    { key: 'organic',       sources: ['オーガニック','コーポレートサイト','ダイレクトリード','Bing Natural Search','Google Natural Search','yahoo','google'] },
+    { key: 'Paid',          sources: ['facebook広告','gdn','Google Ad','yda','リスティング系','facebook','FB','youtube(直接)'] },
+    { key: '外部比較サイト', sources: ['BizHint','BOWNOW','BOXIL','HRpro','ITトレンド','LISKUL','manegy','PRONI','アスピック','アポロsales','デジタル化の窓口','ビジトラ','ミツカル','ミツモア','企業LOG','人事バンク','日本の人事部','WP','qeee','find','Jobspring'] },
+    { key: 'セミナー',      sources: ['セミナー','カンファレンス（オンライン含む）','オンライン新卒フォーラム'] },
+    { key: 'SEO',           sources: ['SEO'] },
+  ]},
+  { major: 'BDR', minors: [
+    { key: '新規テレアポ',     sources: ['新規テレアポ'] },
+    { key: 'テレアポ代行',     sources: ['テレアポ代行'] },
+    { key: '展示会',           sources: ['展示会（オンライン含む）'] },
+    { key: '同一企業別担当者', sources: ['同一企業別担当者'] },
+  ]},
+  { major: 'リファラル', minors: [
+    { key: 'リファラル', sources: ['IS保有企業さんからのご紹介','リファラル','既存顧客','過去リード'] },
+  ]},
+  { major: '再アップ', minors: [
+    { key: '再アップ', sources: [] }, // 動的判定（再アップTRUE & リード作成=過去FY）
+  ]},
+  { major: 'その他', minors: [
+    { key: 'その他', sources: ['PS接触・交流会','代理店','リードソース'] },
+  ]},
+];
+
+// 小項目→{大,中} の逆引き索引
+const _SOURCE_TO_CATEGORY = {};
+LEAD_SOURCE_TREE.forEach(g => g.minors.forEach(mi => mi.sources.forEach(s => {
+  _SOURCE_TO_CATEGORY[s] = { major: g.major, minor: mi.key };
+})));
+
+// 当期FYの判定（currentFYに準拠）
+function _isInCurrentFY(date) {
+  if (!(date instanceof Date) || isNaN(date)) return false;
+  const fyStart = currentFY === 'FY2025' ? new Date(2025, 3, 1) : new Date(2026, 3, 1);
+  const fyEnd   = currentFY === 'FY2025' ? new Date(2026, 2, 31, 23, 59, 59) : new Date(2027, 2, 31, 23, 59, 59);
+  return date >= fyStart && date <= fyEnd;
+}
+
+// 案件→ {major, minor, period: '新規'|'ナーチャリング'|null}
+function getLeadCategory(deal) {
+  const inCurFY = _isInCurrentFY(deal.leadCreatedDate);
+  // 再アップTRUE & 当期外作成 → 「再アップ」大項目
+  if (deal.reupload && !inCurFY) {
+    return { major: '再アップ', minor: '再アップ', period: null };
+  }
+  // それ以外（再アップTRUE&当期内作成 含む）→ ソースで分類
+  const cat = _SOURCE_TO_CATEGORY[deal.leadSource] || { major: 'その他', minor: 'その他' };
+  const period = inCurFY ? '新規' : 'ナーチャリング';
+  return { major: cat.major, minor: cat.minor, period };
 }
 
 const TIME_DECAY_STAGES = ['D', 'C', 'C+'];
@@ -869,13 +1408,22 @@ async function gasPost(action, data) {
 
 // GAS からデータ取得（パイプライン＋スナップショット＋受注率）
 async function fetchFromSheets(silent = false) {
-  const btn  = document.getElementById('fetchBtn');
-  const icon = document.getElementById('fetchBtnIcon');
-  const status = document.getElementById('fileStatus');
+  // FS / IS の両ボタン/ステータスを同時に更新
+  const btns    = [document.getElementById('fetchBtn'),     document.getElementById('isFetchBtn')];
+  const icons   = [document.getElementById('fetchBtnIcon'), document.getElementById('isFetchBtnIcon')];
+  const status  = document.getElementById('fileStatus');
+  const isStatus= document.getElementById('isFileStatus');
+  const setStatus = (txt, color) => {
+    [status, isStatus].forEach(el => {
+      if (!el) return;
+      el.textContent = txt;
+      if (color) el.style.color = color;
+    });
+  };
 
-  if (btn) btn.disabled = true;
-  if (icon) icon.textContent = '⏳';
-  if (!silent) { status.textContent = 'データ取得中...'; status.style.color = '#0284c7'; }
+  btns.forEach(b => { if (b) b.disabled = true; });
+  icons.forEach(i => { if (i) i.textContent = '⏳'; });
+  if (!silent) setStatus('データ取得中...', '#0284c7');
 
   try {
     const res = await fetch(GAS_URL);
@@ -891,15 +1439,13 @@ async function fetchFromSheets(silent = false) {
     // スナップショット：GAS + localStorage をマージ（GAS優先、localStorageのみのものを移行）
     if (json.snapshots !== undefined) {
       const gasSnaps = json.snapshots || [];
-      // localStorage 旧データをGASに移行
       await migrateLocalSnapshotsToGas(gasSnaps);
-      // GASのIDセットで重複除去してマージ
       const gasIds = new Set(gasSnaps.map(s => s.id));
       const localOnly = snapshots.filter(s => !gasIds.has(s.id));
       snapshots = [...gasSnaps, ...localOnly]
         .sort((a, b) => new Date(a.id) - new Date(b.id));
       migrateSnapshotNames();
-      persistSnapshots(); // GASデータをlocalStorageにもバックアップ
+      persistSnapshots();
     }
 
     // 受注率
@@ -908,17 +1454,31 @@ async function fetchFromSheets(silent = false) {
       eWinRate = json.winRates.eWinRate !== undefined ? json.winRates.eWinRate : 0.10;
     }
 
+    // IS 保有リスト
+    if (json.listData) {
+      isListYes = (json.listData.yes || []).map(_normalizeListRow);
+      isListNo  = (json.listData.no  || []).map(_normalizeListRow);
+    }
+
     const updatedAt = json.updatedAt ? new Date(json.updatedAt).toLocaleString('ja-JP') : '';
     if (!silent) {
-      status.textContent = `✅ ${pipeline.length}件（スプシ更新: ${updatedAt}）`;
-      status.style.color = '#059669';
+      // FS = パイプライン件数、IS = リサイクル Yes/No 合算行数
+      if (status) {
+        status.textContent = `✅ ${pipeline.length}件（スプシ更新: ${updatedAt}）`;
+        status.style.color = '#059669';
+      }
+      if (isStatus) {
+        const isTotalRows = (isListYes.length + isListNo.length);
+        isStatus.textContent = `✅ ${isTotalRows}行 (Yes:${isListYes.length} / No:${isListNo.length})（スプシ更新: ${updatedAt}）`;
+        isStatus.style.color = '#059669';
+      }
     }
     render();
   } catch (err) {
-    if (!silent) { status.textContent = `❌ 取得エラー: ${err.message}`; status.style.color = '#dc2626'; }
+    if (!silent) setStatus(`❌ 取得エラー: ${err.message}`, '#dc2626');
   } finally {
-    if (btn) btn.disabled = false;
-    if (icon) icon.textContent = '🔄';
+    btns.forEach(b => { if (b) b.disabled = false; });
+    icons.forEach(i => { if (i) i.textContent = '🔄'; });
   }
 }
 
@@ -1041,6 +1601,31 @@ function normalizeRow(row, hubspotId = null) {
   const nyusaki     = String(find('導入先') || '').trim();
   const appoint2Raw = find('FS2回目商談実施日','fs2_______') || null;
   const appoint3Raw = find('FS3回目商談実施日','fs3_______') || null;
+  // リードソース・業種・再アップ・リード作成日（中項目分類＆時期判定用）
+  const leadSourceRaw = String(find('リードソース_hubspot','リードソース','hubspot') || '').trim();
+  const industryRaw   = String(find('業種_baseconnect','業種','industry_baseconnect') || '').trim();
+  const reuploadRaw   = find('再アップ案件','field72__c');
+  const reuploadFlag  = (reuploadRaw === true || String(reuploadRaw).toUpperCase() === 'TRUE');
+  const leadCreatedRaw = find('リードの作成日_Hubspot','リード作成日','created_day_hubspot');
+  let leadCreatedDate = null;
+  if (leadCreatedRaw instanceof Date && !isNaN(leadCreatedRaw)) {
+    leadCreatedDate = leadCreatedRaw;
+  } else if (leadCreatedRaw) {
+    const m = String(leadCreatedRaw).match(/(\d{4})[\/\-年]?\s*(\d{1,2})(?:[\/\-月]\s*(\d{1,2}))?/);
+    if (m) leadCreatedDate = new Date(parseInt(m[1]), parseInt(m[2])-1, m[3] ? parseInt(m[3]) : 1);
+  }
+  // レコード作成者・ヨミ/未ヨミ決着日・アポ作成日（IS KPI 用）
+  const recordCreator = String(find('レコード作成者','sakuseisyanigasi') || '').trim();
+  const yomiDecidedRaw = find('ヨミ/未ヨミ決着日','ヨミ決着日','yomikadate__c');
+  const apoCreatedRaw  = find('アポ作成日','sakuseibi');
+  function _toDateOrNull(raw) {
+    if (raw instanceof Date && !isNaN(raw)) return raw;
+    if (!raw) return null;
+    const m = String(raw).match(/(\d{4})[\/\-年]?\s*(\d{1,2})(?:[\/\-月]\s*(\d{1,2}))?/);
+    return m ? new Date(parseInt(m[1]), parseInt(m[2])-1, m[3] ? parseInt(m[3]) : 1) : null;
+  }
+  const yomiDecidedDate = _toDateOrNull(yomiDecidedRaw);
+  const apoCreatedDate  = _toDateOrNull(apoCreatedRaw);
 
   let name = null;
   if (DATA_NAME_MAP[rawMember]) name = DATA_NAME_MAP[rawMember];
@@ -1078,8 +1663,11 @@ function normalizeRow(row, hubspotId = null) {
     if (lostAmt === 0 && lostProduct) { lostAmt = PRODUCT_ESTIMATES[lostProduct] || DEFAULT_ESTIMATE; lostEst = true; }
     else if (lostAmt === 0) { lostAmt = DEFAULT_ESTIMATE; lostEst = true; }
     return { company, name, month, closeDay, amount: lostAmt, estimated: lostEst, stage: '失注',
-             lostLabel, lostReason, hubspotId: hubspotId||null,
+             lostLabel, lostReason, mishoshoReason, hubspotId: hubspotId||null,
              product: lostProduct, shinStatus, chuStatus, replaceNew, replaceChu, nyusaki,
+             leadSource: leadSourceRaw, industry: industryRaw,
+             reupload: reuploadFlag, leadCreatedDate,
+             recordCreator, yomiDecidedDate, apoCreatedDate,
              appointDate: lostAppt1.date };
   }
   let stage = null;
@@ -1121,7 +1709,10 @@ function normalizeRow(row, hubspotId = null) {
   return { company, name, month, closeDay, appointDate, appointMonth, appointDay,
            appt2Date: appt2.date, appt2Month: appt2.month, appt2Day: appt2.day,
            appt3Date: appt3.date, appt3Month: appt3.month, appt3Day: appt3.day,
-           amount, stage, product, estimated, hubspotId, lostReason };
+           amount, stage, product, estimated, hubspotId, lostReason,
+           leadSource: leadSourceRaw, industry: industryRaw,
+           reupload: reuploadFlag, leadCreatedDate,
+           recordCreator, yomiDecidedDate, apoCreatedDate };
 }
 
 function clearData() { pipeline = []; lostDeals = []; document.getElementById('fileStatus').textContent = ''; render(); }
@@ -1138,9 +1729,10 @@ function getFyMembers() {
 
 function switchFY(fy) {
   currentFY = fy;
-  // FYボタンの見た目を更新
+  // FYボタンの見た目を更新（現在アクティブなタブのみ）
+  const prefix = activeTab === 'is' ? 'is-' : '';
   ['FY2025','FY2026'].forEach(f => {
-    const btn = document.getElementById('fy-btn-' + f.replace('FY',''));
+    const btn = document.getElementById(prefix + 'fy-btn-' + f.replace('FY',''));
     if (!btn) return;
     if (f === fy) {
       btn.style.background = '#0284c7'; btn.style.color = 'white';
@@ -1156,29 +1748,35 @@ function switchFY(fy) {
   else if (currentMode === 'quarter') currentPeriod = 'Q1';
   else if (currentMode === 'half') currentPeriod = 'H1';
   else currentPeriod = 'FY';
+  _saveCurrentToActiveTab();
   renderPeriodTabs();
   render();
 }
 
 function setView(v) {
   currentMode = v;
+  const prefix = activeTab === 'is' ? 'is-' : '';
   ['month','quarter','half','year'].forEach(k => {
-    const el = document.getElementById('view-' + k);
+    const el = document.getElementById(prefix + 'view-' + k);
+    if (!el) return;
     el.classList.remove('tab-active'); el.classList.add('tab-inactive');
   });
-  const ve = document.getElementById('view-' + v);
-  ve.classList.remove('tab-inactive'); ve.classList.add('tab-active');
+  const ve = document.getElementById(prefix + 'view-' + v);
+  if (ve) { ve.classList.remove('tab-inactive'); ve.classList.add('tab-active'); }
   const fy = getFyData();
   if (v === 'month') currentPeriod = fy.months[1]; // 5月相当
   else if (v === 'quarter') currentPeriod = 'Q1';
   else if (v === 'half') currentPeriod = 'H1';
   else currentPeriod = 'FY';
+  _saveCurrentToActiveTab();
   renderPeriodTabs();
   render();
 }
 
 function renderPeriodTabs() {
-  const wrap = document.getElementById('periodTabs');
+  // 現在アクティブなタブ側の periodTabs を描画
+  const wrap = document.getElementById((activeTab === 'is' ? 'is-' : '') + 'periodTabs');
+  if (!wrap) return;
   const fy = getFyData();
   let opts = [];
   if (currentMode === 'month') {
@@ -1205,6 +1803,7 @@ function setPeriod(k) {
     return;
   }
   currentPeriod = k;
+  _saveCurrentToActiveTab();
   renderPeriodTabs();
   render();
 }
@@ -1461,14 +2060,459 @@ function render() {
     lostMemberSel.value = curLost;
   }
   renderLostAnalysis();
+  renderIsKpis();
+  renderIsMemberTable();
+  renderIsCalendar();
 }
+
+// ============================================================
+// IS 保有リスト
+// ============================================================
+let isListYes = [];
+let isListNo  = [];
+
+function _normalizeListRow(r) {
+  return {
+    company:   String(r.company   || '').trim(),
+    companyId: String(r.companyId || '').trim(),
+    owner:     String(r.owner     || '').trim(),
+  };
+}
+
+// 会社IDで重複排除（IDが空欄なら 会社名で判定）
+function _dedupRows(rows) {
+  const seen = new Set();
+  const result = [];
+  rows.forEach(r => {
+    const key = r.companyId || r.company || '';
+    if (!key) return;
+    if (seen.has(key)) return;
+    seen.add(key);
+    result.push(r);
+  });
+  return result;
+}
+
+// 担当者別の社数（dedupは担当者単位で行う）
+function _byOwnerUnique(rows) {
+  const map = {};
+  rows.forEach(r => {
+    const owner = r.owner || '不明';
+    const key = r.companyId || r.company || '';
+    if (!key) return;
+    if (!map[owner]) map[owner] = new Set();
+    map[owner].add(key);
+  });
+  return Object.fromEntries(
+    Object.entries(map).map(([k, v]) => [k, v.size])
+  );
+}
+
+// KPIカード反映
+function renderIsListCard() {
+  const yesUnique = _dedupRows(isListYes);
+  const noUnique  = _dedupRows(isListNo);
+  const allUnique = _dedupRows([...isListYes, ...isListNo]);
+  setText('is-list-total', allUnique.length);
+  setText('is-list-yes',   yesUnique.length);
+  setText('is-list-no',    noUnique.length);
+}
+
+// === モーダル ===
+let _isListLevel = 1;
+let _isListKind  = null;
+
+function openIsListModal() {
+  _isListLevel = 1;
+  _isListKind  = null;
+  document.getElementById('isListBack').classList.add('hidden');
+  document.getElementById('isListModalTitle').textContent = '📋 IS 保有リスト詳細';
+  _renderIsListLevel1();
+  document.getElementById('isListModal').classList.remove('hidden');
+}
+
+function closeIsListModal() {
+  document.getElementById('isListModal').classList.add('hidden');
+}
+
+function isListBackToLevel1() {
+  _isListLevel = 1;
+  _isListKind  = null;
+  document.getElementById('isListBack').classList.add('hidden');
+  document.getElementById('isListModalTitle').textContent = '📋 IS 保有リスト詳細';
+  _renderIsListLevel1();
+}
+
+function isListDrillTo(kind) {
+  _isListLevel = 2;
+  _isListKind  = kind;
+  document.getElementById('isListBack').classList.remove('hidden');
+  const label = kind === 'yes' ? 'リサイクルコンタクト_Yes' : 'リサイクルコンタクト_No';
+  document.getElementById('isListModalTitle').textContent = '📋 ' + label + ' / 担当者別';
+  _renderIsListLevel2(kind);
+}
+
+function _renderIsListLevel1() {
+  const yesUnique = _dedupRows(isListYes).length;
+  const noUnique  = _dedupRows(isListNo).length;
+  const total     = _dedupRows([...isListYes, ...isListNo]).length;
+  const html = `
+    <p class="text-[12px] text-slate-500 mb-4">合計 <b class="text-slate-700">${total}</b> 社（重複統合済み）</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <button onclick="isListDrillTo('yes')"
+        class="text-left bg-white border-2 rounded-xl p-5 hover:shadow-lg transition-all" style="border-color:#0284c7">
+        <p class="text-xs font-semibold mb-2" style="color:#0284c7">🔄 リサイクルコンタクト_Yes</p>
+        <p class="text-3xl font-bold text-slate-700">${yesUnique}<span class="text-sm font-normal text-slate-400 ml-1">社</span></p>
+        <p class="text-[11px] text-slate-500 mt-1">過去FSアポ実施 → 失注した企業</p>
+        <p class="text-[10px] text-sky-600 mt-2">クリックで担当者別 →</p>
+      </button>
+      <button onclick="isListDrillTo('no')"
+        class="text-left bg-white border-2 rounded-xl p-5 hover:shadow-lg transition-all" style="border-color:#10b981">
+        <p class="text-xs font-semibold mb-2" style="color:#10b981">✨ リサイクルコンタクト_No</p>
+        <p class="text-3xl font-bold text-slate-700">${noUnique}<span class="text-sm font-normal text-slate-400 ml-1">社</span></p>
+        <p class="text-[11px] text-slate-500 mt-1">未トスアップ＝1度も商談していない企業</p>
+        <p class="text-[10px] text-emerald-600 mt-2">クリックで担当者別 →</p>
+      </button>
+    </div>
+  `;
+  document.getElementById('isListModalBody').innerHTML = html;
+}
+
+function _renderIsListLevel2(kind) {
+  const rows = kind === 'yes' ? isListYes : isListNo;
+  const ownerCounts = _byOwnerUnique(rows);
+  const total = _dedupRows(rows).length;
+  const accent = kind === 'yes' ? '#0284c7' : '#10b981';
+  const accentBg = kind === 'yes' ? '#e0f2fe' : '#d1fae5';
+
+  const isMembers = getIsMembers();
+  const isMemberSet = new Set(isMembers);
+  const sortedOwners = Object.entries(ownerCounts).sort((a, b) => {
+    const aIs = isMemberSet.has(a[0]) ? 0 : 1;
+    const bIs = isMemberSet.has(b[0]) ? 0 : 1;
+    if (aIs !== bIs) return aIs - bIs;
+    return b[1] - a[1];
+  });
+
+  if (sortedOwners.length === 0) {
+    document.getElementById('isListModalBody').innerHTML =
+      '<p class="text-slate-400 text-center py-8">該当データなし</p>';
+    return;
+  }
+
+  const maxCount = Math.max(...Object.values(ownerCounts));
+  const ownerRows = sortedOwners.map(([owner, count]) => {
+    const isIsMember = isMemberSet.has(owner);
+    const pct = maxCount > 0 ? Math.round(count / maxCount * 100) : 0;
+    return `<tr class="border-b" style="border-color:#f1f5f9">
+      <td class="px-3 py-2 text-[12px] ${isIsMember ? 'font-semibold text-slate-700' : 'text-slate-500'}">${owner}${isIsMember ? '' : ' <span class="text-[10px] text-slate-400">(IS外)</span>'}</td>
+      <td class="px-3 py-2 text-right text-[13px] font-bold" style="color:${accent}">${count}<span class="text-[10px] font-normal text-slate-400 ml-0.5">社</span></td>
+      <td class="px-3 py-2" style="width:40%">
+        <div class="h-2 rounded-full overflow-hidden" style="background:${accentBg}">
+          <div class="h-2 rounded-full" style="background:${accent};width:${pct}%"></div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('isListModalBody').innerHTML = `
+    <p class="text-[12px] text-slate-500 mb-3">合計 <b style="color:${accent}">${total}</b> 社（重複統合済み・担当者別）</p>
+    <table class="w-full text-sm">
+      <thead><tr class="border-b-2" style="border-color:${accent}">
+        <th class="px-3 py-2 text-left text-[11px] font-semibold text-slate-600">担当者</th>
+        <th class="px-3 py-2 text-right text-[11px] font-semibold text-slate-600">保有数</th>
+        <th class="px-3 py-2 text-[11px] font-semibold text-slate-600">分布</th>
+      </tr></thead>
+      <tbody>${ownerRows}</tbody>
+    </table>
+  `;
+}
+
+// ===== IS ダッシュボード KPI =====
+function renderIsKpis() {
+  // ISタブが存在しない場合はスキップ
+  if (!document.getElementById('is-kpi-contrib-amount')) return;
+
+  const months = getMonthsForPeriod();
+  const activePipe = getActivePipeline();
+
+  // 期間ラベル
+  const lbl = document.getElementById('isPeriodLabel');
+  if (lbl) {
+    if (currentMode === 'month')      lbl.textContent = currentPeriod;
+    else if (currentMode === 'quarter') lbl.textContent = currentFY + ' ' + currentPeriod;
+    else if (currentMode === 'half')    lbl.textContent = currentFY + ' ' + currentPeriod;
+    else                                lbl.textContent = currentFY + ' 通年';
+  }
+
+  // 期間内のIS全体目標（チーム合計目標を直接参照）
+  const _isTotal = getIsTotalTargets(months);
+  const tgtApo = _isTotal.apo, tgtJisshi = _isTotal.jisshi, tgtYomi = _isTotal.yomi;
+
+  // 失注を含む全件（パイプライン + 失注）からISメトリクスを集計
+  const allDeals = [...activePipe, ...lostDeals];
+  const dateInMonths = (date) => {
+    if (!(date instanceof Date) || isNaN(date)) return false;
+    const ym = `${date.getFullYear()}/${String(date.getMonth()+1).padStart(2,'0')}`;
+    return months.includes(ym);
+  };
+
+  // ① 受注貢献 = N列クローズ日が選択期間内 かつ G列取引ステージ=S
+  const sDeals = allDeals.filter(d => d.stage === 'S' && months.includes(d.month));
+  const contribAmount = sDeals.reduce((s, d) => s + (d.amount || 0), 0);
+  const contribCount  = sDeals.length;
+  setText('is-kpi-contrib-amount', '¥' + contribAmount.toLocaleString());
+  setText('is-kpi-contrib-count', contribCount);
+  setText('is-kpi-contrib-note', '');
+  renderIsKpiDetail('contrib', sDeals);
+
+  // ② ヨミ化数
+  const yomiDeals = allDeals.filter(d => {
+    if (!dateInMonths(d.yomiDecidedDate)) return false;
+    if (d.stage === 'E' || d.stage === 'D') return false;
+    if (d.stage === '失注' && d.lostLabel === '未ヨミ化') return false;
+    return true;
+  });
+  setKpi('yomi', yomiDeals.length, tgtYomi);
+  renderIsKpiDetail('yomi', yomiDeals);
+
+  // ③ アポ実施数（E含む全ステージ、失注未商談の除外ルール込み）
+  //    内訳: 済(D以上+その他失注) / 予定(E)
+  const jisshiDeals = _getMemberDealsForKind('__ALL__', 'jisshi', months);
+  const jisshiDoneDeals    = jisshiDeals.filter(d => d.stage !== 'E');
+  const jisshiPlannedDeals = jisshiDeals.filter(d => d.stage === 'E');
+  const jisshiCount = jisshiDeals.length;
+
+  setText('is-kpi-jisshi-count',   jisshiCount);
+  setText('is-kpi-jisshi-target',  tgtJisshi);
+  setText('is-kpi-jisshi-done',    jisshiDoneDeals.length);
+  setText('is-kpi-jisshi-planned', jisshiPlannedDeals.length);
+  const _jrate = tgtJisshi > 0 ? Math.round(jisshiCount/tgtJisshi*100) : 0;
+  setText('is-kpi-jisshi-rate',    _jrate + '%');
+  // スタックバー（合算で 100% を上限とする）
+  const _dPct = tgtJisshi > 0 ? Math.min(jisshiDoneDeals.length/tgtJisshi*100, 100) : 0;
+  const _pPct = tgtJisshi > 0 ? Math.min(jisshiPlannedDeals.length/tgtJisshi*100, 100 - _dPct) : 0;
+  const _dBar = document.getElementById('is-kpi-jisshi-bar-done');
+  const _pBar = document.getElementById('is-kpi-jisshi-bar-planned');
+  if (_dBar) _dBar.style.width = _dPct + '%';
+  if (_pBar) _pBar.style.width = _pPct + '%';
+  renderIsKpiDetail('jisshi', jisshiDeals);
+
+  // ④ アポ取得数
+  const apoDeals = allDeals.filter(d => dateInMonths(d.apoCreatedDate));
+  setKpi('apo', apoDeals.length, tgtApo);
+  renderIsKpiDetail('apo', apoDeals);
+
+  // ⑤ IS 保有リスト数（期間に依存しないので毎回更新）
+  renderIsListCard();
+}
+
+// ===== IS KPI 詳細（管理方法別カード + モーダル） =====
+const IS_KPI_MGMT_DEFS = [
+  { key: 'excel',    label: 'Excel / スプレッドシート', color: '#0284c7', lightBg: '#e0f2fe' },
+  { key: 'ats',      label: '他社管理システム',         color: '#7c3aed', lightBg: '#f5f3ff' },
+  { key: 'kanrikun', label: '採用一括かんりくん',       color: '#059669', lightBg: '#d1fae5' },
+  { key: 'media',    label: '媒体上管理',               color: '#d97706', lightBg: '#fef3c7' },
+  { key: 'unknown',  label: '管理方法不明',             color: '#94a3b8', lightBg: '#f1f5f9' },
+];
+
+const IS_STAGE_DEFS = [
+  { key: 'S',  label: 'S',  color: '#10b981', textColor: '#065f46', bg: '#d1fae5' },
+  { key: 'A',  label: 'A',  color: '#0369a1', textColor: '#075985', bg: '#e0f2fe' },
+  { key: 'B',  label: 'B',  color: '#0284c7', textColor: '#075985', bg: '#e0f2fe' },
+  { key: 'C+', label: 'C+', color: '#0ea5e9', textColor: '#075985', bg: '#e0f2fe' },
+  { key: 'C',  label: 'C',  color: '#38bdf8', textColor: '#075985', bg: '#e0f2fe' },
+  { key: 'D',  label: 'D',  color: '#7dd3fc', textColor: '#075985', bg: '#e0f2fe' },
+  { key: 'E',  label: 'E',  color: '#94a3b8', textColor: '#475569', bg: '#f1f5f9' },
+  { key: '失注', label: '失注', color: '#ef4444', textColor: '#b91c1c', bg: '#fee2e2' },
+];
+
+const IS_KPI_LABELS = {
+  contrib: '🏆 受注貢献',
+  yomi:    '📋 ヨミ化数',
+  jisshi:  '🤝 実施数',
+  apo:     '📞 アポ取得数'
+};
+
+// 詳細モーダル用に保持
+const _isKpiDetailCache = {}; // { contrib: { excel:[deals], ... }, yomi: {...}, ... }
+
+function _escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// 集計だけ保持（カード内には詳細を表示しない）
+function renderIsKpiDetail(key, deals) {
+  const byMgmt = {};
+  IS_KPI_MGMT_DEFS.forEach(g => { byMgmt[g.key] = []; });
+  deals.forEach(d => { byMgmt[getDealMgmtCategory(d)].push(d); });
+  _isKpiDetailCache[key] = byMgmt;
+}
+
+// 第2階層: 詳細ボタン → 管理方法別カード
+function openIsKpiDetailModal(kpiKey) {
+  const modal  = document.getElementById('isKpiDetailModal');
+  const title  = document.getElementById('isKpiDetailModal-title');
+  const header = document.getElementById('isKpiDetailModal-header');
+  const body   = document.getElementById('isKpiDetailModal-body');
+  if (!modal || !body) return;
+
+  const byMgmt = _isKpiDetailCache[kpiKey] || {};
+  const total = Object.values(byMgmt).reduce((s, a) => s + a.length, 0);
+  const kpiLabel = IS_KPI_LABELS[kpiKey] || kpiKey;
+
+  title.innerHTML = `<span style="color:#1e293b;">${kpiLabel}</span> <span style="color:#94a3b8;font-weight:400;font-size:12px;">（${total}件）</span>`;
+  header.style.background = '#f8fafc';
+
+  if (total === 0) {
+    body.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">該当案件がありません</p>';
+  } else {
+    const activeGroups = IS_KPI_MGMT_DEFS.filter(g => (byMgmt[g.key] || []).length > 0);
+    const cards = activeGroups.map(g => {
+      const list = byMgmt[g.key];
+      const stageRows = IS_STAGE_DEFS.map(st => {
+        const cnt = list.filter(d => d.stage === st.key).length;
+        if (!cnt) return '';
+        return `
+          <div style="padding:5px 0;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;">
+            <span style="display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:${st.textColor};">
+              <span style="width:7px;height:7px;border-radius:50%;background:${st.color};flex-shrink:0;"></span>
+              ${st.label}
+            </span>
+            <span style="font-size:12px;font-weight:700;color:#1e293b;">${cnt}件</span>
+          </div>`;
+      }).filter(Boolean).join('');
+
+      return `
+        <div style="background:white;border:1px solid #e2e8f0;border-top:3px solid ${g.color};border-radius:12px;padding:14px 16px;min-width:0;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:11px;font-weight:700;color:${g.color};">${g.label}</span>
+            <button onclick="openIsKpiLevel3('${kpiKey}','${g.key}')"
+              style="font-size:10px;font-weight:600;padding:1px 8px;border-radius:9999px;border:1px solid ${g.color};color:${g.color};background:white;cursor:pointer;white-space:nowrap;">詳細</button>
+          </div>
+          <div style="font-size:22px;font-weight:700;color:#1e293b;line-height:1.1;margin-bottom:10px;">
+            ${list.length}<span style="font-size:13px;font-weight:400;color:#94a3b8;margin-left:3px;">件</span>
+          </div>
+          <div>${stageRows || '<span style="font-size:11px;color:#cbd5e1;">内訳なし</span>'}</div>
+        </div>`;
+    }).join('');
+
+    body.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">${cards}</div>
+    `;
+  }
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+// 第3階層: 管理方法カードクリック → レコード作成者別の案件リスト
+function openIsKpiLevel3(kpiKey, mgmtKey) {
+  const modal  = document.getElementById('isKpiDetailModal');
+  const title  = document.getElementById('isKpiDetailModal-title');
+  const header = document.getElementById('isKpiDetailModal-header');
+  const body   = document.getElementById('isKpiDetailModal-body');
+  if (!modal || !body) return;
+
+  const gDef = IS_KPI_MGMT_DEFS.find(g => g.key === mgmtKey);
+  const list = (_isKpiDetailCache[kpiKey] || {})[mgmtKey] || [];
+  if (!gDef || !list.length) return;
+
+  const kpiLabel = IS_KPI_LABELS[kpiKey] || kpiKey;
+  title.innerHTML = `
+    <button onclick="openIsKpiDetailModal('${kpiKey}')"
+      style="margin-right:8px;font-size:11px;color:#64748b;background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:4px;">← 戻る</button>
+    <span style="color:#475569;">${kpiLabel}</span>
+    <span style="color:${gDef.color};"> ／ ${gDef.label}（${list.length}件）</span>`;
+  header.style.background = gDef.lightBg;
+
+  // レコード作成者でグループ化
+  const byCreator = {};
+  list.forEach(d => {
+    const c = (d.recordCreator || '').trim() || '（未設定）';
+    if (!byCreator[c]) byCreator[c] = [];
+    byCreator[c].push(d);
+  });
+  const sortedCreators = Object.keys(byCreator).sort((a, b) => byCreator[b].length - byCreator[a].length);
+
+  const stageColor = (s) => (IS_STAGE_DEFS.find(x => x.key === s) || {}).color || '#64748b';
+
+  body.innerHTML = sortedCreators.map(creator => {
+    const items = byCreator[creator];
+    const rows = items.map((d, i) => {
+      const stageLabel = d.stage === '失注' ? `失注（${d.lostLabel || ''}）` : (d.stage || '-');
+      const svc = d.product || '-';
+      const hubUrl = d.hubspotId
+        ? `href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener"`
+        : '';
+      const rowBg = i % 2 === 0 ? '#fff' : '#f8fafc';
+      return `
+        <tr style="background:${rowBg};border-bottom:1px solid #f1f5f9;">
+          <td style="padding:5px 8px;font-size:11px;color:#334155;max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_escapeHtml(d.company)}">
+            ${hubUrl
+              ? `<a ${hubUrl} style="color:#0284c7;text-decoration:none;">${_escapeHtml(d.company || '-')}</a>`
+              : _escapeHtml(d.company || '-')}
+          </td>
+          <td style="padding:5px 8px;font-size:11px;text-align:center;width:90px;">
+            <span style="font-weight:700;color:${stageColor(d.stage)};">${_escapeHtml(stageLabel)}</span>
+          </td>
+          <td style="padding:5px 8px;font-size:11px;color:#0369a1;text-align:center;width:130px;">${_escapeHtml(svc)}</td>
+        </tr>`;
+    }).join('');
+
+    return `
+      <div style="margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:700;color:#475569;padding:6px 4px;display:flex;align-items:center;gap:6px;">
+          <span style="color:#cbd5e1;">┣</span> 👤 ${_escapeHtml(creator)}
+          <span style="font-size:11px;font-weight:400;color:#94a3b8;">${items.length}件</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+          <colgroup><col><col style="width:90px"><col style="width:130px"></colgroup>
+          <thead>
+            <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
+              <th style="padding:4px 8px;font-size:10px;font-weight:600;color:#64748b;text-align:left;">取引名</th>
+              <th style="padding:4px 8px;font-size:10px;font-weight:600;color:#64748b;text-align:center;">取引ステージ</th>
+              <th style="padding:4px 8px;font-size:10px;font-weight:600;color:#64748b;text-align:center;">検討/対象サービス</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }).join('');
+}
+
+function closeIsKpiDetailModal() {
+  const modal = document.getElementById('isKpiDetailModal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+
+function setKpi(prefix, actual, target) {
+  setText(`is-kpi-${prefix}-count`, actual);
+  setText(`is-kpi-${prefix}-target`, target);
+  const rate = target > 0 ? Math.round((actual/target)*100) : 0;
+  setText(`is-kpi-${prefix}-rate`, rate + '%');
+  const bar = document.getElementById(`is-kpi-${prefix}-bar`);
+  if (bar) bar.style.width = Math.min(rate, 100) + '%';
+}
+
+function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
 
 // ===== 目標 vs 受注実績グラフ =====
 let progressChart = null;
 
 let chartMember = '';
 
-function setChartMember(v) { chartMember = v; renderProgressChart(); }
+function setChartMember(v) {
+  chartMember = v;
+  currentSnapMember = v;  // KPI・ステージ別件数・FSメンバー別グラフと連動
+  // スナップショット側のセレクトもUIを同期
+  const snapSel = document.getElementById('snapMemberFilter');
+  if (snapSel) snapSel.value = v;
+  render(); // 内部で renderProgressChart も呼ばれる
+}
 
 function renderProgressChart() {
   const canvas = document.getElementById('progressChart');
@@ -1797,7 +2841,9 @@ function _buildLostListHtml(deals, gDef) {
           const mgmtShin = hasShin ? _effectiveMgmt(d.replaceNew||'', d.shinStatus||'') : '';
           const mgmtChu  = hasChu  ? _effectiveMgmt(d.replaceChu||'', d.chuStatus||'')  : '';
           const mgmtVal  = [mgmtShin, mgmtChu].filter(Boolean).join(' / ') || '—';
-          const nyuVal   = (d.nyusaki || '').trim() || '—';
+          const nyuVal   = lc.key === '未ヨミ化'
+            ? ((d.mishoshoReason || '').trim() || '—')
+            : ((d.nyusaki || '').trim() || '—');
           const rowBg    = i % 2 === 0 ? 'background:#fff;' : 'background:#f8fafc;';
           return `<tr style="${rowBg}border-bottom:1px solid #f1f5f9;">
             <td style="${tdBase('left','#334155', ellipsis)}" title="${d.company||''}">
@@ -1836,7 +2882,7 @@ function _buildLostListHtml(deals, gDef) {
                   <th style="${thStyle('right')}">リードタイム</th>
                   <th style="${thStyle('left')}">現状の管理方法</th>
                   <th style="${thStyle('center')}">検討サービス</th>
-                  <th style="${thStyle('left')}">導入先</th>
+                  <th style="${thStyle('left')}">${lc.key === '未ヨミ化' ? '未商談化理由' : '導入先'}</th>
                 </tr>
               </thead>
               <tbody>${rows}</tbody>
@@ -1967,6 +3013,174 @@ function _matchLostSvc(deal) {
   if (lostSvcFilter === 'both') return p === '新卒・中途';
   if (lostSvcFilter === 'unkn') return !p;
   return true;
+}
+
+// ===== リードソース別 =====
+const _MAJOR_COLORS = {
+  'SDR':       { dark:'#0284c7', mid:'#38bdf8', light:'#e0f2fe' },
+  'BDR':       { dark:'#7c3aed', mid:'#a78bfa', light:'#ede9fe' },
+  'リファラル': { dark:'#059669', mid:'#34d399', light:'#d1fae5' },
+  '再アップ':   { dark:'#d97706', mid:'#fbbf24', light:'#fef3c7' },
+  'その他':    { dark:'#64748b', mid:'#94a3b8', light:'#f1f5f9' },
+};
+
+function renderLeadSourceBreakdown() {
+  const container = document.getElementById('leadSourceContent');
+  if (!container) return;
+  const months = getMonthsForPeriod();
+  const activePipe = getActivePipeline();
+  const member = currentSnapMember;
+  const deals = activePipe.filter(d => months.includes(d.month) && (!member || d.name === member));
+  if (deals.length === 0) {
+    container.innerHTML = '<p class="text-xs text-slate-400">該当案件なし</p>';
+    return;
+  }
+
+  // ツリー集計
+  const tree = {};
+  LEAD_SOURCE_TREE.forEach(g => {
+    tree[g.major] = { count: 0, amount: 0, minors: {} };
+    g.minors.forEach(mi => {
+      tree[g.major].minors[mi.key] = {
+        count: 0, amount: 0,
+        新規:        { count: 0, amount: 0 },
+        ナーチャリング: { count: 0, amount: 0 },
+      };
+    });
+  });
+  let totalCount = 0, totalAmount = 0;
+  deals.forEach(d => {
+    const cat = getLeadCategory(d);
+    if (!tree[cat.major] || !tree[cat.major].minors[cat.minor]) return;
+    const node = tree[cat.major].minors[cat.minor];
+    node.count++; node.amount += d.amount;
+    if (cat.period === '新規' || cat.period === 'ナーチャリング') {
+      node[cat.period].count++; node[cat.period].amount += d.amount;
+    }
+    tree[cat.major].count++; tree[cat.major].amount += d.amount;
+    totalCount++; totalAmount += d.amount;
+  });
+
+  const fmtMoney = n => n >= 1_000_000 ? '¥' + (n/1_000_000).toFixed(1) + 'M' : '¥' + (n||0).toLocaleString();
+  const pct = n => totalAmount > 0 ? Math.round((n/totalAmount)*100) : 0;
+
+  // ===== サマリーバー =====
+  let summaryHtml = `<div class="flex items-center gap-3 mb-4 p-3 bg-slate-50 rounded-lg">
+    <div class="flex-1">
+      <div class="text-[10px] text-slate-500 uppercase tracking-wider">合計</div>
+      <div class="text-lg font-bold text-slate-700">${totalCount}<span class="text-xs font-normal text-slate-400 ml-1">件</span> <span class="text-sm font-semibold text-slate-500 ml-2">${fmtMoney(totalAmount)}</span></div>
+    </div>
+    <div class="flex gap-1.5 flex-wrap justify-end">`;
+  LEAD_SOURCE_TREE.forEach(g => {
+    if (tree[g.major].count === 0) return;
+    const c = _MAJOR_COLORS[g.major] || _MAJOR_COLORS['その他'];
+    const r = pct(tree[g.major].amount);
+    summaryHtml += `<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full" style="background:${c.light}">
+      <span class="w-2 h-2 rounded-full" style="background:${c.dark}"></span>
+      <span class="text-[11px] font-semibold" style="color:${c.dark}">${g.major}</span>
+      <span class="text-[11px] font-bold" style="color:${c.dark}">${tree[g.major].count}件</span>
+      <span class="text-[10px]" style="color:${c.dark};opacity:0.7">${r}%</span>
+    </div>`;
+  });
+  summaryHtml += `</div></div>`;
+
+  // ===== 大項目カード =====
+  let cardsHtml = '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">';
+  LEAD_SOURCE_TREE.forEach(g => {
+    const M = tree[g.major];
+    if (M.count === 0) return;
+    const c = _MAJOR_COLORS[g.major] || _MAJOR_COLORS['その他'];
+    const isReup = g.major === '再アップ';
+
+    // 中項目行
+    let minorRows = '';
+    g.minors.forEach(mi => {
+      const N = M.minors[mi.key];
+      if (!N || N.count === 0) return;
+      const eRate = Math.round(getMinorWinRate(mi.key) * 100);
+
+      if (isReup) {
+        // 再アップ: 時期サブなし、合計だけ表示
+        minorRows += `<div class="flex items-center justify-between px-3 py-2 hover:bg-slate-50 transition-colors">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="text-[12px] font-medium text-slate-700 truncate">${mi.key}</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded font-semibold" style="background:#fef3c7;color:#92400e">E ${eRate}%</span>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="text-[12px] font-bold text-slate-700">${N.count}<span class="text-[10px] font-normal text-slate-400 ml-0.5">件</span></span>
+            <span class="text-[11px] text-slate-500 tabular-nums">${fmtMoney(N.amount)}</span>
+          </div>
+        </div>`;
+      } else {
+        // 通常: 新規 / ナーチャリングを横並びの2列で表示
+        const newC = N['新規'].count, newA = N['新規'].amount;
+        const nurC = N['ナーチャリング'].count, nurA = N['ナーチャリング'].amount;
+        minorRows += `<div class="px-3 py-2 hover:bg-slate-50 transition-colors">
+          <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="text-[12px] font-medium text-slate-700 truncate">${mi.key}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded font-semibold shrink-0" style="background:${c.light};color:${c.dark}">E ${eRate}%</span>
+            </div>
+            <span class="text-[11px] text-slate-400 shrink-0">計 ${N.count}件 · ${fmtMoney(N.amount)}</span>
+          </div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <div class="flex items-center justify-between px-2 py-1 rounded" style="background:#ecfdf5">
+              <div class="flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full" style="background:#10b981"></span>
+                <span class="text-[10px] font-semibold text-emerald-700">新規</span>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-[12px] font-bold text-emerald-700">${newC}</span>
+                <span class="text-[9px] text-emerald-600">件</span>
+                <span class="text-[10px] text-emerald-600 ml-1 tabular-nums">${fmtMoney(newA)}</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between px-2 py-1 rounded" style="background:#fef3f9">
+              <div class="flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full" style="background:#db2777"></span>
+                <span class="text-[10px] font-semibold" style="color:#be185d">ナーチャリング</span>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-[12px] font-bold" style="color:#be185d">${nurC}</span>
+                <span class="text-[9px]" style="color:#db2777">件</span>
+                <span class="text-[10px] ml-1 tabular-nums" style="color:#db2777">${fmtMoney(nurA)}</span>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }
+    });
+
+    cardsHtml += `<div class="rounded-xl border overflow-hidden" style="border-color:${c.light}">
+      <div class="px-4 py-2.5 flex items-center justify-between" style="background:linear-gradient(90deg, ${c.light}, white)">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full" style="background:${c.dark}"></span>
+          <span class="text-sm font-bold" style="color:${c.dark}">${g.major}</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-bold text-slate-700">${M.count}<span class="text-[10px] font-normal text-slate-500 ml-0.5">件</span></span>
+          <span class="text-[12px] text-slate-500 tabular-nums">${fmtMoney(M.amount)}</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full font-semibold" style="background:${c.light};color:${c.dark}">${pct(M.amount)}%</span>
+        </div>
+      </div>
+      <div class="divide-y divide-slate-100">${minorRows || '<p class="px-3 py-2 text-[11px] text-slate-400">内訳なし</p>'}</div>
+    </div>`;
+  });
+  cardsHtml += '</div>';
+
+  container.innerHTML = summaryHtml + cardsHtml;
+}
+
+// 中項目別E勝率の取得（カスタム→デフォルト）
+const E_WIN_BY_MINOR_DEFAULT = {
+  'organic': 0.20, 'Paid': 0.08, '外部比較サイト': 0.12, 'セミナー': 0.15, 'SEO': 0.20,
+  '新規テレアポ': 0.05, 'テレアポ代行': 0.03, '展示会': 0.15, '同一企業別担当者': 0.30,
+  'リファラル': 0.35, '再アップ': 0.10, 'その他': 0.10,
+};
+let customEWinByMinor = {}; // GASから読み込み
+function getMinorWinRate(minor) {
+  if (customEWinByMinor[minor] !== undefined) return customEWinByMinor[minor];
+  return E_WIN_BY_MINOR_DEFAULT[minor] !== undefined ? E_WIN_BY_MINOR_DEFAULT[minor] : eWinRate;
 }
 
 // ===== 失注分析 =====
@@ -2146,6 +3360,33 @@ function openWinRatesModal() {
 function closeWinRatesModal() {
   document.getElementById('winRatesModal').classList.add('hidden');
 }
+function renderEMinorRates() {
+  const minors = [];
+  LEAD_SOURCE_TREE.forEach(g => g.minors.forEach(mi => minors.push(mi.key)));
+  let html = `<table class="text-xs border-collapse w-full">
+    <thead><tr class="bg-slate-50">
+      <th class="px-3 py-2 text-left border border-slate-200 text-slate-600">中項目</th>
+      <th class="px-3 py-2 text-center border border-slate-200 text-slate-600">E勝率(%)</th>
+    </tr></thead><tbody>`;
+  minors.forEach(mi => {
+    const cur = Math.round(getMinorWinRate(mi) * 100);
+    const hasCustom = customEWinByMinor[mi] !== undefined;
+    html += `<tr>
+      <td class="px-3 py-1 border border-slate-200">${mi}</td>
+      <td class="px-2 py-1 border border-slate-200">
+        <div class="flex items-center gap-1 justify-center">
+          <input type="number" min="0" max="100" step="0.1" value="${cur}"
+            id="wr-emin-${mi}"
+            class="w-16 border rounded px-1 py-0.5 text-right text-xs ${hasCustom ? 'border-violet-400 bg-violet-50' : ''}" />
+          <span class="text-slate-400">%</span>
+        </div></td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  const wrap = document.getElementById('eMinorRatesWrap');
+  if (wrap) wrap.innerHTML = html;
+}
+
 function renderWinRatesTable() {
   const cols = ['default', '新卒', '中途', '新卒・中途'];
   const colLabels = { default:'デフォルト（不明）', '新卒':'新卒採用', '中途':'中途採用', '新卒・中途':'新卒・中途（両方）' };
@@ -2724,6 +3965,583 @@ function renderECalendar() {
   }
 }
 
+// ============================================================
+// IS 担当者別 状況テーブル
+// ============================================================
+// 表示順 + 行カラー（FY2026仕様）
+const IS_TABLE_ROWS_FY2026 = [
+  // 吉住ユニット（青）
+  { name:'吉住 碧斗', color:'sky' },
+  { name:'福永 将也', color:'sky' },
+  { name:'田中 俊也', color:'sky' },
+  { name:'近藤 璃空', color:'sky' },
+  { name:'前田 朱梨', color:'sky' },
+  { name:'吉井 琉杏', color:'sky' },
+  { name:'宮原 亘輝', color:'sky' },
+  { name:'川上 陸斗', color:'sky' },
+  // 駒田ユニット（緑）
+  { name:'駒田 智士', color:'emerald' },
+  { name:'大井 駿空', color:'emerald' },
+  { name:'大山 耕太郎', color:'emerald' },
+  { name:'谷原 葵衣', color:'emerald' },
+  { name:'中村 雅', color:'emerald' },
+  { name:'高橋 玲衣', color:'emerald' },
+  { name:'宇佐美 朱莉', color:'emerald' },
+  { name:'開発 茉子', color:'emerald' },
+  { name:'久保 智花', color:'emerald' },
+  { name:'降籏 唯斗', color:'emerald' },
+  // MKグループ（ピンク）
+  { name:'池田 美亜', color:'rose' },
+  { name:'本島 翼', color:'rose' },
+  { name:'西 倖平', color:'rose' },
+  { name:'田代 大和', color:'rose' },
+];
+
+// FY2025 表示順（暫定: メンバーリスト順、全員 sky 色）
+const IS_TABLE_ROWS_FY2025 = (typeof IS_MEMBERS_FY2025 !== 'undefined' ? IS_MEMBERS_FY2025 : [])
+  .map(n => ({ name:n, color:'slate' }));
+
+// ユニット footer の集計対象
+const IS_UNITS_FY2026 = {
+  '吉住ユニット': ['吉住 碧斗','福永 将也','田中 俊也'],
+  '駒田ユニット': ['駒田 智士','大井 駿空','大山 耕太郎'],
+  'MKグループ':  ['池田 美亜','本島 翼','西 倖平','田代 大和'],
+  '新卒メンバー': ['近藤 璃空','前田 朱梨','吉井 琉杏','宮原 亘輝','川上 陸斗','谷原 葵衣','中村 雅','高橋 玲衣','宇佐美 朱莉','開発 茉子','久保 智花'],
+};
+
+// 行カラー: 全て白背景（点線で区切り）
+const IS_ROW_BG = {
+  sky:     '#ffffff',
+  emerald: '#ffffff',
+  rose:    '#ffffff',
+  slate:   '#ffffff',
+};
+
+// 詳細表示用: 期間内の対象deal一覧（再利用しやすいよう関数化）
+function _getMemberDealsForKind(member, kind, months) {
+  const allDeals = [...pipeline, ...lostDeals];
+  const dateInMonths = (date) => {
+    if (!(date instanceof Date) || isNaN(date)) return false;
+    const ym = `${date.getFullYear()}/${String(date.getMonth()+1).padStart(2,'0')}`;
+    return months.includes(ym);
+  };
+  // member 引数の解釈
+  //   '__ALL__'    → 全 deals （担当者フィルタなし）
+  //   配列         → そのレコード作成者群に一致
+  //   文字列       → 単一のレコード作成者
+  //   空/undef     → 全 deals
+  let memDeals;
+  if (member === '__ALL__') {
+    memDeals = allDeals;
+  } else if (Array.isArray(member)) {
+    const set = new Set(member);
+    memDeals = allDeals.filter(d => set.has((d.recordCreator || '').trim()));
+  } else if (member) {
+    memDeals = allDeals.filter(d => (d.recordCreator || '').trim() === member);
+  } else {
+    memDeals = allDeals;
+  }
+  if (kind === 'apo') {
+    return memDeals.filter(d => dateInMonths(d.apoCreatedDate));
+  }
+  if (kind === 'jisshi') {
+    // FS初回アポ実施日が期間内、E含む全ステージ
+    // 失注（未商談）で未商談化理由が「商談してない（リスケ等）」「ターゲット外」は除外
+    //   ただし 2026/04 のみ「ターゲット外」もカウント
+    return memDeals.filter(d => {
+      if (!d.appointMonth || !months.includes(d.appointMonth)) return false;
+      if (d.stage === '失注' && d.lostLabel === '未ヨミ化') {
+        const reason = (d.mishoshoReason || '').trim();
+        if (reason.includes('商談してない')) return false;
+        if (reason.includes('ターゲット外')) {
+          if (d.appointMonth !== '2026/04') return false;
+        }
+      }
+      return true;
+    });
+  }
+  if (kind === 'yomi') {
+    return memDeals.filter(d => {
+      if (!dateInMonths(d.yomiDecidedDate)) return false;
+      if (d.stage === 'E' || d.stage === 'D') return false;
+      if (d.stage === '失注' && d.lostLabel === '未ヨミ化') return false;
+      return true;
+    });
+  }
+  if (kind === 'won') {
+    return memDeals.filter(d => d.stage === 'S' && months.includes(d.month));
+  }
+  return [];
+}
+
+function renderIsMemberTable() {
+  const tbody = document.getElementById('isMemberTableBody');
+  if (!tbody) return;
+
+  const months = getMonthsForPeriod();
+  const rows = (currentFY === 'FY2026') ? IS_TABLE_ROWS_FY2026 : IS_TABLE_ROWS_FY2025;
+
+  // 1メンバー集計
+  function statsFor(member) {
+    let tApo=0, tJisshi=0, tYomi=0;
+    months.forEach(mo => {
+      const t = getIsTargetFor(member, mo);
+      tApo += t.apo; tJisshi += t.jisshi; tYomi += t.yomi;
+    });
+    const apoDeals    = _getMemberDealsForKind(member, 'apo',    months);
+    const jisshiDeals = _getMemberDealsForKind(member, 'jisshi', months);
+    const yomiDeals   = _getMemberDealsForKind(member, 'yomi',   months);
+    const wonDeals    = _getMemberDealsForKind(member, 'won',    months);
+    const wonAmount = wonDeals.reduce((s,d) => s + (d.amount||0), 0);
+    return {
+      tApo, tJisshi, tYomi,
+      apoCount: apoDeals.length,
+      jisshiCount: jisshiDeals.length,
+      yomiCount: yomiDeals.length,
+      wonCount: wonDeals.length,
+      wonAmount
+    };
+  }
+
+  const pctColor = p => p < 60 ? '#dc2626' : p < 100 ? '#f59e0b' : '#10b981';
+  const fmtMoney = n => n > 0 ? '¥' + n.toLocaleString() : '¥0';
+  const escAttr = s => String(s).replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+
+  // 数値クリック→openIsMetricDetail を仕込む
+  function clickable(value, label, member, kind) {
+    if (value === 0) return `<span class="text-slate-400">0</span>`;
+    return `<button onclick="openIsMetricDetail('${escAttr(member)}', '${kind}', '${escAttr(label)}')" 
+      class="font-semibold underline decoration-dotted hover:opacity-70 cursor-pointer">${value}</button>`;
+  }
+
+  function makeCells(s, label, member, isFooter) {
+    const apoRate    = s.tApo    > 0 ? Math.round(s.apoCount   /s.tApo*100)    : (s.apoCount>0?100:0);
+    const jisshiRate = s.tJisshi > 0 ? Math.round(s.jisshiCount/s.tJisshi*100) : (s.jisshiCount>0?100:0);
+    const yomiRate   = s.tYomi   > 0 ? Math.round(s.yomiCount  /s.tYomi*100)   : (s.yomiCount>0?100:0);
+    const yomiKaRate = s.apoCount > 0 ? Math.round(s.yomiCount/s.apoCount*100) : 0;
+
+    // 通常行/フッター行 共通: 達成率だけ赤/橙/緑、実績数は青リンク、それ以外はグレー
+    const isFt = !!isFooter;
+    const baseCls = isFt ? 'px-2 py-1.5 text-center' : 'px-2 py-1 text-center';
+    const moneyCls = isFt ? 'px-2 py-1.5 text-right' : 'px-2 py-1 text-right';
+    const dimCol = isFt ? 'rgba(255,255,255,0.85)' : '#475569';   // 目標値・ヨミ化率の文字色
+    const linkCol = isFt ? '#bae6fd' : '#0284c7';                  // 実績数の青（フッターは明るい青）
+    const moneyCol = isFt ? 'white' : '#0f172a';                   // 金額の文字色
+    const borderL = isFt ? 'border-l border-white/30' : 'border-l border-slate-200';
+
+    function clk(value, kind) {
+      if (value === 0) return `<span style="color:${dimCol}">0</span>`;
+      return `<button onclick="openIsMetricDetail('${escAttr(member)}', '${kind}', '${escAttr(label)}')"
+        class="font-semibold underline decoration-dotted hover:opacity-70 cursor-pointer" style="color:${linkCol}">${value}</button>`;
+    }
+
+    return `
+      <td class="${baseCls}" style="color:${dimCol}">${s.tApo}</td>
+      <td class="${baseCls}">${clk(s.apoCount, 'apo')}</td>
+      <td class="${baseCls} font-semibold" style="color:${pctColor(apoRate)}">${apoRate}%</td>
+      <td class="${baseCls} ${borderL}" style="color:${dimCol}">${s.tJisshi}</td>
+      <td class="${baseCls}">${clk(s.jisshiCount, 'jisshi')}</td>
+      <td class="${baseCls} font-semibold" style="color:${pctColor(jisshiRate)}">${jisshiRate}%</td>
+      <td class="${baseCls} ${borderL}" style="color:${dimCol}">${s.tYomi}</td>
+      <td class="${baseCls}">${clk(s.yomiCount, 'yomi')}</td>
+      <td class="${baseCls} font-semibold" style="color:${pctColor(yomiRate)}">${yomiRate}%</td>
+      <td class="${baseCls}" style="color:${dimCol}">${yomiKaRate}%</td>
+      <td class="${baseCls} ${borderL}">${clk(s.wonCount, 'won')}</td>
+      <td class="${moneyCls}" style="color:${moneyCol}">${fmtMoney(s.wonAmount)}</td>
+    `;
+  }
+
+  // 個別行: 白背景 + 行間 点線
+  const memberStatsMap = {};
+  let memberRowsHtml = rows.map(r => {
+    const s = statsFor(r.name);
+    memberStatsMap[r.name] = s;
+    return `<tr style="background:#ffffff;border-bottom:1px dashed #e2e8f0">
+      <td class="px-2 py-1 text-left font-medium sticky left-0 z-10" style="background:#ffffff">${r.name}</td>
+      ${makeCells(s, r.name, r.name)}
+    </tr>`;
+  }).join('');
+
+  // 集計行（複数名の合計）
+  function aggregateRow(label, names, bgColor) {
+    const isTotal = label === '合計';
+    let sum;
+    if (isTotal) {
+      // 合計行: 担当者問わず 全 deals から実績集計、目標は IS全体目標を直接参照
+      const _tot = getIsTotalTargets(months);
+      const tApo = _tot.apo, tJisshi = _tot.jisshi, tYomi = _tot.yomi;
+      const apoDeals    = _getMemberDealsForKind('__ALL__', 'apo',    months);
+      const jisshiDeals = _getMemberDealsForKind('__ALL__', 'jisshi', months);
+      const yomiDeals   = _getMemberDealsForKind('__ALL__', 'yomi',   months);
+      const wonDeals    = _getMemberDealsForKind('__ALL__', 'won',    months);
+      sum = {
+        tApo, tJisshi, tYomi,
+        apoCount:    apoDeals.length,
+        jisshiCount: jisshiDeals.length,
+        yomiCount:   yomiDeals.length,
+        wonCount:    wonDeals.length,
+        wonAmount:   wonDeals.reduce((s,d) => s + (d.amount||0), 0),
+      };
+    } else {
+      sum = { tApo:0, tJisshi:0, tYomi:0, apoCount:0, jisshiCount:0, yomiCount:0, wonCount:0, wonAmount:0 };
+      names.forEach(n => {
+        const s = memberStatsMap[n] || statsFor(n);
+        Object.keys(sum).forEach(k => sum[k] += s[k] || 0);
+      });
+    }
+    const memberArg = isTotal ? '__ALL__' : ('GROUP:' + names.join(','));
+    return `<tr style="background:${bgColor};color:white">
+      <td class="px-2 py-1.5 text-left font-bold sticky left-0 z-10 text-white" style="background:${bgColor}">${label}</td>
+      ${makeCells(sum, label, memberArg, true)}
+    </tr>`;
+  }
+
+  const allNames = rows.map(r => r.name);
+  // 合計行は「担当者/月間」と同じ #0284c7 / ユニット行も同色で統一
+  const FOOTER_BG = '#0284c7';
+  let footerHtml = aggregateRow('合計', allNames, FOOTER_BG);
+
+  if (currentFY === 'FY2026') {
+    Object.entries(IS_UNITS_FY2026).forEach(([name, members]) => {
+      footerHtml += aggregateRow(name, members, FOOTER_BG);
+    });
+  }
+
+  tbody.innerHTML = memberRowsHtml + footerHtml;
+}
+
+// ============================================================
+// IS 実績詳細モーダル
+// ============================================================
+function closeIsMetricDetail() {
+  const m = document.getElementById('isMetricDetailModal');
+  if (m) m.classList.add('hidden');
+}
+
+function _calcLeadTime(start, end) {
+  if (!(start instanceof Date) || isNaN(start) || !(end instanceof Date) || isNaN(end)) return null;
+  // 元の Date を破壊しないよう、日付のみ抽出して比較
+  const s = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+  const e = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+  return Math.round((e - s) / 86400000); // 日数
+}
+function _fmtMd(date) {
+  if (!(date instanceof Date) || isNaN(date)) return '-';
+  return `${date.getMonth()+1}/${date.getDate()}`;
+}
+function _closeDateOf(d) {
+  if (!d.month || !d.closeDay) return null;
+  const [y, mo] = d.month.split('/').map(Number);
+  return new Date(y, mo-1, d.closeDay);
+}
+
+const IS_KIND_META = {
+  apo:    { title: '取得実績', icon: '📞', color: '#8b5cf6', groupBy: d => d.product || '不明', groupLabel: '検討/対象サービス' },
+  jisshi: { title: '実施実績', icon: '🤝', color: '#f59e0b', groupBy: d => d.stage,             groupLabel: 'ステージ' },
+  yomi:   { title: 'ヨミ化実績', icon: '📋', color: '#0284c7', groupBy: d => d.stage === '失注' ? `失注（${d.lostLabel||''}）` : d.stage, groupLabel: 'ステージ' },
+  won:    { title: '受注件数', icon: '🏆', color: '#10b981', groupBy: () => 'S', groupLabel: '' },
+};
+
+function openIsMetricDetail(memberArg, kind, label) {
+  const meta = IS_KIND_META[kind];
+  if (!meta) return;
+  const months = getMonthsForPeriod();
+
+  // member 引数の解釈
+  let memberKey;
+  if (memberArg === '__ALL__') {
+    memberKey = '__ALL__';
+  } else if (memberArg && memberArg.startsWith('GROUP:')) {
+    memberKey = memberArg.substring(6).split(',');
+  } else {
+    memberKey = memberArg;
+  }
+
+  const deals = _getMemberDealsForKind(memberKey, kind, months);
+
+  // フォーマッタ
+  function rowHtml(d) {
+    const company = d.company || '?';
+    const product = d.product || '-';
+    const hubUrl = d.hubspotId ? `https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}` : null;
+    const companyHtml = hubUrl
+      ? `<a href="${hubUrl}" target="_blank" rel="noopener" class="font-semibold hover:underline" style="color:${meta.color}">${company}</a>`
+      : `<span class="font-semibold" style="color:${meta.color}">${company}</span>`;
+
+    if (kind === 'apo') {
+      // 企業名のみ
+      return `<li class="py-1">${companyHtml}</li>`;
+    }
+    if (kind === 'jisshi') {
+      // 失注（未商談）= lostLabel '未ヨミ化': 未商談化理由を表示
+      if (d.stage === '失注' && d.lostLabel === '未ヨミ化') {
+        const reason = (d.mishoshoReason || '').trim() || '-';
+        return `<li class="py-1">${companyHtml} <span class="text-slate-400">｜</span> <span class="text-slate-600">${product}</span> <span class="text-slate-400">｜</span> <span class="text-rose-600">未商談化理由: ${reason}</span></li>`;
+      }
+      // その他の失注: アポ実施日〜クローズ日のリードタイム + 導入先
+      if (d.stage === '失注') {
+        const close = _closeDateOf(d);
+        const lt = _calcLeadTime(d.appointDate, close);
+        const ltStr = lt === 0 ? '実施後直後' : (lt != null ? `${_fmtMd(d.appointDate)}〜${_fmtMd(close)} (${lt}日)` : '-');
+        return `<li class="py-1">${companyHtml} <span class="text-slate-400">｜</span> <span class="text-slate-600">${product}</span> <span class="text-slate-400">｜</span> <span class="text-slate-500">${ltStr}</span> <span class="text-slate-400">｜</span> <span class="text-rose-600">導入先: ${d.nyusaki || '-'}</span></li>`;
+      }
+      // D以上（パイプライン中）: 企業名｜検討サービス
+      return `<li class="py-1">${companyHtml} <span class="text-slate-400">｜</span> <span class="text-slate-600">${product}</span></li>`;
+    }
+    if (kind === 'yomi') {
+      const apo = d.appointDate;
+      if (d.stage === '失注') {
+        const close = _closeDateOf(d);
+        const lt = _calcLeadTime(apo, close);
+        const ltStr = lt === 0 ? '実施後直後' : (lt != null ? `${_fmtMd(apo)}〜${_fmtMd(close)} (${lt}日)` : '-');
+        return `<li class="py-1">${companyHtml} <span class="text-slate-400">｜</span> <span class="text-slate-600">${product}</span> <span class="text-slate-400">｜</span> <span class="text-slate-500">${ltStr}</span> <span class="text-slate-400">｜</span> <span class="text-rose-600">導入先: ${d.nyusaki || '-'}</span></li>`;
+      } else {
+        const lt = _calcLeadTime(apo, d.yomiDecidedDate);
+        const ltStr = lt === 0 ? '実施後直後' : (lt != null ? `${_fmtMd(apo)}〜${_fmtMd(d.yomiDecidedDate)} (${lt}日)` : '-');
+        return `<li class="py-1">${companyHtml} <span class="text-slate-400">｜</span> <span class="text-slate-600">${product}</span> <span class="text-slate-400">｜</span> <span class="text-slate-500">${ltStr}</span></li>`;
+      }
+    }
+    if (kind === 'won') {
+      const close = _closeDateOf(d);
+      const lt = _calcLeadTime(d.appointDate, close);
+      const ltStr = lt === 0 ? '実施後直後' : (lt != null ? `${_fmtMd(d.appointDate)}〜${_fmtMd(close)} (${lt}日)` : '-');
+      const amt = '¥' + (d.amount||0).toLocaleString();
+      return `<li class="py-1">${companyHtml} <span class="text-slate-400">｜</span> <span class="text-slate-600">${product}</span> <span class="text-slate-400">｜</span> <span class="font-semibold" style="color:${meta.color}">${amt}</span> <span class="text-slate-400">｜</span> <span class="text-slate-500">${ltStr}</span></li>`;
+    }
+    return '';
+  }
+
+  // グルーピング
+  const grouped = {};
+  deals.forEach(d => {
+    const k = meta.groupBy(d) || '不明';
+    if (!grouped[k]) grouped[k] = [];
+    grouped[k].push(d);
+  });
+
+  // ステージ順序
+  const STAGE_ORDER = { 'S':0, 'A':1, 'B':2, 'C+':3, 'C':4, 'D':5, 'E':6 };
+  const sortedKeys = Object.keys(grouped).sort((a,b) => {
+    const oa = STAGE_ORDER[a] !== undefined ? STAGE_ORDER[a] : 99;
+    const ob = STAGE_ORDER[b] !== undefined ? STAGE_ORDER[b] : 99;
+    return oa - ob || a.localeCompare(b, 'ja');
+  });
+
+  let bodyHtml = '';
+  if (deals.length === 0) {
+    bodyHtml = '<p class="text-slate-400 text-center py-8">該当案件なし</p>';
+  } else {
+    bodyHtml = sortedKeys.map(k => {
+      const ds = grouped[k];
+      return `<div class="mb-4">
+        <h4 class="text-xs font-bold mb-1 px-2 py-1 rounded inline-block" style="background:${meta.color}20;color:${meta.color}">${k} <span class="text-slate-500 font-normal">(${ds.length}件)</span></h4>
+        <ul class="ml-2 divide-y divide-slate-100 text-[12px]">${ds.map(rowHtml).join('')}</ul>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('isMetricDetailTitle').textContent = `${meta.icon} ${label} - ${meta.title}（${deals.length}件）`;
+  document.getElementById('isMetricDetailHeader').style.borderBottomColor = meta.color;
+  document.getElementById('isMetricDetailBody').innerHTML = bodyHtml;
+  document.getElementById('isMetricDetailModal').classList.remove('hidden');
+}
+
+// ============================================================
+// IS 商談カレンダー（FSカレンダーをベースに、フィルタはレコード作成者）
+// ============================================================
+let isCalMember = '';
+let isCalViewMonth = (() => {
+  const n = new Date();
+  return `${n.getFullYear()}/${String(n.getMonth()+1).padStart(2,'0')}`;
+})();
+let isCalTab = 0; // 0=全て 1=1回目 2=2回目 3=3回目
+let isCalExpandedDays = new Set();
+
+function setIsCalTab(t) {
+  isCalTab = t;
+  isCalExpandedDays.clear();
+  const TAB_COLORS = { 0: '#0284c7', 1: '#0ea5e9', 2: '#f97316', 3: '#8b5cf6' };
+  [0,1,2,3].forEach(i => {
+    const btn = document.getElementById('isCalTab-' + i);
+    if (!btn) return;
+    if (i === t) { btn.style.background = TAB_COLORS[i]; btn.style.color = 'white'; }
+    else         { btn.style.background = 'white';      btn.style.color = TAB_COLORS[i]; }
+  });
+  renderIsCalendar();
+}
+
+function toggleIsCalDay(dateStr) {
+  if (isCalExpandedDays.has(dateStr)) isCalExpandedDays.delete(dateStr);
+  else isCalExpandedDays.add(dateStr);
+  renderIsCalendar();
+}
+
+function setIsCalMember(v) { isCalMember = v; isCalExpandedDays.clear(); renderIsCalendar(); }
+function isCalPrevMonth() {
+  const allM = [...FY2025_MONTHS, ...FY_MONTHS];
+  const idx = allM.indexOf(isCalViewMonth);
+  if (idx > 0) { isCalViewMonth = allM[idx - 1]; isCalExpandedDays.clear(); renderIsCalendar(); }
+}
+function isCalNextMonth() {
+  const allM = [...FY2025_MONTHS, ...FY_MONTHS];
+  const idx = allM.indexOf(isCalViewMonth);
+  if (idx >= 0 && idx < allM.length - 1) { isCalViewMonth = allM[idx + 1]; isCalExpandedDays.clear(); renderIsCalendar(); }
+}
+
+function renderIsCalendar() {
+  const cal = document.getElementById('isCalendar');
+  if (!cal) return;
+
+  // メンバーフィルター更新（IS_MEMBERS_FY{n} に登録されたメンバーのみ表示）
+  const sel = document.getElementById('isCalMemberFilter');
+  if (sel) {
+    const cur = sel.value;
+    const isMembers = getIsMembers();
+    sel.innerHTML = '<option value="">全員</option>' + isMembers.map(m => `<option value="${m}">${m}</option>`).join('');
+    sel.value = cur || isCalMember;
+  }
+
+  // FY範囲にクランプ
+  const allFyMonths = [...FY2025_MONTHS, ...FY_MONTHS];
+  if (!allFyMonths.includes(isCalViewMonth)) isCalViewMonth = FY_MONTHS[0];
+  const [yr, mo] = isCalViewMonth.split('/').map(Number);
+
+  const lbl = document.getElementById('isCalMonthLabel');
+  if (lbl) lbl.textContent = `${yr}年 ${mo}月`;
+
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}`;
+
+  const calPipeline = getActivePipeline();
+  // ★ レコード作成者でフィルタ
+  const allDeals = calPipeline.filter(d => !isCalMember || (d.recordCreator || '').trim() === isCalMember);
+
+  // 商談回ごとに収集
+  const eDeals1 = allDeals.filter(d => d.stage === 'E' && d.appointMonth === isCalViewMonth);
+  const eDealsNoDate = allDeals.filter(d => d.stage === 'E' && !d.appointDate && d.month === isCalViewMonth);
+  const eDeals2 = allDeals.filter(d => d.appt2Month === isCalViewMonth && d.appt2Day);
+  const eDeals3 = allDeals.filter(d => d.appt3Month === isCalViewMonth && d.appt3Day);
+
+  const count1 = eDeals1.length + eDealsNoDate.length;
+  const count2 = eDeals2.length;
+  const count3 = eDeals3.length;
+  const totalCount = count1 + count2 + count3;
+  const displayCount = isCalTab === 0 ? totalCount : isCalTab === 1 ? count1 : isCalTab === 2 ? count2 : count3;
+  const badge = document.getElementById('isCalTotalBadge');
+  const TAB_BADGE_COLORS = { 0: {bg:'#dbeafe',col:'#0284c7'}, 1: {bg:'#e0f2fe',col:'#0ea5e9'}, 2: {bg:'#fff7ed',col:'#f97316'}, 3: {bg:'#f5f3ff',col:'#8b5cf6'} };
+  const bc = TAB_BADGE_COLORS[isCalTab];
+  if (badge) {
+    badge.textContent = isCalTab === 0
+      ? `${mo}月 合計 ${totalCount}件（1回目:${count1} 2回目:${count2} 3回目:${count3}）`
+      : `${mo}月 ${CAL_COLORS[isCalTab]?.label || ''}${displayCount}件`;
+    badge.style.background = bc.bg;
+    badge.style.color = bc.col;
+  }
+
+  function getDayEntries(dayNum) {
+    const entries = [];
+    if (isCalTab === 0 || isCalTab === 1) eDeals1.filter(d => d.appointDay === dayNum).forEach(d => entries.push({ d, type: 1 }));
+    if (isCalTab === 0 || isCalTab === 2) eDeals2.filter(d => d.appt2Day === dayNum).forEach(d => entries.push({ d, type: 2 }));
+    if (isCalTab === 0 || isCalTab === 3) eDeals3.filter(d => d.appt3Day === dayNum).forEach(d => entries.push({ d, type: 3 }));
+    return entries;
+  }
+
+  function entryCard(d, type) {
+    const c = CAL_COLORS[type];
+    const pb = PRODUCT_BADGE[d.product] || { bg: '#f1f5f9', text: '#475569' };
+    const creatorShort = d.recordCreator ? d.recordCreator.split(' ')[0] : '';
+    const hubUrl = d.hubspotId ? `href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener"` : '';
+    return `<div class="rounded p-1 mb-0.5 text-[10px] leading-tight" style="background:${c.bg};border-left:3px solid ${c.main}">
+      <a ${hubUrl} class="font-medium block truncate hover:underline" style="color:#1e293b" title="${d.company}">${d.company || '-'}</a>
+      <div class="flex items-center justify-between mt-0.5 flex-wrap gap-0.5">
+        <span class="font-semibold" style="color:${c.main}">${creatorShort || '?'}</span>
+        ${d.product ? `<span class="rounded-full px-1" style="background:${pb.bg};color:${pb.text}">${d.product}</span>` : ''}
+      </div>
+    </div>`;
+  }
+
+  const firstDay = new Date(yr, mo - 1, 1).getDay();
+  const daysInMonth = new Date(yr, mo, 0).getDate();
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+
+  let html = `<div class="border rounded-xl overflow-hidden" style="border-color:#e2e8f0">`;
+  html += `<div class="grid grid-cols-7 border-b" style="border-color:#e2e8f0;background:#f8fafc">`;
+  WEEK_LABELS.forEach((w, i) => {
+    const col = i === 0 ? '#dc2626' : i === 6 ? '#0284c7' : '#475569';
+    html += `<div class="text-center py-2 text-xs font-semibold" style="color:${col}">${w}</div>`;
+  });
+  html += `</div><div class="grid grid-cols-7">`;
+
+  for (let i = 0; i < totalCells; i++) {
+    const dayNum = i - firstDay + 1;
+    const isValid = dayNum >= 1 && dayNum <= daysInMonth;
+    const dateStr = isValid ? `${yr}/${String(mo).padStart(2,'0')}/${String(dayNum).padStart(2,'0')}` : '';
+    const isToday = dateStr === todayStr;
+    const dow = i % 7;
+    const isSun = dow === 0, isSat = dow === 6;
+    const isPast = isValid && dateStr < todayStr;
+
+    const dayEntries = isValid ? getDayEntries(dayNum) : [];
+    const isExpanded = isValid && isCalExpandedDays.has(dateStr);
+    const visibleEntries = isExpanded ? dayEntries : dayEntries.slice(0, E_CAL_MAX);
+    const hiddenCount = dayEntries.length - E_CAL_MAX;
+
+    const cellBg = isToday ? '#eff6ff' : 'white';
+    const numColor = isToday ? 'white' : isSun ? '#dc2626' : isSat ? '#0284c7' : isPast ? '#cbd5e1' : '#374151';
+    const borderR = i % 7 !== 6 ? 'border-r' : '';
+    const borderB = i < totalCells - 7 ? 'border-b' : '';
+
+    html += `<div class="${borderR} ${borderB}" style="border-color:#f1f5f9;min-height:80px;background:${cellBg};padding:4px">`;
+    if (isValid) {
+      html += `<div class="flex items-center gap-1 mb-1">
+        <span class="text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full" style="${isToday ? 'background:#0284c7;' : ''}color:${numColor}">${dayNum}</span>
+        ${dayEntries.length > 0 ? `<span class="text-[9px] font-semibold rounded-full px-1" style="background:#f1f5f9;color:#475569">${dayEntries.length}件</span>` : ''}
+      </div>`;
+      visibleEntries.forEach(({ d, type }) => { html += entryCard(d, type); });
+      if (!isExpanded && hiddenCount > 0) {
+        html += `<button onclick="toggleIsCalDay('${dateStr}')" class="w-full mt-0.5 text-[9px] font-semibold rounded py-0.5 hover:opacity-80" style="background:#dbeafe;color:#0284c7">＋${hiddenCount}件 もっと見る</button>`;
+      } else if (isExpanded && dayEntries.length > E_CAL_MAX) {
+        html += `<button onclick="toggleIsCalDay('${dateStr}')" class="w-full mt-0.5 text-[9px] font-semibold rounded py-0.5 hover:opacity-80" style="background:#f1f5f9;color:#64748b">折りたたむ ▲</button>`;
+      }
+    }
+    html += `</div>`;
+  }
+  html += `</div></div>`;
+
+  html += `<div class="mt-2 flex items-center gap-4 text-xs text-slate-500 px-1">
+    <span>表示中 <b class="text-slate-700">${displayCount}件</b></span>
+    ${isCalTab === 0 || isCalTab === 1 ? `<span style="color:${CAL_COLORS[1].main}">● 1回目 ${count1}件</span>` : ''}
+    ${isCalTab === 0 || isCalTab === 2 ? `<span style="color:${CAL_COLORS[2].main}">● 2回目 ${count2}件</span>` : ''}
+    ${isCalTab === 0 || isCalTab === 3 ? `<span style="color:${CAL_COLORS[3].main}">● 3回目 ${count3}件</span>` : ''}
+  </div>`;
+
+  cal.innerHTML = html;
+
+  // 日付未設定のE案件（1回目のみ）
+  const sec = document.getElementById('isCalNoDaySection');
+  const lst = document.getElementById('isCalNoDayList');
+  if (sec && lst) {
+    if (eDealsNoDate.length > 0) {
+      sec.classList.remove('hidden');
+      lst.innerHTML = eDealsNoDate.map(d => {
+        const c = CAL_COLORS[1];
+        const pb = PRODUCT_BADGE[d.product] || { bg: '#f1f5f9', text: '#475569' };
+        const creatorShort = d.recordCreator ? d.recordCreator.split(' ')[0] : '';
+        const hubUrl = d.hubspotId ? `href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener"` : '';
+        return `<div class="rounded-lg p-2 text-[10px] border" style="background:${c.bg};border-color:${c.main};min-width:120px">
+          <a ${hubUrl} class="font-medium block truncate hover:underline" style="color:#1e293b" title="${d.company}">${d.company || '-'}</a>
+          <div class="flex items-center gap-1 mt-0.5">
+            <span class="font-semibold" style="color:${c.main}">${creatorShort || '?'}</span>
+            ${d.product ? `<span class="rounded-full px-1" style="background:${pb.bg};color:${pb.text}">${d.product}</span>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    } else {
+      sec.classList.add('hidden');
+    }
+  }
+}
+
 // ===== スナップショット =====
 // 旧名前形式（名姓）→ 新形式（姓名）変換マップ
 const SNAP_NAME_MIGRATION = {
@@ -2810,6 +4628,9 @@ function clearAllSnapshots() {
 
 function setSnapMember(v) {
   currentSnapMember = v;
+  chartMember = v;  // 目標vs受注実績の担当者選択と連動
+  const chartSel = document.getElementById('chartMemberSelect');
+  if (chartSel) chartSel.value = v;
   render(); // KPI・グラフ・表も連動して切り替え
 }
 
@@ -3118,6 +4939,18 @@ function showCompareModal(snaps) {
     if (catKey === 'newAdded' && d.month) {
       const m = d.month.slice(0, 7); // YYYY/MM
       dateChangeHtml = `<span class="text-[10px] font-semibold shrink-0 px-1.5 py-0.5 rounded" style="background:#f0fdf4;color:#16a34a">📅 ${m}</span>`;
+    }
+    // 上昇の場合、クローズ日（変更があれば before→after、無ければ現在の月日）を表示
+    if (catKey === 'up' && traj.firstDeal && traj.lastDeal) {
+      const fd = traj.firstDeal, ld = traj.lastDeal;
+      const fm  = fd.month ? fd.month.slice(5).replace(/^0/,'') : '?';
+      const fd2 = fd.closeDay ?? '?';
+      const lm  = ld.month ? ld.month.slice(5).replace(/^0/,'') : '?';
+      const ld2 = ld.closeDay ?? '?';
+      const dateChanged = fd.month !== ld.month || fd.closeDay !== ld.closeDay;
+      dateChangeHtml = dateChanged
+        ? `<span class="text-[10px] font-semibold shrink-0 px-1.5 py-0.5 rounded" style="background:#f0fdf4;color:#059669">${fm}/${fd2}→${lm}/${ld2}</span>`
+        : `<span class="text-[10px] font-semibold shrink-0 px-1.5 py-0.5 rounded" style="background:#f0fdf4;color:#059669">📅 ${lm}/${ld2}</span>`;
     }
 
     return `<div class="flex items-center gap-2 px-2 py-1.5 rounded text-[11px]" style="background:${bg}">
