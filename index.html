@@ -1001,11 +1001,11 @@ let eWinRate = 0.10; // E案件の最終受注率（初期値10%）
 //   IS_TARGETS[member]['YYYY/MM'] = [apo, jisshi, yomi]
 // ============================================================
 const IS_TARGETS = {
-  '池田 美亜': { '2025/04':[30,30,20], '2025/05':[30,30,20], '2025/06':[25,25,16], '2025/07':[39,39,25], '2025/08':[40,40,26], '2025/09':[33,33,21], '2025/10':[30,30,20], '2025/11':[30,30,20], '2025/12':[30,30,20], '2026/01':[30,30,20], '2026/02':[30,30,20], '2026/03':[30,30,20] },
+  '池田 美亜': { '2025/04':[30,30,20], '2025/05':[30,30,20], '2025/06':[25,25,16], '2025/07':[39,39,25], '2025/08':[40,40,26], '2025/09':[33,33,21], '2025/10':[30,30,20], '2025/11':[30,30,20], '2025/12':[30,30,20], '2026/01':[30,30,20], '2026/02':[30,30,20], '2026/03':[30,30,20], '2026/05':[20,20,8] },
   '駒田 智士': { '2025/04':[17,17,9], '2025/05':[17,17,9], '2025/06':[20,20,11], '2025/07':[27,27,15], '2025/08':[27,27,15], '2025/09':[27,27,15], '2025/10':[25,25,14], '2025/11':[25,25,14], '2025/12':[27,27,15], '2026/01':[25,25,14], '2026/02':[25,25,14], '2026/03':[27,27,15], '2026/04':[25,25,10], '2026/05':[25,25,10], '2026/06':[25,25,10], '2026/07':[25,25,10], '2026/08':[25,25,10], '2026/09':[25,25,10], '2026/10':[25,25,10], '2026/11':[25,25,10], '2026/12':[25,25,10], '2027/01':[25,25,10], '2027/02':[25,25,10], '2027/03':[25,25,10] },
   '吉住 碧斗': { '2025/04':[17,17,9], '2025/05':[17,17,9], '2025/06':[20,20,11], '2025/07':[27,27,15], '2025/08':[27,27,15], '2025/09':[27,27,15], '2025/10':[25,25,14], '2025/11':[25,25,14], '2025/12':[27,27,15], '2026/01':[25,25,14], '2026/02':[25,25,14], '2026/03':[27,27,15], '2026/04':[25,25,10], '2026/05':[25,25,10], '2026/06':[25,25,10], '2026/07':[25,25,10], '2026/08':[25,25,10], '2026/09':[25,25,10], '2026/10':[25,25,10], '2026/11':[25,25,10], '2026/12':[25,25,10], '2027/01':[25,25,10], '2027/02':[25,25,10], '2027/03':[25,25,10] },
   '深澤 陸': { '2025/04':[17,17,9], '2025/05':[17,17,9], '2025/06':[20,20,11], '2025/07':[15,15,8], '2025/08':[15,15,8], '2025/09':[15,15,8], '2025/10':[0,0,0], '2025/11':[0,0,0], '2025/12':[0,0,0], '2026/01':[0,0,0], '2026/02':[0,0,0], '2026/03':[0,0,0] },
-  '本島 翼': { '2025/04':[17,17,9], '2025/05':[17,17,9], '2025/06':[20,20,11], '2025/07':[25,25,14], '2025/08':[25,25,14], '2025/09':[25,25,14], '2025/10':[20,20,11], '2025/11':[20,20,11], '2025/12':[25,25,14], '2026/01':[20,20,11], '2026/02':[20,20,11], '2026/03':[25,25,14] },
+  '本島 翼': { '2025/04':[17,17,9], '2025/05':[17,17,9], '2025/06':[20,20,11], '2025/07':[25,25,14], '2025/08':[25,25,14], '2025/09':[25,25,14], '2025/10':[20,20,11], '2025/11':[20,20,11], '2025/12':[25,25,14], '2026/01':[20,20,11], '2026/02':[20,20,11], '2026/03':[25,25,14], '2026/05':[13,13,5.2] },
   '長谷部 琴音': { '2025/04':[17,17,9], '2025/05':[17,17,9], '2025/06':[20,20,11], '2025/07':[25,25,14], '2025/08':[25,25,14], '2025/09':[25,25,14], '2025/10':[20,20,11], '2025/11':[20,20,11], '2025/12':[25,25,14], '2026/01':[0,0,0], '2026/02':[0,0,0], '2026/03':[0,0,0] },
   '田中 俊也': { '2025/04':[7,7,4], '2025/05':[10,10,6], '2025/06':[10,10,6], '2025/07':[15,15,8], '2025/08':[15,15,8], '2025/09':[17,17,9], '2025/10':[15,15,8], '2025/11':[15,15,8], '2025/12':[17,17,9], '2026/01':[15,15,8], '2026/02':[15,15,8], '2026/03':[17,17,9], '2026/04':[20,20,8], '2026/05':[20,20,8], '2026/06':[20,20,8], '2026/07':[20,20,8], '2026/08':[20,20,8], '2026/09':[20,20,8], '2026/10':[20,20,8], '2026/11':[20,20,8], '2026/12':[20,20,8], '2027/01':[20,20,8], '2027/02':[20,20,8], '2027/03':[20,20,8] },
   '宇野澤 彰子': { '2025/04':[7,7,4], '2025/05':[10,10,6], '2025/06':[10,10,6], '2025/07':[0,0,0], '2025/08':[0,0,0], '2025/09':[0,0,0], '2025/10':[0,0,0], '2025/11':[0,0,0], '2025/12':[0,0,0], '2026/01':[0,0,0], '2026/02':[0,0,0], '2026/03':[0,0,0] },
@@ -1015,8 +1015,8 @@ const IS_TARGETS = {
   '大井 駿空': { '2025/04':[7,7,4], '2025/05':[10,10,6], '2025/06':[10,10,6], '2025/07':[15,15,8], '2025/08':[15,15,8], '2025/09':[17,17,9], '2025/10':[15,15,8], '2025/11':[15,15,8], '2025/12':[17,17,9], '2026/01':[15,15,8], '2026/02':[15,15,8], '2026/03':[17,17,9], '2026/04':[20,20,8], '2026/05':[20,20,8], '2026/06':[20,20,8], '2026/07':[20,20,8], '2026/08':[20,20,8], '2026/09':[20,20,8], '2026/10':[20,20,8], '2026/11':[20,20,8], '2026/12':[20,20,8], '2027/01':[20,20,8], '2027/02':[20,20,8], '2027/03':[20,20,8] },
   '小島 萌': { '2025/04':[7,7,4], '2025/05':[10,10,6], '2025/06':[10,10,6], '2025/07':[15,15,8], '2025/08':[15,15,8], '2025/09':[17,17,9], '2025/10':[15,15,8], '2025/11':[15,15,8], '2025/12':[17,17,9], '2026/01':[0,0,0], '2026/02':[0,0,0], '2026/03':[0,0,0] },
   'JobSpringAgent 事務局': { '2025/04':[20,20,2], '2025/05':[20,20,2], '2025/06':[20,20,2], '2025/07':[20,20,2], '2025/08':[20,20,2], '2025/09':[20,20,2], '2025/10':[20,20,2], '2025/11':[20,20,2], '2025/12':[20,20,2], '2026/01':[40,40,4], '2026/02':[40,40,4], '2026/03':[40,40,4] },
-  '西 倖平': { '2025/04':[0,0,0], '2025/05':[0,0,0], '2025/06':[0,0,0], '2025/07':[0,0,0], '2025/08':[5,5,3], '2025/09':[15,15,8], '2025/10':[15,15,8], '2025/11':[15,15,8], '2025/12':[15,15,8], '2026/01':[15,15,8], '2026/02':[15,15,8], '2026/03':[15,15,8] },
-  '田代 大和': { '2025/04':[0,0,0], '2025/05':[0,0,0], '2025/06':[0,0,0], '2025/07':[0,0,0], '2025/08':[0,0,0], '2025/09':[0,0,0], '2025/10':[5,5,3], '2025/11':[15,15,8], '2025/12':[15,15,8], '2026/01':[15,15,8], '2026/02':[15,15,8], '2026/03':[15,15,8] },
+  '西 倖平': { '2025/04':[0,0,0], '2025/05':[0,0,0], '2025/06':[0,0,0], '2025/07':[0,0,0], '2025/08':[5,5,3], '2025/09':[15,15,8], '2025/10':[15,15,8], '2025/11':[15,15,8], '2025/12':[15,15,8], '2026/01':[15,15,8], '2026/02':[15,15,8], '2026/03':[15,15,8], '2026/05':[13,13,5.2] },
+  '田代 大和': { '2025/04':[0,0,0], '2025/05':[0,0,0], '2025/06':[0,0,0], '2025/07':[0,0,0], '2025/08':[0,0,0], '2025/09':[0,0,0], '2025/10':[5,5,3], '2025/11':[15,15,8], '2025/12':[15,15,8], '2026/01':[15,15,8], '2026/02':[15,15,8], '2026/03':[15,15,8], '2026/05':[33,33,13.2] },
   '福永 将也': { '2025/04':[0,0,0], '2025/05':[0,0,0], '2025/06':[0,0,0], '2025/07':[0,0,0], '2025/08':[0,0,0], '2025/09':[0,0,0], '2025/10':[0,0,0], '2025/11':[5,5,3], '2025/12':[15,15,8], '2026/01':[15,15,8], '2026/02':[15,15,8], '2026/03':[15,15,8], '2026/04':[20,20,8], '2026/05':[20,20,8], '2026/06':[20,20,8], '2026/07':[20,20,8], '2026/08':[20,20,8], '2026/09':[20,20,8], '2026/10':[20,20,8], '2026/11':[20,20,8], '2026/12':[20,20,8], '2027/01':[20,20,8], '2027/02':[20,20,8], '2027/03':[20,20,8] },
   '大山 耕太郎': { '2025/04':[0,0,0], '2025/05':[0,0,0], '2025/06':[0,0,0], '2025/07':[0,0,0], '2025/08':[0,0,0], '2025/09':[0,0,0], '2025/10':[0,0,0], '2025/11':[0,0,0], '2025/12':[0,0,0], '2026/01':[5,5,3], '2026/02':[15,15,8], '2026/03':[15,15,8], '2026/04':[20,20,8], '2026/05':[20,20,8], '2026/06':[20,20,8], '2026/07':[20,20,8], '2026/08':[20,20,8], '2026/09':[20,20,8], '2026/10':[20,20,8], '2026/11':[20,20,8], '2026/12':[20,20,8], '2027/01':[20,20,8], '2027/02':[20,20,8], '2027/03':[20,20,8] },
   '谷原 葵衣': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[15,15,6], '2026/11':[15,15,6], '2026/12':[15,15,6], '2027/01':[15,15,6], '2027/02':[15,15,6], '2027/03':[15,15,6] },
@@ -1341,6 +1341,8 @@ const LOST_STAGE_MAP = {
   '失注（ATS利用なし）': 'ATS導入なし',
   '失注（音信不通）': '音信不通',
   '失注（その他）': 'その他',
+  '失注（代理店）': '代理店',
+  'チャーン':       'チャーン',
 };
 let currentMode = 'month';
 let currentFY = 'FY2026'; // 'FY2025' | 'FY2026'
@@ -1627,10 +1629,14 @@ function normalizeRow(row, hubspotId = null) {
   const yomiDecidedDate = _toDateOrNull(yomiDecidedRaw);
   const apoCreatedDate  = _toDateOrNull(apoCreatedRaw);
 
+  // 取引担当者(D列) → 内部表記に変換。マップに無い場合は rawMember をそのまま使う。
+  // ★ IS集計はレコード作成者(E列)で行うため、取引担当者が空/未マップでも
+  //    レコード作成者があれば行を残す（取引担当者だけで除外しない）
   let name = null;
   if (DATA_NAME_MAP[rawMember]) name = DATA_NAME_MAP[rawMember];
   else if (Object.values(DATA_NAME_MAP).includes(rawMember)) name = rawMember;
-  else return null;
+  else if (rawMember) name = rawMember;  // 未マップでも raw 値を保持
+  if (!name && !recordCreator) return null;  // 取引担当者もレコード作成者も無ければ除外
 
   let month = null;
   let closeDay = null;
@@ -1646,7 +1652,9 @@ function normalizeRow(row, hubspotId = null) {
   if (!FY_MONTHS.includes(month) && !FY2025_MONTHS.includes(month)) return null;
 
   const su = stageRaw.toUpperCase().replace(/\s/g,'');
-  if (stageRaw.includes('失注')) {
+  // 失注系（失注（〜）/ チャーン / 代理店失注）を一括で「失注扱い」に
+  const _isLostLike = stageRaw.includes('失注') || stageRaw.trim() === 'チャーン';
+  if (_isLostLike) {
     const lostLabel = LOST_STAGE_MAP[Object.keys(LOST_STAGE_MAP).find(k => stageRaw.includes(k))] || 'その他';
     // 失注案件もproductを判定（管理方法分析で新卒/中途を切り分けるため）
     const cj2 = (targetSvc + ' ' + shinStatus + ' ' + chuStatus);
@@ -1668,7 +1676,9 @@ function normalizeRow(row, hubspotId = null) {
              leadSource: leadSourceRaw, industry: industryRaw,
              reupload: reuploadFlag, leadCreatedDate,
              recordCreator, yomiDecidedDate, apoCreatedDate,
-             appointDate: lostAppt1.date };
+             appointDate:  lostAppt1.date,
+             appointMonth: lostAppt1.month,  // ★追加: 実施数フィルタ用
+             appointDay:   lostAppt1.day };
   }
   let stage = null;
   if (su.startsWith('S')) stage = 'S';
@@ -1710,6 +1720,8 @@ function normalizeRow(row, hubspotId = null) {
            appt2Date: appt2.date, appt2Month: appt2.month, appt2Day: appt2.day,
            appt3Date: appt3.date, appt3Month: appt3.month, appt3Day: appt3.day,
            amount, stage, product, estimated, hubspotId, lostReason,
+           mishoshoReason,  // ★追加: 未商談化理由（実施数フィルタ用）
+           shinStatus, chuStatus, replaceNew, replaceChu, nyusaki,
            leadSource: leadSourceRaw, industry: industryRaw,
            reupload: reuploadFlag, leadCreatedDate,
            recordCreator, yomiDecidedDate, apoCreatedDate };
@@ -2283,10 +2295,10 @@ function renderIsKpis() {
   const jisshiPlannedDeals = jisshiDeals.filter(d => d.stage === 'E');
   const jisshiCount = jisshiDeals.length;
 
-  setText('is-kpi-jisshi-count',   jisshiCount);
-  setText('is-kpi-jisshi-target',  tgtJisshi);
-  setText('is-kpi-jisshi-done',    jisshiDoneDeals.length);
-  setText('is-kpi-jisshi-planned', jisshiPlannedDeals.length);
+  setText('is-kpi-jisshi-count',   Math.round(jisshiCount));
+  setText('is-kpi-jisshi-target',  Math.round(tgtJisshi));
+  setText('is-kpi-jisshi-done',    Math.round(jisshiDoneDeals.length));
+  setText('is-kpi-jisshi-planned', Math.round(jisshiPlannedDeals.length));
   const _jrate = tgtJisshi > 0 ? Math.round(jisshiCount/tgtJisshi*100) : 0;
   setText('is-kpi-jisshi-rate',    _jrate + '%');
   // スタックバー（合算で 100% を上限とする）
@@ -2298,8 +2310,8 @@ function renderIsKpis() {
   if (_pBar) _pBar.style.width = _pPct + '%';
   renderIsKpiDetail('jisshi', jisshiDeals);
 
-  // ④ アポ取得数
-  const apoDeals = allDeals.filter(d => dateInMonths(d.apoCreatedDate));
+  // ④ アポ取得数（I列アポ作成日基準、未商談化理由フィルタ込み）
+  const apoDeals = _getMemberDealsForKind('__ALL__', 'apo', months);
   setKpi('apo', apoDeals.length, tgtApo);
   renderIsKpiDetail('apo', apoDeals);
 
@@ -2490,8 +2502,9 @@ function closeIsKpiDetailModal() {
 }
 
 function setKpi(prefix, actual, target) {
-  setText(`is-kpi-${prefix}-count`, actual);
-  setText(`is-kpi-${prefix}-target`, target);
+  // 表示は整数四捨五入（小数点表示しない）
+  setText(`is-kpi-${prefix}-count`, Math.round(actual));
+  setText(`is-kpi-${prefix}-target`, Math.round(target));
   const rate = target > 0 ? Math.round((actual/target)*100) : 0;
   setText(`is-kpi-${prefix}-rate`, rate + '%');
   const bar = document.getElementById(`is-kpi-${prefix}-bar`);
@@ -4042,20 +4055,29 @@ function _getMemberDealsForKind(member, kind, months) {
     memDeals = allDeals;
   }
   if (kind === 'apo') {
-    return memDeals.filter(d => dateInMonths(d.apoCreatedDate));
+    // I列「アポ作成日」が期間内、E含む全ステージ＋失注／チャーン／代理店も対象
+    // 担当者カウントはE列「レコード作成者」（_getMemberDealsForKind 上部の memDeals 分岐で適用済み）
+    // 未商談化理由(R列)による除外:
+    //   - 「商談してない（リスケ等）」 → 常に除外
+    //   - 「ターゲット外（エントリー数50名等）」 → 含めてOK（除外しない）
+    return memDeals.filter(d => {
+      if (!dateInMonths(d.apoCreatedDate)) return false;
+      const reason = (d.mishoshoReason || '').trim();
+      if (reason.includes('商談してない') || reason.includes('リスケ')) return false;
+      return true;
+    });
   }
   if (kind === 'jisshi') {
-    // FS初回アポ実施日が期間内、E含む全ステージ
-    // 失注（未商談）で未商談化理由が「商談してない（リスケ等）」「ターゲット外」は除外
-    //   ただし 2026/04 のみ「ターゲット外」もカウント
+    // FS初回アポ実施日(J列)が期間内、E含む全ステージ
+    // 未商談化理由(R列)による除外ルール（ステージ問わず適用）:
+    //   - 「商談してない（リスケ等）」 → 常に除外
+    //   - 「ターゲット外（エントリー数50名等）」 → 除外。ただし FS初回アポ実施日が 2026/04 の場合のみカウント
     return memDeals.filter(d => {
       if (!d.appointMonth || !months.includes(d.appointMonth)) return false;
-      if (d.stage === '失注' && d.lostLabel === '未ヨミ化') {
-        const reason = (d.mishoshoReason || '').trim();
-        if (reason.includes('商談してない')) return false;
-        if (reason.includes('ターゲット外')) {
-          if (d.appointMonth !== '2026/04') return false;
-        }
+      const reason = (d.mishoshoReason || '').trim();
+      if (reason.includes('商談してない') || reason.includes('リスケ')) return false;
+      if (reason.includes('ターゲット外') || reason.includes('エントリー数50名')) {
+        if (d.appointMonth !== '2026/04') return false;
       }
       return true;
     });
@@ -4136,17 +4158,17 @@ function renderIsMemberTable() {
     }
 
     return `
-      <td class="${baseCls}" style="color:${dimCol}">${s.tApo}</td>
-      <td class="${baseCls}">${clk(s.apoCount, 'apo')}</td>
+      <td class="${baseCls}" style="color:${dimCol}">${Math.round(s.tApo)}</td>
+      <td class="${baseCls}">${clk(Math.round(s.apoCount), 'apo')}</td>
       <td class="${baseCls} font-semibold" style="color:${pctColor(apoRate)}">${apoRate}%</td>
-      <td class="${baseCls} ${borderL}" style="color:${dimCol}">${s.tJisshi}</td>
-      <td class="${baseCls}">${clk(s.jisshiCount, 'jisshi')}</td>
+      <td class="${baseCls} ${borderL}" style="color:${dimCol}">${Math.round(s.tJisshi)}</td>
+      <td class="${baseCls}">${clk(Math.round(s.jisshiCount), 'jisshi')}</td>
       <td class="${baseCls} font-semibold" style="color:${pctColor(jisshiRate)}">${jisshiRate}%</td>
-      <td class="${baseCls} ${borderL}" style="color:${dimCol}">${s.tYomi}</td>
-      <td class="${baseCls}">${clk(s.yomiCount, 'yomi')}</td>
+      <td class="${baseCls} ${borderL}" style="color:${dimCol}">${Math.round(s.tYomi)}</td>
+      <td class="${baseCls}">${clk(Math.round(s.yomiCount), 'yomi')}</td>
       <td class="${baseCls} font-semibold" style="color:${pctColor(yomiRate)}">${yomiRate}%</td>
       <td class="${baseCls}" style="color:${dimCol}">${yomiKaRate}%</td>
-      <td class="${baseCls} ${borderL}">${clk(s.wonCount, 'won')}</td>
+      <td class="${baseCls} ${borderL}">${clk(Math.round(s.wonCount), 'won')}</td>
       <td class="${moneyCls}" style="color:${moneyCol}">${fmtMoney(s.wonAmount)}</td>
     `;
   }
@@ -4218,7 +4240,7 @@ function closeIsMetricDetail() {
   if (m) m.classList.add('hidden');
 }
 
-function _calcLeadTime(start, end) {
+function _calcLeadTimeDays(start, end) {
   if (!(start instanceof Date) || isNaN(start) || !(end instanceof Date) || isNaN(end)) return null;
   // 元の Date を破壊しないよう、日付のみ抽出して比較
   const s = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
@@ -4281,7 +4303,7 @@ function openIsMetricDetail(memberArg, kind, label) {
       // その他の失注: アポ実施日〜クローズ日のリードタイム + 導入先
       if (d.stage === '失注') {
         const close = _closeDateOf(d);
-        const lt = _calcLeadTime(d.appointDate, close);
+        const lt = _calcLeadTimeDays(d.appointDate, close);
         const ltStr = lt === 0 ? '実施後直後' : (lt != null ? `${_fmtMd(d.appointDate)}〜${_fmtMd(close)} (${lt}日)` : '-');
         return `<li class="py-1">${companyHtml} <span class="text-slate-400">｜</span> <span class="text-slate-600">${product}</span> <span class="text-slate-400">｜</span> <span class="text-slate-500">${ltStr}</span> <span class="text-slate-400">｜</span> <span class="text-rose-600">導入先: ${d.nyusaki || '-'}</span></li>`;
       }
@@ -4292,18 +4314,18 @@ function openIsMetricDetail(memberArg, kind, label) {
       const apo = d.appointDate;
       if (d.stage === '失注') {
         const close = _closeDateOf(d);
-        const lt = _calcLeadTime(apo, close);
+        const lt = _calcLeadTimeDays(apo, close);
         const ltStr = lt === 0 ? '実施後直後' : (lt != null ? `${_fmtMd(apo)}〜${_fmtMd(close)} (${lt}日)` : '-');
         return `<li class="py-1">${companyHtml} <span class="text-slate-400">｜</span> <span class="text-slate-600">${product}</span> <span class="text-slate-400">｜</span> <span class="text-slate-500">${ltStr}</span> <span class="text-slate-400">｜</span> <span class="text-rose-600">導入先: ${d.nyusaki || '-'}</span></li>`;
       } else {
-        const lt = _calcLeadTime(apo, d.yomiDecidedDate);
+        const lt = _calcLeadTimeDays(apo, d.yomiDecidedDate);
         const ltStr = lt === 0 ? '実施後直後' : (lt != null ? `${_fmtMd(apo)}〜${_fmtMd(d.yomiDecidedDate)} (${lt}日)` : '-');
         return `<li class="py-1">${companyHtml} <span class="text-slate-400">｜</span> <span class="text-slate-600">${product}</span> <span class="text-slate-400">｜</span> <span class="text-slate-500">${ltStr}</span></li>`;
       }
     }
     if (kind === 'won') {
       const close = _closeDateOf(d);
-      const lt = _calcLeadTime(d.appointDate, close);
+      const lt = _calcLeadTimeDays(d.appointDate, close);
       const ltStr = lt === 0 ? '実施後直後' : (lt != null ? `${_fmtMd(d.appointDate)}〜${_fmtMd(close)} (${lt}日)` : '-');
       const amt = '¥' + (d.amount||0).toLocaleString();
       return `<li class="py-1">${companyHtml} <span class="text-slate-400">｜</span> <span class="text-slate-600">${product}</span> <span class="text-slate-400">｜</span> <span class="font-semibold" style="color:${meta.color}">${amt}</span> <span class="text-slate-400">｜</span> <span class="text-slate-500">${ltStr}</span></li>`;
