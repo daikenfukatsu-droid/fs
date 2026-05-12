@@ -1391,6 +1391,8 @@ document.addEventListener('DOMContentLoaded', () => {
 //  スプレッドシート（Apps Script Web App）との双方向同期
 // ============================================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzi6SLnPh6qKmjXpfQcIpaSpCe_pAfnmA58Wgr2U9b-ALPAgnMJ7gBdw-db-O9FDI5t/exec';
+// ★ IS GAS: デプロイ後にURLをここへ貼り付け
+const IS_GAS_URL = '';
 
 // GAS への書き込み（no-cors POST → fire and forget）
 async function gasPost(action, data) {
@@ -1456,7 +1458,7 @@ async function fetchFromSheets(silent = false) {
       eWinRate = json.winRates.eWinRate !== undefined ? json.winRates.eWinRate : 0.10;
     }
 
-    // IS 保有リスト
+    // IS 保有リスト（FSのGASにlistDataがあれば使う）
     if (json.listData) {
       isListYes = (json.listData.yes || []).map(_normalizeListRow);
       isListNo  = (json.listData.no  || []).map(_normalizeListRow);
@@ -1464,17 +1466,41 @@ async function fetchFromSheets(silent = false) {
 
     const updatedAt = json.updatedAt ? new Date(json.updatedAt).toLocaleString('ja-JP') : '';
     if (!silent) {
-      // FS = パイプライン件数、IS = リサイクル Yes/No 合算行数
       if (status) {
         status.textContent = `✅ ${pipeline.length}件（スプシ更新: ${updatedAt}）`;
         status.style.color = '#059669';
       }
-      if (isStatus) {
-        const isTotalRows = (isListYes.length + isListNo.length);
-        isStatus.textContent = `✅ ${isTotalRows}行 (Yes:${isListYes.length} / No:${isListNo.length})（スプシ更新: ${updatedAt}）`;
+    }
+
+    // IS専用GASが設定されていれば別途取得
+    if (IS_GAS_URL) {
+      try {
+        const isRes  = await fetch(IS_GAS_URL);
+        const isJson = await isRes.json();
+        if (isJson.ok && isJson.listData) {
+          isListYes = (isJson.listData.yes || []).map(_normalizeListRow);
+          isListNo  = (isJson.listData.no  || []).map(_normalizeListRow);
+          const isUpdatedAt = isJson.updatedAt ? new Date(isJson.updatedAt).toLocaleString('ja-JP') : updatedAt;
+          if (!silent && isStatus) {
+            const total = isListYes.length + isListNo.length;
+            isStatus.textContent = `✅ ${total}行 (Yes:${isListYes.length} / No:${isListNo.length})（スプシ更新: ${isUpdatedAt}）`;
+            isStatus.style.color = '#059669';
+          }
+        }
+      } catch(isErr) {
+        if (!silent && isStatus) {
+          isStatus.textContent = `❌ IS取得エラー: ${isErr.message}`;
+          isStatus.style.color = '#dc2626';
+        }
+      }
+    } else {
+      if (!silent && isStatus) {
+        const total = isListYes.length + isListNo.length;
+        isStatus.textContent = `✅ ${total}行 (Yes:${isListYes.length} / No:${isListNo.length})（スプシ更新: ${updatedAt}）`;
         isStatus.style.color = '#059669';
       }
     }
+
     render();
   } catch (err) {
     if (!silent) setStatus(`❌ 取得エラー: ${err.message}`, '#dc2626');
@@ -1600,7 +1626,7 @@ function normalizeRow(row, hubspotId = null) {
   const lostReason = lostReason1 || mishoshoReason;
   const replaceNew  = String(find('リプレイス（新卒）') || '').trim();
   const replaceChu  = String(find('リプレイス（中途）') || '').trim();
-  const nyusaki     = String(find('導入先') || '').trim();
+  const nyusaki     = String(find('導入先','field5__c') || '').trim();
   const appoint2Raw = find('FS2回目商談実施日','fs2_______') || null;
   const appoint3Raw = find('FS3回目商談実施日','fs3_______') || null;
   // リードソース・業種・再アップ・リード作成日（中項目分類＆時期判定用）
@@ -2085,9 +2111,14 @@ let isListNo  = [];
 
 function _normalizeListRow(r) {
   return {
-    company:   String(r.company   || '').trim(),
-    companyId: String(r.companyId || '').trim(),
-    owner:     String(r.owner     || '').trim(),
+    company:     String(r.company     || '').trim(),
+    companyId:   String(r.companyId   || '').trim(),
+    owner:       String(r.owner       || '').trim(),
+    status:      String(r.status      || '').trim(),
+    lastContact: String(r.lastContact || '').trim(),
+    lastMet:     String(r.lastMet     || '').trim(),
+    nextCall:    String(r.nextCall    || '').trim(),
+    recycle:     String(r.recycle     || '').trim(),
   };
 }
 
@@ -2133,10 +2164,10 @@ function renderIsListCard() {
 // === モーダル ===
 let _isListLevel = 1;
 let _isListKind  = null;
+let _isListOwner = null;
 
 function openIsListModal() {
-  _isListLevel = 1;
-  _isListKind  = null;
+  _isListLevel = 1; _isListKind = null; _isListOwner = null;
   document.getElementById('isListBack').classList.add('hidden');
   document.getElementById('isListModalTitle').textContent = '📋 IS 保有リスト詳細';
   _renderIsListLevel1();
@@ -2148,21 +2179,36 @@ function closeIsListModal() {
 }
 
 function isListBackToLevel1() {
-  _isListLevel = 1;
-  _isListKind  = null;
+  _isListLevel = 1; _isListKind = null; _isListOwner = null;
   document.getElementById('isListBack').classList.add('hidden');
   document.getElementById('isListModalTitle').textContent = '📋 IS 保有リスト詳細';
   _renderIsListLevel1();
 }
 
 function isListDrillTo(kind) {
-  _isListLevel = 2;
-  _isListKind  = kind;
+  _isListLevel = 2; _isListKind = kind; _isListOwner = null;
   document.getElementById('isListBack').classList.remove('hidden');
   const label = kind === 'yes' ? 'リサイクルコンタクト_Yes' : 'リサイクルコンタクト_No';
   document.getElementById('isListModalTitle').textContent = '📋 ' + label + ' / 担当者別';
   _renderIsListLevel2(kind);
 }
+
+function isListDrillToOwner(owner) {
+  _isListLevel = 3; _isListOwner = owner;
+  document.getElementById('isListBack').classList.remove('hidden');
+  const label = _isListKind === 'yes' ? 'リサイクルYes' : 'リサイクルNo';
+  document.getElementById('isListModalTitle').textContent = `📋 ${label} / ${owner}`;
+  _renderIsListLevel3(_isListKind, owner);
+}
+
+// 戻るボタン: レベルに応じて1つ上へ
+document.addEventListener('DOMContentLoaded', () => {
+  const backBtn = document.getElementById('isListBack');
+  if (backBtn) backBtn.onclick = () => {
+    if (_isListLevel === 3) isListDrillTo(_isListKind);
+    else isListBackToLevel1();
+  };
+});
 
 function _renderIsListLevel1() {
   const yesUnique = _dedupRows(isListYes).length;
@@ -2216,27 +2262,105 @@ function _renderIsListLevel2(kind) {
   const ownerRows = sortedOwners.map(([owner, count]) => {
     const isIsMember = isMemberSet.has(owner);
     const pct = maxCount > 0 ? Math.round(count / maxCount * 100) : 0;
-    return `<tr class="border-b" style="border-color:#f1f5f9">
-      <td class="px-3 py-2 text-[12px] ${isIsMember ? 'font-semibold text-slate-700' : 'text-slate-500'}">${owner}${isIsMember ? '' : ' <span class="text-[10px] text-slate-400">(IS外)</span>'}</td>
+    const esc = owner.replace(/'/g, "\\'");
+    return `<tr class="border-b cursor-pointer hover:bg-slate-50 transition-colors" style="border-color:#f1f5f9"
+              onclick="isListDrillToOwner('${esc}')">
+      <td class="px-3 py-2 text-[12px] ${isIsMember ? 'font-semibold text-slate-700' : 'text-slate-500'}">
+        ${owner}${isIsMember ? '' : ' <span class="text-[10px] text-slate-400">(IS外)</span>'}
+      </td>
       <td class="px-3 py-2 text-right text-[13px] font-bold" style="color:${accent}">${count}<span class="text-[10px] font-normal text-slate-400 ml-0.5">社</span></td>
-      <td class="px-3 py-2" style="width:40%">
+      <td class="px-3 py-2" style="width:38%">
         <div class="h-2 rounded-full overflow-hidden" style="background:${accentBg}">
           <div class="h-2 rounded-full" style="background:${accent};width:${pct}%"></div>
         </div>
       </td>
+      <td class="px-2 py-2 text-[11px] text-slate-400">›</td>
     </tr>`;
   }).join('');
 
   document.getElementById('isListModalBody').innerHTML = `
-    <p class="text-[12px] text-slate-500 mb-3">合計 <b style="color:${accent}">${total}</b> 社（重複統合済み・担当者別）</p>
+    <p class="text-[12px] text-slate-500 mb-3">合計 <b style="color:${accent}">${total}</b> 社（重複統合済み）　<span class="text-[11px] text-slate-400">担当者をクリックで企業一覧</span></p>
     <table class="w-full text-sm">
       <thead><tr class="border-b-2" style="border-color:${accent}">
         <th class="px-3 py-2 text-left text-[11px] font-semibold text-slate-600">担当者</th>
         <th class="px-3 py-2 text-right text-[11px] font-semibold text-slate-600">保有数</th>
         <th class="px-3 py-2 text-[11px] font-semibold text-slate-600">分布</th>
+        <th class="px-2 py-2"></th>
       </tr></thead>
       <tbody>${ownerRows}</tbody>
     </table>
+  `;
+}
+
+function _renderIsListLevel3(kind, owner) {
+  const rows   = kind === 'yes' ? isListYes : isListNo;
+  const accent = kind === 'yes' ? '#0284c7' : '#10b981';
+  const accentBg = kind === 'yes' ? '#e0f2fe' : '#d1fae5';
+
+  // 担当者でフィルタ → 会社IDで重複排除
+  const ownerRows = _dedupRows(rows.filter(r => (r.owner || '不明') === owner));
+
+  if (!ownerRows.length) {
+    document.getElementById('isListModalBody').innerHTML =
+      '<p class="text-slate-400 text-center py-8">該当データなし</p>';
+    return;
+  }
+
+  // 次回架電日でソート（空は末尾）
+  ownerRows.sort((a, b) => {
+    if (!a.nextCall && !b.nextCall) return 0;
+    if (!a.nextCall) return 1;
+    if (!b.nextCall) return -1;
+    return a.nextCall.localeCompare(b.nextCall);
+  });
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const companyRows = ownerRows.map((r, i) => {
+    const bg = i % 2 === 0 ? '#ffffff' : '#f8fafc';
+    // 次回架電日の色付け（過去=赤、今日=橙、未来=緑、なし=グレー）
+    let nextCallHtml = '—';
+    if (r.nextCall) {
+      const d = new Date(r.nextCall.replace(/\//g, '-'));
+      d.setHours(0,0,0,0);
+      const diff = Math.floor((d - today) / 86400000);
+      const color = diff < 0 ? '#ef4444' : diff === 0 ? '#f97316' : '#16a34a';
+      const label = diff < 0 ? `${Math.abs(diff)}日超過` : diff === 0 ? '今日' : `${diff}日後`;
+      nextCallHtml = `<span style="color:${color};font-weight:600;">${r.nextCall}</span>
+                      <span style="color:${color};font-size:9px;margin-left:3px;">(${label})</span>`;
+    }
+    return `<tr style="background:${bg};border-bottom:1px solid #f1f5f9;">
+      <td style="padding:4px 8px;font-size:11px;font-weight:500;color:#1e40af;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.company}">${r.company || '—'}</td>
+      <td style="padding:4px 8px;font-size:11px;text-align:center;white-space:nowrap;">
+        ${r.status ? `<span style="background:${accentBg};color:${accent};font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;">${r.status}</span>` : '—'}
+      </td>
+      <td style="padding:4px 8px;font-size:11px;color:#475569;text-align:center;white-space:nowrap;">${r.lastContact || '—'}</td>
+      <td style="padding:4px 8px;font-size:11px;color:#475569;text-align:center;white-space:nowrap;">${r.lastMet || '—'}</td>
+      <td style="padding:4px 8px;font-size:11px;text-align:center;white-space:nowrap;">${nextCallHtml}</td>
+    </tr>`;
+  }).join('');
+
+  const thS = `padding:4px 8px;font-size:10px;font-weight:600;color:#475569;background:#f1f5f9;border-bottom:2px solid ${accent};white-space:nowrap;`;
+  document.getElementById('isListModalBody').innerHTML = `
+    <p style="font-size:12px;color:#64748b;margin-bottom:8px;">
+      <b style="color:${accent}">${ownerRows.length}</b> 社
+      <span style="font-size:10px;color:#94a3b8;">次回架電日順</span>
+    </p>
+    <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed;min-width:480px;">
+      <colgroup>
+        <col style="width:30%"><col style="width:16%"><col style="width:16%"><col style="width:16%"><col style="width:22%">
+      </colgroup>
+      <thead><tr>
+        <th style="${thS}text-align:left;">会社名</th>
+        <th style="${thS}text-align:center;">状況</th>
+        <th style="${thS}text-align:center;">前回の連絡</th>
+        <th style="${thS}text-align:center;">最終接触日</th>
+        <th style="${thS}text-align:center;">次回架電日</th>
+      </tr></thead>
+      <tbody>${companyRows}</tbody>
+    </table>
+    </div>
+    <p style="font-size:10px;color:#cbd5e1;margin-top:6px;">次回架電日: <span style="color:#ef4444;">赤=超過</span> / <span style="color:#f97316;">橙=今日</span> / <span style="color:#16a34a;">緑=未来</span></p>
   `;
 }
 
@@ -2830,8 +2954,8 @@ function _buildLostListHtml(deals, gDef) {
       byMember[m].push(d);
     });
 
-    // カラム幅定義（モーダル幅680px基準）
-    const COL_W = { company:'155px', amt:'68px', lt:'72px', mgmt:'135px', svc:'68px', nyu:'140px' };
+    // カラム幅定義（モーダル幅680px基準・7列）
+    const COL_W = { company:'140px', amt:'65px', lt:'65px', mgmt:'120px', svc:'63px', reup:'52px', nyu:'113px' };
     const thStyle = (align='left') =>
       `padding:3px 6px;text-align:${align};font-weight:600;font-size:10px;color:#64748b;` +
       `background:#f8fafc;border-bottom:2px solid #e2e8f0;white-space:nowrap;`;
@@ -2857,6 +2981,7 @@ function _buildLostListHtml(deals, gDef) {
           const nyuVal   = lc.key === '未ヨミ化'
             ? ((d.mishoshoReason || '').trim() || '—')
             : ((d.nyusaki || '').trim() || '—');
+          const reupHtml = d.reupload ? 'TRUE' : 'FALSE';
           const rowBg    = i % 2 === 0 ? 'background:#fff;' : 'background:#f8fafc;';
           return `<tr style="${rowBg}border-bottom:1px solid #f1f5f9;">
             <td style="${tdBase('left','#334155', ellipsis)}" title="${d.company||''}">
@@ -2870,6 +2995,7 @@ function _buildLostListHtml(deals, gDef) {
             <td style="${tdBase('right','#7c3aed')}">${lt}</td>
             <td style="${tdBase('left','#475569', ellipsis)}" title="${mgmtVal}">${mgmtVal}</td>
             <td style="${tdBase('center','#0369a1')}">${svc}</td>
+            <td style="${tdBase('center','#334155')}">${reupHtml}</td>
             <td style="${tdBase('left','#dc2626', ellipsis)}" title="${nyuVal}">${nyuVal}</td>
           </tr>`;
         }).join('');
@@ -2886,6 +3012,7 @@ function _buildLostListHtml(deals, gDef) {
                 <col style="width:${COL_W.lt}">
                 <col style="width:${COL_W.mgmt}">
                 <col style="width:${COL_W.svc}">
+                <col style="width:${COL_W.reup}">
                 <col style="width:${COL_W.nyu}">
               </colgroup>
               <thead>
@@ -2895,6 +3022,7 @@ function _buildLostListHtml(deals, gDef) {
                   <th style="${thStyle('right')}">リードタイム</th>
                   <th style="${thStyle('left')}">現状の管理方法</th>
                   <th style="${thStyle('center')}">検討サービス</th>
+                  <th style="${thStyle('center')}">再アップ</th>
                   <th style="${thStyle('left')}">${lc.key === '未ヨミ化' ? '未商談化理由' : '導入先'}</th>
                 </tr>
               </thead>
@@ -3534,6 +3662,10 @@ function toggleChartMemberDeals(memberName, type) {
       : '—';
     const svc = d.product || '—';
     const amt = fmt(d.amount);
+    // リードタイム: アポ作成日 → 今日（日数）
+    const ltDays = (d.apoCreatedDate instanceof Date && !isNaN(d.apoCreatedDate))
+      ? Math.floor((Date.now() - d.apoCreatedDate.getTime()) / 86400000) + '日'
+      : '—';
     // 次回商談日: 3回目優先 → 2回目（date形式: YYYY/MM/DD）
     const fmtAppt = (dateStr, color) => {
       if (!dateStr) return null;
@@ -3553,6 +3685,7 @@ function toggleChartMemberDeals(memberName, type) {
       <td style="padding:3px 6px;font-size:11px;text-align:center;color:#475569;white-space:nowrap;">${closeDisp}</td>
       <td style="padding:3px 6px;font-size:11px;text-align:center;color:#0369a1;white-space:nowrap;">${svc}</td>
       <td style="padding:3px 6px;font-size:11px;text-align:right;color:#334155;white-space:nowrap;">${amt}</td>
+      <td style="padding:3px 6px;font-size:11px;text-align:right;color:#7c3aed;white-space:nowrap;">${ltDays}</td>
       <td style="padding:3px 6px;font-size:11px;text-align:center;white-space:nowrap;">${nxtDate}</td>
     </tr>`;
   }).join('');
@@ -3563,11 +3696,12 @@ function toggleChartMemberDeals(memberName, type) {
       ? `<p style="font-size:11px;color:#94a3b8;padding:8px 0;">該当案件なし</p>`
       : `<table style="width:100%;border-collapse:collapse;table-layout:fixed;margin-top:4px;border-radius:6px;overflow:hidden;">
           <colgroup>
-            <col style="width:36%">
-            <col style="width:10%">
-            <col style="width:14%">
-            <col style="width:14%">
-            <col style="width:14%">
+            <col style="width:30%">
+            <col style="width:9%">
+            <col style="width:12%">
+            <col style="width:11%">
+            <col style="width:13%">
+            <col style="width:13%">
             <col style="width:12%">
           </colgroup>
           <thead>
@@ -3577,12 +3711,13 @@ function toggleChartMemberDeals(memberName, type) {
               <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#475569;text-align:center;border-bottom:1px solid #cbd5e1;">クローズ月</th>
               <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#475569;text-align:center;border-bottom:1px solid #cbd5e1;">検討サービス</th>
               <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#475569;text-align:right;border-bottom:1px solid #cbd5e1;">金額</th>
+              <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#7c3aed;text-align:right;border-bottom:1px solid #cbd5e1;">リードタイム</th>
               <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#475569;text-align:center;border-bottom:1px solid #cbd5e1;">次回商談日</th>
             </tr>
           </thead>
           <tbody>${dealRows}</tbody>
         </table>
-        <p style="font-size:10px;color:#94a3b8;margin-top:4px;">次回商談日: <span style="color:#f97316;">橙=2回目</span> / <span style="color:#8b5cf6;">紫=3回目</span></p>`;
+        <p style="font-size:10px;color:#94a3b8;margin-top:4px;">次回商談日: <span style="color:#f97316;">橙=2回目</span> / <span style="color:#8b5cf6;">紫=3回目</span>　リードタイム: アポ作成日〜今日</p>`;
   }
 
   subRow.style.display = '';
