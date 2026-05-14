@@ -587,6 +587,18 @@
     </div>
   </div>
 
+  <!-- 類似企業ポップアップ -->
+  <div id="similarModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-start justify-center z-50 py-8 overflow-y-auto">
+    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-4xl mx-4">
+      <div class="flex items-center justify-between mb-3 pb-3 border-b" style="border-bottom-color:#f59e0b">
+        <h3 id="similarModalTitle" class="font-semibold text-slate-800 text-lg">🔍 類似企業</h3>
+        <button onclick="closeSimilarModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+      </div>
+      <p id="similarModalSubtitle" class="text-[11px] text-slate-500 mb-3"></p>
+      <div id="similarModalBody" class="text-sm text-slate-700 overflow-x-auto"></div>
+    </div>
+  </div>
+
   <p class="text-xs text-slate-400 mt-4 mb-2 text-center">データは本ブラウザ内のみで処理されます（サーバー送信なし）</p>
   </div><!-- /dashboardContent-fs -->
 
@@ -1334,6 +1346,100 @@ function confirmDelete() {
 
 let pipeline = [];
 let lostDeals = [];
+// 類似企業マスタ（FS GASから取得した受注済み企業データ）
+let similarCompanies = [];
+
+// 業界文字列の正規化（記号・全半角・空白を吸収して比較しやすく）
+function _normalizeIndustry(s) {
+  if (!s) return '';
+  return String(s)
+    .replace(/[・\s\u3000、，,／\/\.．]/g, '')  // 記号・空白除去
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)) // 全角英数→半角
+    .toLowerCase()
+    .trim();
+}
+
+// 業界マッチで類似企業を探す（将来: 所在地・従業員数も加味）
+//   マッチング: 双方向 includes（"人材" は "人材サービス" にもヒット）
+let _findSimDebugDone = false;
+function findSimilarCompanies(industry, location, employees) {
+  if (!similarCompanies || similarCompanies.length === 0) {
+    if (!_findSimDebugDone) {
+      console.warn('[findSimilarCompanies] similarCompanies が空です。マスタデータが取得できていません。');
+      _findSimDebugDone = true;
+    }
+    return [];
+  }
+  if (!industry || !String(industry).trim()) return [];
+  const dealInd = _normalizeIndustry(industry);
+  if (!dealInd) return [];
+  const matches = similarCompanies.filter(c => {
+    const cInd = _normalizeIndustry(c.industry || '');
+    if (!cInd) return false;
+    return dealInd === cInd || dealInd.includes(cInd) || cInd.includes(dealInd);
+  });
+  // 1回だけサンプル比較を出力（デバッグ用）
+  if (!_findSimDebugDone) {
+    const allInd = [...new Set(similarCompanies.map(c => c.industry).filter(Boolean))].slice(0, 20);
+    console.log('[findSimilarCompanies] 取引側業種:', JSON.stringify(industry), '→ 正規化:', JSON.stringify(dealInd));
+    console.log('[findSimilarCompanies] マスタ業種一覧(先頭20件・正規化前):', allInd);
+    console.log('[findSimilarCompanies] マッチ件数:', matches.length);
+    _findSimDebugDone = true;
+  }
+  return matches;
+}
+
+// 類似企業モーダル開閉
+function openSimilarModal(companyEnc, industryEnc) {
+  const company  = decodeURIComponent(companyEnc || '');
+  const industry = decodeURIComponent(industryEnc || '');
+  const list = findSimilarCompanies(industry);
+  const title = document.getElementById('similarModalTitle');
+  const sub   = document.getElementById('similarModalSubtitle');
+  const body  = document.getElementById('similarModalBody');
+  if (!body) return;
+  title.textContent = `🔍 ${company || '?'} の類似企業（${list.length}件）`;
+  sub.innerHTML = `業界: <b class="text-slate-700">${industry || '不明'}</b> / 受注済み企業マスタから抽出`;
+  if (list.length === 0) {
+    body.innerHTML = '<p class="text-center text-slate-400 py-8">該当する類似企業はありません</p>';
+  } else {
+    // テーブル: 企業名｜所在地｜業界｜従業員数｜掲載可否｜インタビュー記事可否
+    const yesNoBadge = (v) => {
+      const t = String(v || '').trim();
+      if (!t) return '<span class="text-slate-300">-</span>';
+      const isYes = t === 'TRUE' || t === '可' || t === 'Yes' || t === 'OK' || t === '○';
+      const isNo  = t === 'FALSE' || t === '不可' || t === 'No' || t === 'NG' || t === '×';
+      if (isYes) return '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold" style="background:#d1fae5;color:#065f46">可</span>';
+      if (isNo)  return '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold" style="background:#fee2e2;color:#991b1b">不可</span>';
+      return `<span class="text-[11px] text-slate-600">${t}</span>`;
+    };
+    const rows = list.map(c => `<tr class="border-b" style="border-color:#f1f5f9">
+      <td class="px-3 py-1.5 text-[12px] font-medium text-slate-700">${c.name || '-'}</td>
+      <td class="px-3 py-1.5 text-[11px] text-slate-600">${c.location || '-'}</td>
+      <td class="px-3 py-1.5 text-[11px] text-slate-600">${c.industry || '-'}</td>
+      <td class="px-3 py-1.5 text-[11px] text-right text-slate-600">${c.employees != null ? c.employees.toLocaleString() + '人' : '-'}</td>
+      <td class="px-3 py-1.5 text-center">${yesNoBadge(c.canPublish)}</td>
+      <td class="px-3 py-1.5 text-center">${yesNoBadge(c.canInterview)}</td>
+    </tr>`).join('');
+    body.innerHTML = `<table class="w-full text-sm">
+      <thead><tr class="border-b-2" style="border-color:#f59e0b">
+        <th class="px-3 py-2 text-left text-[11px] font-semibold text-slate-600">企業名</th>
+        <th class="px-3 py-2 text-left text-[11px] font-semibold text-slate-600">所在地</th>
+        <th class="px-3 py-2 text-left text-[11px] font-semibold text-slate-600">業界</th>
+        <th class="px-3 py-2 text-right text-[11px] font-semibold text-slate-600">従業員数</th>
+        <th class="px-3 py-2 text-center text-[11px] font-semibold text-slate-600">掲載可否</th>
+        <th class="px-3 py-2 text-center text-[11px] font-semibold text-slate-600">インタビュー記事</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  }
+  document.getElementById('similarModal').classList.remove('hidden');
+}
+
+function closeSimilarModal() {
+  const m = document.getElementById('similarModal');
+  if (m) m.classList.add('hidden');
+}
 
 const LOST_STAGE_MAP = {
   '失注（未商談）': '未ヨミ化',
@@ -1392,7 +1498,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ============================================================
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzi6SLnPh6qKmjXpfQcIpaSpCe_pAfnmA58Wgr2U9b-ALPAgnMJ7gBdw-db-O9FDI5t/exec';
 // ★ IS GAS: デプロイ後にURLをここへ貼り付け
-const IS_GAS_URL = '';
+const IS_GAS_URL = 'https://script.google.com/macros/s/AKfycbybTDHeaZyyZkeOG7d3qlSvDH08faNHRw6lIUCU-43JA_jp1HelOXvc1ZAMq-ijTEBsWQ/exec';
 
 // GAS への書き込み（no-cors POST → fire and forget）
 async function gasPost(action, data) {
@@ -1458,12 +1564,19 @@ async function fetchFromSheets(silent = false) {
       eWinRate = json.winRates.eWinRate !== undefined ? json.winRates.eWinRate : 0.10;
     }
 
-    // IS 保有リスト（FSのGASにlistDataがあれば使う）
-    if (json.listData) {
-      isListYes = (json.listData.yes || []).map(_normalizeListRow);
-      isListNo  = (json.listData.no  || []).map(_normalizeListRow);
+    // 類似企業マスタ
+    if (Array.isArray(json.similarCompanies)) {
+      similarCompanies = json.similarCompanies;
+      console.log('[類似企業マスタ] 取得件数:', similarCompanies.length);
+      if (similarCompanies.length > 0) {
+        const sample = similarCompanies.slice(0, 3).map(c => ({ name: c.name, industry: c.industry }));
+        console.log('[類似企業マスタ] サンプル(先頭3件):', sample);
+      }
+    } else {
+      console.warn('[類似企業マスタ] json.similarCompanies が空または未定義です。GASがデプロイ済みか確認してください。');
     }
 
+    // NOTE: ISリスト保有データは FS GAS ではなく専用の IS GAS から取得（下記）
     const updatedAt = json.updatedAt ? new Date(json.updatedAt).toLocaleString('ja-JP') : '';
     if (!silent) {
       if (status) {
@@ -1472,20 +1585,23 @@ async function fetchFromSheets(silent = false) {
       }
     }
 
-    // IS専用GASが設定されていれば別途取得
+    // IS専用GAS（新スプシ: 1yE_zvz...）から リサイクルコンタクト_Yes/_No を取得
+    //   レスポンス形式: { ok, yes:[{company,companyId,owner}, ...], no:[...], updatedAt }
     if (IS_GAS_URL) {
       try {
         const isRes  = await fetch(IS_GAS_URL);
         const isJson = await isRes.json();
-        if (isJson.ok && isJson.listData) {
-          isListYes = (isJson.listData.yes || []).map(_normalizeListRow);
-          isListNo  = (isJson.listData.no  || []).map(_normalizeListRow);
-          const isUpdatedAt = isJson.updatedAt ? new Date(isJson.updatedAt).toLocaleString('ja-JP') : updatedAt;
+        if (isJson.ok) {
+          isListYes = (isJson.yes || []).map(_normalizeListRow);
+          isListNo  = (isJson.no  || []).map(_normalizeListRow);
+          const isUpdatedAt = isJson.updatedAt ? new Date(isJson.updatedAt).toLocaleString('ja-JP') : '';
           if (!silent && isStatus) {
             const total = isListYes.length + isListNo.length;
-            isStatus.textContent = `✅ ${total}行 (Yes:${isListYes.length} / No:${isListNo.length})（スプシ更新: ${isUpdatedAt}）`;
+            isStatus.textContent = `✅ ${total}行 (Yes:${isListYes.length} / No:${isListNo.length})（IS更新: ${isUpdatedAt}）`;
             isStatus.style.color = '#059669';
           }
+        } else {
+          throw new Error(isJson.error || 'IS GAS応答エラー');
         }
       } catch(isErr) {
         if (!silent && isStatus) {
@@ -1495,9 +1611,8 @@ async function fetchFromSheets(silent = false) {
       }
     } else {
       if (!silent && isStatus) {
-        const total = isListYes.length + isListNo.length;
-        isStatus.textContent = `✅ ${total}行 (Yes:${isListYes.length} / No:${isListNo.length})（スプシ更新: ${updatedAt}）`;
-        isStatus.style.color = '#059669';
+        isStatus.textContent = '⚠️ IS_GAS_URL 未設定（コード冒頭の const IS_GAS_URL に IS GAS の Web App URL を設定してください）';
+        isStatus.style.color = '#d97706';
       }
     }
 
@@ -1767,6 +1882,7 @@ function getFyMembers() {
 
 function switchFY(fy) {
   currentFY = fy;
+  console.log('[switchFY]', { fy, activeTab, currentMode });
   // FYボタンの見た目を更新（現在アクティブなタブのみ）
   const prefix = activeTab === 'is' ? 'is-' : '';
   ['FY2025','FY2026'].forEach(f => {
@@ -1793,6 +1909,7 @@ function switchFY(fy) {
 
 function setView(v) {
   currentMode = v;
+  console.log('[setView]', { v, activeTab, currentFY, currentPeriod });
   const prefix = activeTab === 'is' ? 'is-' : '';
   ['month','quarter','half','year'].forEach(k => {
     const el = document.getElementById(prefix + 'view-' + k);
@@ -1836,8 +1953,9 @@ function renderPeriodTabs() {
 }
 
 function setPeriod(k) {
+  console.log('[setPeriod]', { k, activeTab, currentMode });
   if (k === 'FY2025' || k === 'FY2026') {
-    switchFY(k); // FYボタン同期も含む
+    switchFY(k);
     return;
   }
   currentPeriod = k;
@@ -2098,9 +2216,11 @@ function render() {
     lostMemberSel.value = curLost;
   }
   renderLostAnalysis();
-  renderIsKpis();
-  renderIsMemberTable();
-  renderIsCalendar();
+
+  // === IS 関連の再描画（FSセクションでエラーが起きてもISは確実に走るよう独立try/catch） ===
+  try { renderIsKpis(); }       catch (e) { console.error('renderIsKpis error:', e); }
+  try { renderIsMemberTable(); } catch (e) { console.error('renderIsMemberTable error:', e); }
+  try { renderIsCalendar(); }    catch (e) { console.error('renderIsCalendar error:', e); }
 }
 
 // ============================================================
@@ -2370,6 +2490,7 @@ function renderIsKpis() {
   if (!document.getElementById('is-kpi-contrib-amount')) return;
 
   const months = getMonthsForPeriod();
+  console.log('[renderIsKpis] months:', months, 'mode:', currentMode, 'period:', currentPeriod);
   const activePipe = getActivePipeline();
 
   // 期間ラベル
@@ -4021,12 +4142,27 @@ function renderECalendar() {
     const pb = PRODUCT_BADGE[d.product] || { bg: '#f1f5f9', text: '#475569' };
     const shortName = d.name ? d.name.split(' ').slice(-1)[0] : '';
     const hubUrl = d.hubspotId ? `href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener"` : '';
+    // 類似企業（業界マッチ・部分一致）
+    const sims = findSimilarCompanies(d.industry || '');
+    const indDisp = (d.industry || '').trim();
+    const masterCount = (similarCompanies || []).length;
+    let simBadge;
+    if (sims.length > 0) {
+      simBadge = `<button onclick="event.stopPropagation();openSimilarModal('${encodeURIComponent(d.company||'')}','${encodeURIComponent(d.industry||'')}')" class="rounded-full px-1 hover:opacity-80" style="background:#fde68a;color:#92400e;font-weight:600;cursor:pointer" title="類似企業を見る (業種: ${indDisp})">類似${sims.length}</button>`;
+    } else if (!indDisp) {
+      simBadge = `<span class="rounded-full px-1" style="background:#fef3c7;color:#92400e" title="取引側の業種_baseconnect 列が空です">業種未設定</span>`;
+    } else if (masterCount === 0) {
+      simBadge = `<span class="rounded-full px-1" style="background:#fee2e2;color:#991b1b;font-weight:600" title="類似企業マスタが0件です。FS GASのデプロイ・新スプシの閲覧権限を確認してください。">⚠ マスタ0件</span>`;
+    } else {
+      simBadge = `<span class="rounded-full px-1" style="background:#f1f5f9;color:#94a3b8" title="業種「${indDisp}」に該当する企業がマスタ${masterCount}件中にありません">該当なし(${indDisp}/マスタ${masterCount})</span>`;
+    }
     return `<div class="rounded p-1 mb-0.5 text-[10px] leading-tight" style="background:${c.bg};border-left:3px solid ${c.main}">
       <a ${hubUrl} class="font-medium block truncate hover:underline" style="color:#1e293b" title="${d.company}">${d.company || '-'}</a>
       <div class="flex items-center justify-between mt-0.5 flex-wrap gap-0.5">
         <span class="font-semibold" style="color:${c.main}">${shortName}</span>
         ${d.product ? `<span class="rounded-full px-1" style="background:${pb.bg};color:${pb.text}">${d.product}</span>` : ''}
       </div>
+      <div class="mt-0.5">${simBadge}</div>
     </div>`;
   }
 
