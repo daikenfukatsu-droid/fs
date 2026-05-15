@@ -4997,7 +4997,8 @@ async function migrateLocalSnapshotsToGas(gasSnapshots) {
   const localOnly = snapshots.filter(s => !gasIds.has(s.id));
   if (localOnly.length === 0) return;
 
-  Logger && console.log(`GAS未登録のローカルスナップショット ${localOnly.length}件を移行中...`);
+  // Logger && を削除する
+  console.log(`GAS未登録のローカルスナップショット ${localOnly.length}件を移行中...`);
   for (const snap of localOnly) {
     await gasPost('saveSnapshot', { snapshot: snap });
   }
