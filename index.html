@@ -1389,21 +1389,41 @@ function findSimilarCompanies(industry, location, employees) {
   return matches;
 }
 
+// 数値safe変換（"0", null, "", "#N/A" 等を安全に処理）
+function _simToNum(v) {
+  if (v == null || v === '') return 0;
+  const s = String(v).trim();
+  if (s === '' || s === '#N/A' || s === '-') return 0;
+  const n = Number(s.replace(/,/g, ''));
+  return isNaN(n) ? 0 : n;
+}
+// 検討領域(新卒/中途/新卒・中途)で類似企業マスタを絞り込み
+function filterSimByProduct(list, product) {
+  const p = String(product || '').trim();
+  if (p === '新卒')       return list.filter(c => _simToNum(c.shinSotsu) >= 1 && _simToNum(c.chuTo) === 0);
+  if (p === '中途')       return list.filter(c => _simToNum(c.shinSotsu) === 0 && _simToNum(c.chuTo) >= 1);
+  if (p === '新卒・中途') return list.filter(c => _simToNum(c.shinSotsu) >= 1 && _simToNum(c.chuTo) >= 1);
+  return list; // 検討領域未設定なら絞り込みなし
+}
+
 // 類似企業モーダル開閉
-function openSimilarModal(companyEnc, industryEnc) {
+function openSimilarModal(companyEnc, industryEnc, productEnc) {
   const company  = decodeURIComponent(companyEnc || '');
   const industry = decodeURIComponent(industryEnc || '');
-  const list = findSimilarCompanies(industry);
+  const product  = decodeURIComponent(productEnc || '').trim(); // 検討領域(新卒/中途/新卒・中途/空)
+  const allList = findSimilarCompanies(industry);
+  const list = filterSimByProduct(allList, product);
   const title = document.getElementById('similarModalTitle');
   const sub   = document.getElementById('similarModalSubtitle');
   const body  = document.getElementById('similarModalBody');
   if (!body) return;
   title.textContent = `🔍 ${company || '?'} の類似企業（${list.length}件）`;
-  sub.innerHTML = `業界: <b class="text-slate-700">${industry || '不明'}</b> / 受注済み企業マスタから抽出`;
+  const filterTxt = product ? ` / 検討領域: <b class="text-slate-700">${product}</b>のみ` : '';
+  sub.innerHTML = `業界: <b class="text-slate-700">${industry || '不明'}</b>${filterTxt} / 受注済み企業マスタから抽出`;
   if (list.length === 0) {
     body.innerHTML = '<p class="text-center text-slate-400 py-8">該当する類似企業はありません</p>';
   } else {
-    // テーブル: 企業名｜所在地｜業界｜従業員数｜掲載可否｜インタビュー記事可否
+    // テーブル: 企業名｜検討領域｜所在地｜業界｜従業員数｜掲載可否｜インタビュー記事｜LINE利用
     const yesNoBadge = (v) => {
       const t = String(v || '').trim();
       if (!t) return '<span class="text-slate-300">-</span>';
@@ -1413,22 +1433,76 @@ function openSimilarModal(companyEnc, industryEnc) {
       if (isNo)  return '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold" style="background:#fee2e2;color:#991b1b">不可</span>';
       return `<span class="text-[11px] text-slate-600">${t}</span>`;
     };
-    const rows = list.map(c => `<tr class="border-b" style="border-color:#f1f5f9">
+    // 数値変換（"0", 0, null, "", "#N/A" 等の安全な処理）
+    const toNum = (v) => {
+      if (v == null || v === '') return 0;
+      const s = String(v).trim();
+      if (s === '' || s === '#N/A' || s === '-') return 0;
+      const n = Number(s.replace(/,/g, ''));
+      return isNaN(n) ? 0 : n;
+    };
+    // 検討領域 ラベル（F列=新卒, G列=中途 を参照）
+    const ryouikiLabel = (c) => {
+      const sin = toNum(c.shinSotsu);
+      const chu = toNum(c.chuTo);
+      if (sin >= 1 && chu >= 1) {
+        return '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold" style="background:#ede9fe;color:#5b21b6">新卒・中途</span>';
+      }
+      if (sin >= 1) {
+        return '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold" style="background:#dbeafe;color:#1e40af">新卒</span>';
+      }
+      if (chu >= 1) {
+        return '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold" style="background:#fef3c7;color:#92400e">中途</span>';
+      }
+      return '<span class="text-slate-300">-</span>';
+    };
+    // インタビュー記事「有り」判定: 空 or #N/A 以外で、"無" "NG" "×" を含まないものを有り扱い
+    const hasInterview = (v) => {
+      const s = String(v || '').trim();
+      if (!s) return false;
+      if (s === '#N/A' || s === '-' || s === 'N/A') return false;
+      if (s === 'FALSE' || s === '不可' || s === 'No' || s === 'NG' || s === '×' || s === '無') return false;
+      return true;
+    };
+    // 掲載可否=可 判定
+    const isPublishOK = (v) => {
+      const s = String(v || '').trim();
+      return (s === 'TRUE' || s === '可' || s === 'Yes' || s === 'OK' || s === '○');
+    };
+    // ソート: ①インタビュー記事あり ②（無い中で）掲載可否=可 ③（その他で）従業員数降順
+    const sorted = list.slice().sort((a, b) => {
+      const ai = hasInterview(a.canInterview) ? 1 : 0;
+      const bi = hasInterview(b.canInterview) ? 1 : 0;
+      if (ai !== bi) return bi - ai; // インタビュー有が上位
+      // 同階層内: 掲載可否=可 を上位
+      const ap = isPublishOK(a.canPublish) ? 1 : 0;
+      const bp = isPublishOK(b.canPublish) ? 1 : 0;
+      if (ap !== bp) return bp - ap;
+      // 最後: 従業員数の降順
+      const ae = (a.employees != null) ? Number(a.employees) : -1;
+      const be = (b.employees != null) ? Number(b.employees) : -1;
+      return be - ae;
+    });
+    const rows = sorted.map(c => `<tr class="border-b" style="border-color:#f1f5f9">
       <td class="px-3 py-1.5 text-[12px] font-medium text-slate-700">${c.name || '-'}</td>
-      <td class="px-3 py-1.5 text-[11px] text-slate-600">${c.location || '-'}</td>
-      <td class="px-3 py-1.5 text-[11px] text-slate-600">${c.industry || '-'}</td>
-      <td class="px-3 py-1.5 text-[11px] text-right text-slate-600">${c.employees != null ? c.employees.toLocaleString() + '人' : '-'}</td>
-      <td class="px-3 py-1.5 text-center">${yesNoBadge(c.canPublish)}</td>
+      <td class="px-3 py-1.5 text-center whitespace-nowrap">${ryouikiLabel(c)}</td>
+      <td class="px-3 py-1.5 text-[11px] text-slate-600 whitespace-nowrap">${c.location || '-'}</td>
+      <td class="px-3 py-1.5 text-[11px] text-slate-600 whitespace-nowrap">${c.industry || '-'}</td>
+      <td class="px-3 py-1.5 text-[11px] text-right text-slate-600 whitespace-nowrap">${c.employees != null ? c.employees.toLocaleString() + '人' : '-'}</td>
+      <td class="px-3 py-1.5 text-center whitespace-nowrap">${yesNoBadge(c.canPublish)}</td>
       <td class="px-3 py-1.5 text-center">${yesNoBadge(c.canInterview)}</td>
+      <td class="px-3 py-1.5 text-center whitespace-nowrap">${yesNoBadge(c.lineUse)}</td>
     </tr>`).join('');
     body.innerHTML = `<table class="w-full text-sm">
       <thead><tr class="border-b-2" style="border-color:#f59e0b">
         <th class="px-3 py-2 text-left text-[11px] font-semibold text-slate-600">企業名</th>
-        <th class="px-3 py-2 text-left text-[11px] font-semibold text-slate-600">所在地</th>
-        <th class="px-3 py-2 text-left text-[11px] font-semibold text-slate-600">業界</th>
-        <th class="px-3 py-2 text-right text-[11px] font-semibold text-slate-600">従業員数</th>
-        <th class="px-3 py-2 text-center text-[11px] font-semibold text-slate-600">掲載可否</th>
-        <th class="px-3 py-2 text-center text-[11px] font-semibold text-slate-600">インタビュー記事</th>
+        <th class="px-3 py-2 text-center text-[11px] font-semibold text-slate-600 whitespace-nowrap">検討領域</th>
+        <th class="px-3 py-2 text-left text-[11px] font-semibold text-slate-600 whitespace-nowrap">所在地</th>
+        <th class="px-3 py-2 text-left text-[11px] font-semibold text-slate-600 whitespace-nowrap">業界</th>
+        <th class="px-3 py-2 text-right text-[11px] font-semibold text-slate-600 whitespace-nowrap">従業員数</th>
+        <th class="px-3 py-2 text-center text-[11px] font-semibold text-slate-600 whitespace-nowrap">掲載可否</th>
+        <th class="px-3 py-2 text-center text-[11px] font-semibold text-slate-600 whitespace-nowrap">インタビュー記事</th>
+        <th class="px-3 py-2 text-center text-[11px] font-semibold text-slate-600 whitespace-nowrap">LINE利用</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
@@ -1536,7 +1610,11 @@ async function fetchFromSheets(silent = false) {
   if (!silent) setStatus('データ取得中...', '#0284c7');
 
   try {
-    const res = await fetch(GAS_URL);
+    // FS GAS にもタイムアウトを設定（30秒）
+    const fsCtrl = new AbortController();
+    const fsTimer = setTimeout(() => fsCtrl.abort(), 30000);
+    const res = await fetch(GAS_URL, { signal: fsCtrl.signal });
+    clearTimeout(fsTimer);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || '取得失敗');
@@ -1585,40 +1663,55 @@ async function fetchFromSheets(silent = false) {
       }
     }
 
-    // IS専用GAS（新スプシ: 1yE_zvz...）から リサイクルコンタクト_Yes/_No を取得
-    //   レスポンス形式: { ok, yes:[{company,companyId,owner}, ...], no:[...], updatedAt }
+    // ★ FSのrender()を先に実行（IS fetchを待たない）
+    render();
+
+    // IS専用GAS（非同期 + 20秒タイムアウト付き、ハング対策）
     if (IS_GAS_URL) {
-      try {
-        const isRes  = await fetch(IS_GAS_URL);
-        const isJson = await isRes.json();
-        if (isJson.ok) {
-          isListYes = (isJson.yes || []).map(_normalizeListRow);
-          isListNo  = (isJson.no  || []).map(_normalizeListRow);
-          const isUpdatedAt = isJson.updatedAt ? new Date(isJson.updatedAt).toLocaleString('ja-JP') : '';
-          if (!silent && isStatus) {
-            const total = isListYes.length + isListNo.length;
-            isStatus.textContent = `✅ ${total}行 (Yes:${isListYes.length} / No:${isListNo.length})（IS更新: ${isUpdatedAt}）`;
-            isStatus.style.color = '#059669';
+      (async () => {
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 20000);
+          const isRes  = await fetch(IS_GAS_URL, { signal: ctrl.signal });
+          clearTimeout(timer);
+          if (!isRes.ok) throw new Error(`HTTP ${isRes.status}`);
+          const isJson = await isRes.json();
+          if (isJson.ok) {
+            isListYes = (isJson.yes || []).map(_normalizeListRow);
+            isListNo  = (isJson.no  || []).map(_normalizeListRow);
+            const isUpdatedAt = isJson.updatedAt ? new Date(isJson.updatedAt).toLocaleString('ja-JP') : '';
+            if (!silent && isStatus) {
+              const total = isListYes.length + isListNo.length;
+              isStatus.textContent = `✅ ${total}行 (Yes:${isListYes.length} / No:${isListNo.length})（IS更新: ${isUpdatedAt}）`;
+              isStatus.style.color = '#059669';
+            }
+            render();
+          } else {
+            throw new Error(isJson.error || 'IS GAS応答エラー');
           }
-        } else {
-          throw new Error(isJson.error || 'IS GAS応答エラー');
+        } catch(isErr) {
+          if (!silent && isStatus) {
+            const msg = isErr.name === 'AbortError'
+              ? '❌ IS取得タイムアウト(20秒)。URL/デプロイ設定を確認してください'
+              : `❌ IS取得エラー: ${isErr.message}`;
+            isStatus.textContent = msg;
+            isStatus.style.color = '#dc2626';
+          }
         }
-      } catch(isErr) {
-        if (!silent && isStatus) {
-          isStatus.textContent = `❌ IS取得エラー: ${isErr.message}`;
-          isStatus.style.color = '#dc2626';
-        }
-      }
+      })();
     } else {
       if (!silent && isStatus) {
         isStatus.textContent = '⚠️ IS_GAS_URL 未設定（コード冒頭の const IS_GAS_URL に IS GAS の Web App URL を設定してください）';
         isStatus.style.color = '#d97706';
       }
     }
-
-    render();
   } catch (err) {
-    if (!silent) setStatus(`❌ 取得エラー: ${err.message}`, '#dc2626');
+    if (!silent) {
+      const msg = err.name === 'AbortError'
+        ? '❌ FS取得タイムアウト(30秒)。FS GASのデプロイ・readSimilarCompanies_を確認してください'
+        : `❌ 取得エラー: ${err.message}`;
+      setStatus(msg, '#dc2626');
+    }
   } finally {
     btns.forEach(b => { if (b) b.disabled = false; });
     icons.forEach(i => { if (i) i.textContent = '🔄'; });
@@ -4103,8 +4196,9 @@ function renderECalendar() {
   }
 
   // 各商談回ごとにこの月の案件を収集
-  // 1回目: E案件のみ（アポ実施日 or クローズ月がこの月）
-  const eDeals1 = allDeals.filter(d => d.stage === 'E' && d.appointMonth === eCalViewMonth);
+  // 1回目: アポ実施日がこの月の全案件（ステージ問わず累積表示。E→D/C/C+/B/A/S/失注などへ変化しても残す）
+  const eDeals1 = allDeals.filter(d => d.appointMonth === eCalViewMonth && d.appointDay);
+  // 日付未設定のE案件（まだ1回目をスケジュールしていない / クローズ月がこの月）
   const eDealsNoDate = allDeals.filter(d => d.stage === 'E' && !d.appointDate && d.month === eCalViewMonth);
   // 2回目: ステージ問わず、appt2Month がこの月 & 日付あり
   const eDeals2 = allDeals.filter(d => d.appt2Month === eCalViewMonth && d.appt2Day);
@@ -4136,19 +4230,44 @@ function renderECalendar() {
     return entries;
   }
 
+  // ステージバッジ生成（E/D/C/C+/B/A/S/失注系/チャーン）
+  function stageBadgeHtml(stage) {
+    const s = String(stage || '').trim();
+    if (!s) return '';
+    if (s.indexOf('失注') === 0 || s === 'チャーン') {
+      return `<span class="rounded px-1 text-[9px] font-bold" style="background:#fee2e2;color:#991b1b" title="${s}">${s.length > 6 ? s.slice(0, 6) + '…' : s}</span>`;
+    }
+    const sc = { 'E':{bg:'#e0f2fe',text:'#0369a1'}, 'D':{bg:'#dbeafe',text:'#1d4ed8'}, 'C':{bg:'#d1fae5',text:'#065f46'}, 'C+':{bg:'#a7f3d0',text:'#047857'}, 'B':{bg:'#fef3c7',text:'#92400e'}, 'A':{bg:'#fed7aa',text:'#c2410c'}, 'S':{bg:'#fde68a',text:'#854d0e'} };
+    const col = sc[s] || { bg:'#f1f5f9', text:'#475569' };
+    return `<span class="rounded px-1 text-[9px] font-bold" style="background:${col.bg};color:${col.text}">${s}</span>`;
+  }
+  // 失注系判定（カード全体の見た目を落ち着かせる用）
+  function isLostStage(stage) {
+    const s = String(stage || '').trim();
+    return s.indexOf('失注') === 0 || s === 'チャーン';
+  }
+
   // カードHTML生成（共通）
   function entryCard(d, type) {
     const c = CAL_COLORS[type];
     const pb = PRODUCT_BADGE[d.product] || { bg: '#f1f5f9', text: '#475569' };
     const shortName = d.name ? d.name.split(' ').slice(-1)[0] : '';
     const hubUrl = d.hubspotId ? `href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener"` : '';
-    // 類似企業（業界マッチ・部分一致）
-    const sims = findSimilarCompanies(d.industry || '');
+    const lost = isLostStage(d.stage);
+    // 失注時はカード全体をグレーアウト
+    const cardBg = lost ? '#f8fafc' : c.bg;
+    const cardBorder = lost ? '#cbd5e1' : c.main;
+    const nameColor = lost ? '#94a3b8' : '#1e293b';
+    const nameStyle = lost ? 'text-decoration:line-through;color:#94a3b8' : `color:${nameColor}`;
+    // 類似企業（業界マッチ・部分一致＋検討領域フィルタ）
+    const simsAll = findSimilarCompanies(d.industry || '');
+    const sims = filterSimByProduct(simsAll, d.product || '');
     const indDisp = (d.industry || '').trim();
     const masterCount = (similarCompanies || []).length;
+    const productHint = d.product ? ` / 検討領域:${d.product}` : '';
     let simBadge;
     if (sims.length > 0) {
-      simBadge = `<button onclick="event.stopPropagation();openSimilarModal('${encodeURIComponent(d.company||'')}','${encodeURIComponent(d.industry||'')}')" class="rounded-full px-1 hover:opacity-80" style="background:#fde68a;color:#92400e;font-weight:600;cursor:pointer" title="類似企業を見る (業種: ${indDisp})">類似${sims.length}</button>`;
+      simBadge = `<button onclick="event.stopPropagation();openSimilarModal('${encodeURIComponent(d.company||'')}','${encodeURIComponent(d.industry||'')}','${encodeURIComponent(d.product||'')}')" class="rounded-full px-1 hover:opacity-80" style="background:#fde68a;color:#92400e;font-weight:600;cursor:pointer" title="類似企業を見る (業種:${indDisp}${productHint})">類似${sims.length}</button>`;
     } else if (!indDisp) {
       simBadge = `<span class="rounded-full px-1" style="background:#fef3c7;color:#92400e" title="取引側の業種_baseconnect 列が空です">業種未設定</span>`;
     } else if (masterCount === 0) {
@@ -4156,11 +4275,14 @@ function renderECalendar() {
     } else {
       simBadge = `<span class="rounded-full px-1" style="background:#f1f5f9;color:#94a3b8" title="業種「${indDisp}」に該当する企業がマスタ${masterCount}件中にありません">該当なし(${indDisp}/マスタ${masterCount})</span>`;
     }
-    return `<div class="rounded p-1 mb-0.5 text-[10px] leading-tight" style="background:${c.bg};border-left:3px solid ${c.main}">
-      <a ${hubUrl} class="font-medium block truncate hover:underline" style="color:#1e293b" title="${d.company}">${d.company || '-'}</a>
+    return `<div class="rounded p-1 mb-0.5 text-[10px] leading-tight" style="background:${cardBg};border-left:3px solid ${cardBorder}">
+      <a ${hubUrl} class="font-medium block truncate hover:underline" style="${nameStyle}" title="${d.company}${d.stage ? ' / ステージ:' + d.stage : ''}">${d.company || '-'}</a>
       <div class="flex items-center justify-between mt-0.5 flex-wrap gap-0.5">
-        <span class="font-semibold" style="color:${c.main}">${shortName}</span>
-        ${d.product ? `<span class="rounded-full px-1" style="background:${pb.bg};color:${pb.text}">${d.product}</span>` : ''}
+        <span class="font-semibold" style="color:${lost ? '#94a3b8' : c.main}">${shortName}</span>
+        <div class="flex items-center gap-0.5 flex-wrap">
+          ${stageBadgeHtml(d.stage)}
+          ${d.product ? `<span class="rounded-full px-1" style="background:${pb.bg};color:${pb.text}">${d.product}</span>` : ''}
+        </div>
       </div>
       <div class="mt-0.5">${simBadge}</div>
     </div>`;
