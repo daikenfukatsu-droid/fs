@@ -2395,6 +2395,9 @@ function _normalizeListRow(r) {
   return {
     company:     String(r.company     || '').trim(),
     companyId:   String(r.companyId   || '').trim(),
+    lastname:    String(r.lastname    || '').trim(),
+    firstname:   String(r.firstname   || '').trim(),
+    contactId:   String(r.contactId   || '').trim(),
     owner:       String(r.owner       || '').trim(),
     status:      String(r.status      || '').trim(),
     lastContact: String(r.lastContact || '').trim(),
@@ -2419,7 +2422,14 @@ function _dedupRows(rows) {
   });
   const result = [];
   groups.forEach((list) => {
-    result.push(list.length === 1 ? list[0] : _mergeLatestCompanyRow(list));
+    if (list.length === 1) {
+      // 単一コンタクトでも contacts 配列を持たせてトグル表示で扱いやすくする
+      const single = Object.assign({}, list[0]);
+      single.contacts = list.slice();
+      result.push(single);
+    } else {
+      result.push(_mergeLatestCompanyRow(list));
+    }
   });
   return result;
 }
@@ -2475,6 +2485,7 @@ function _mergeLatestCompanyRow(list) {
     lastMet:     pickLatestDateStr('lastMet'),
     nextCall:    pickLatestDateStr('nextCall'),
     recycle:     firstNonEmpty('recycle'),
+    contacts:    list.slice(), // 同一企業の各コンタクト（トグル表示用）
     _mergedCount: list.length, // デバッグ用
   };
 }
@@ -2559,6 +2570,19 @@ let _isListL3SortKey = 'nextCall';
 let _isListL3SortDir = 'asc';
 // Level3 カテゴリフィルタ: null=全表示, 1=①未来, 2=②直近3か月, 3=③3か月以上前, 4=④未分類
 let _isListL3FilterCat = null;
+// Level3 トグル展開状態（企業ごと）: Set of companyKey
+let _isListL3Expanded = new Set();
+
+// HubSpot Portal ID（コンタクト遷移用）
+const HUBSPOT_PORTAL_ID = '23871469';
+
+function isListToggleCompany(key) {
+  if (_isListL3Expanded.has(key)) _isListL3Expanded.delete(key);
+  else _isListL3Expanded.add(key);
+  if (_isListLevel === 3 && _isListOwner) {
+    _renderIsListLevel3(_isListKind, _isListOwner);
+  }
+}
 
 function isListSortL3(key) {
   if (_isListL3SortKey === key) {
@@ -2582,6 +2606,7 @@ function isListFilterL3Cat(cat) {
 function openIsListModal() {
   _isListLevel = 1; _isListKind = null; _isListOwner = null;
   _isListL3FilterCat = null;
+  _isListL3Expanded = new Set();
   document.getElementById('isListBack').classList.add('hidden');
   document.getElementById('isListModalTitle').textContent = '📋 IS 保有リスト詳細';
   _renderIsListLevel1();
@@ -2595,6 +2620,7 @@ function closeIsListModal() {
 function isListBackToLevel1() {
   _isListLevel = 1; _isListKind = null; _isListOwner = null;
   _isListL3FilterCat = null;
+  _isListL3Expanded = new Set();
   document.getElementById('isListBack').classList.add('hidden');
   document.getElementById('isListModalTitle').textContent = '📋 IS 保有リスト詳細';
   _renderIsListLevel1();
@@ -2603,6 +2629,7 @@ function isListBackToLevel1() {
 function isListDrillTo(kind) {
   _isListLevel = 2; _isListKind = kind; _isListOwner = null;
   _isListL3FilterCat = null;
+  _isListL3Expanded = new Set();
   document.getElementById('isListBack').classList.remove('hidden');
   const label = kind === 'yes' ? 'リサイクルコンタクト_Yes' : 'リサイクルコンタクト_No';
   document.getElementById('isListModalTitle').textContent = '📋 ' + label + ' / 担当者別';
@@ -2612,6 +2639,7 @@ function isListDrillTo(kind) {
 function isListDrillToOwner(owner) {
   _isListLevel = 3; _isListOwner = owner;
   _isListL3FilterCat = null; // 担当者切替時はフィルタリセット
+  _isListL3Expanded = new Set(); // トグル展開状態もリセット
   document.getElementById('isListBack').classList.remove('hidden');
   const label = _isListKind === 'yes' ? 'リサイクルYes' : 'リサイクルNo';
   document.getElementById('isListModalTitle').textContent = `📋 ${label} / ${owner}`;
@@ -2827,6 +2855,35 @@ function _renderIsListLevel3(kind, owner) {
     ? ownerRows
     : ownerRows.filter(r => _category(r) === _isListL3FilterCat);
 
+  // コンタクト1件分のセル組み立て（トグル展開行で使用）
+  const _renderContactSubRow = (c, bg) => {
+    const cId = String(c.contactId || '').trim();
+    const lastNm = String(c.lastname  || '').trim();
+    const firstNm = String(c.firstname || '').trim();
+    const hubContactUrl = cId
+      ? `https://app.hubspot.com/contacts/${HUBSPOT_PORTAL_ID}/contact/${cId}`
+      : '';
+    const lastNameCell = hubContactUrl
+      ? `<a href="${hubContactUrl}" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:none;cursor:pointer;font-weight:600;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" title="HubSpotでコンタクトを開く">${lastNm || '—'}</a>`
+      : `<span style="color:#1e40af;font-weight:600;">${lastNm || '—'}</span>`;
+    const lc = _validDateStr(c.lastContact);
+    const nc = _validDateStr(c.nextCall);
+    let ncCell = '—';
+    if (nc) {
+      const d = new Date(nc.replace(/\//g, '-')); d.setHours(0,0,0,0);
+      const diff = Math.floor((d - today) / 86400000);
+      const color = diff < 0 ? '#ef4444' : diff === 0 ? '#f97316' : '#16a34a';
+      ncCell = `<span style="color:${color};font-weight:600;">${nc}</span>`;
+    }
+    return `<tr style="background:${bg};border-bottom:1px solid #e2e8f0;">
+      <td style="padding:4px 8px 4px 28px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${lastNameCell}</td>
+      <td style="padding:4px 8px;font-size:11px;color:#334155;text-align:center;white-space:nowrap;">${firstNm || '—'}</td>
+      <td style="padding:4px 8px;font-size:11px;color:#475569;text-align:center;white-space:nowrap;">${lc || '—'}</td>
+      <td style="padding:4px 8px;font-size:11px;text-align:center;white-space:nowrap;">${ncCell}</td>
+      <td style="padding:4px 8px;font-size:11px;color:#475569;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${String(c.owner || '').trim() || '—'}</td>
+    </tr>`;
+  };
+
   const companyRows = filteredRows.map((r) => {
     const cat = _category(r);
     const bg = CAT_BG[cat];
@@ -2846,13 +2903,24 @@ function _renderIsListLevel3(kind, owner) {
                       <span style="color:${color};font-size:9px;margin-left:3px;">(${label})</span>`;
     }
     const hubCompanyUrl = r.companyId
-      ? `https://app.hubspot.com/contacts/23871469/record/0-2/${r.companyId}`
+      ? `https://app.hubspot.com/contacts/${HUBSPOT_PORTAL_ID}/record/0-2/${r.companyId}`
       : '';
     const companyCell = hubCompanyUrl
       ? `<a href="${hubCompanyUrl}" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:none;cursor:pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" title="HubSpotで開く: ${r.company}">${r.company || '—'}</a>`
       : `<span style="color:#1e40af;" title="${r.company}">${r.company || '—'}</span>`;
-    return `<tr style="background:${bg};border-bottom:1px solid #f1f5f9;border-left:3px solid ${leftBar};">
-      <td style="padding:4px 8px;font-size:11px;font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${companyCell}</td>
+
+    // 担当者の一覧（トグル展開行）
+    const contacts = Array.isArray(r.contacts) && r.contacts.length ? r.contacts : [r];
+    const ckey = String(r.companyId || r.company || '');
+    const expanded = _isListL3Expanded.has(ckey);
+    const arrow = expanded ? '▼' : '▶';
+    const toggleBtn = `<span onclick="event.stopPropagation();isListToggleCompany('${ckey.replace(/'/g, "\\'")}')"
+      style="display:inline-block;width:14px;text-align:center;cursor:pointer;color:#64748b;font-size:9px;margin-right:4px;user-select:none;"
+      title="担当者一覧を${expanded ? '閉じる' : '開く'}（${contacts.length}件）">${arrow}</span>`;
+    const countBadge = `<span style="font-size:9px;color:#64748b;margin-left:4px;">(${contacts.length})</span>`;
+
+    let html = `<tr style="background:${bg};border-bottom:1px solid #f1f5f9;border-left:3px solid ${leftBar};">
+      <td style="padding:4px 8px;font-size:11px;font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${toggleBtn}${companyCell}${countBadge}</td>
       <td style="padding:4px 8px;font-size:11px;text-align:center;white-space:nowrap;">
         ${r.status ? `<span style="background:${accentBg};color:${accent};font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;">${r.status}</span>` : '—'}
       </td>
@@ -2860,6 +2928,31 @@ function _renderIsListLevel3(kind, owner) {
       <td style="padding:4px 8px;font-size:11px;color:#475569;text-align:center;white-space:nowrap;">${safeLastMet || '—'}</td>
       <td style="padding:4px 8px;font-size:11px;text-align:center;white-space:nowrap;">${nextCallHtml}</td>
     </tr>`;
+
+    if (expanded) {
+      // サブテーブル: 姓 | 名 | 前回の連絡 | 次回架電日 | コンタクト担当者
+      const subRows = contacts.map(c => _renderContactSubRow(c, '#ffffff')).join('');
+      html += `<tr style="background:${bg};border-left:3px solid ${leftBar};">
+        <td colspan="5" style="padding:0 8px 8px 28px;">
+          <table style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e2e8f0;border-radius:4px;table-layout:fixed;">
+            <colgroup>
+              <col style="width:22%"><col style="width:14%"><col style="width:18%"><col style="width:18%"><col style="width:28%">
+            </colgroup>
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="padding:4px 8px 4px 28px;font-size:10px;color:#64748b;font-weight:600;text-align:left;border-bottom:1px solid #e2e8f0;">姓</th>
+                <th style="padding:4px 8px;font-size:10px;color:#64748b;font-weight:600;text-align:center;border-bottom:1px solid #e2e8f0;">名</th>
+                <th style="padding:4px 8px;font-size:10px;color:#64748b;font-weight:600;text-align:center;border-bottom:1px solid #e2e8f0;">前回の連絡</th>
+                <th style="padding:4px 8px;font-size:10px;color:#64748b;font-weight:600;text-align:center;border-bottom:1px solid #e2e8f0;">次回架電日</th>
+                <th style="padding:4px 8px;font-size:10px;color:#64748b;font-weight:600;text-align:center;border-bottom:1px solid #e2e8f0;">コンタクト担当者</th>
+              </tr>
+            </thead>
+            <tbody>${subRows}</tbody>
+          </table>
+        </td>
+      </tr>`;
+    }
+    return html;
   }).join('');
 
   // 背景色: Level3 はモーダルを白に戻す（行ごとに色付けするため）
@@ -2934,7 +3027,7 @@ function _renderIsListLevel3(kind, owner) {
       <tbody>${companyRows}</tbody>
     </table>
     <p style="font-size:10px;color:#94a3b8;margin-top:6px;">
-      ヘッダーの ▲▼ で昇順/降順を切替　|　次回架電日: <span style="color:#ef4444;">赤=超過</span> / <span style="color:#f97316;">橙=今日</span> / <span style="color:#16a34a;">緑=未来</span>
+      会社名横の <span style="color:#64748b;">▶</span> で担当者一覧を開閉（姓クリックで HubSpot コンタクトへ）　|　ヘッダーの ▲▼ で昇順/降順を切替　|　次回架電日: <span style="color:#ef4444;">赤=超過</span> / <span style="color:#f97316;">橙=今日</span> / <span style="color:#16a34a;">緑=未来</span>
     </p>
     </div>
   `;
