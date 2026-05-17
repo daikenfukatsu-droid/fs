@@ -146,12 +146,13 @@
           <!-- 6 -->
           <div>
             <p class="font-bold text-slate-700 mb-1">6. 時間減衰（D / C / C+）</p>
-            <p class="text-slate-500">残営業日が少ないほど期待値が下がる。</p>
+            <p class="text-slate-500">残営業日が少ないほど期待値が下がる（緩やか版）。</p>
             <div class="mt-1 px-3 py-2 rounded bg-slate-50 font-mono">
-              期待値 = 金額 × 勝率 × 残営業日比率<br>
+              期待値 = 金額 × 勝率 × 緩和係数<br>
+              緩和係数 = 1 - (1 - 残営業日比率) × 0.5<br>
               残営業日比率 = 残営業日数 ÷ 月の総営業日数
             </div>
-            <p class="text-slate-400 mt-1">土日は営業日から除外。</p>
+            <p class="text-slate-400 mt-1">土日は営業日から除外。月末でも勝率の50%は残る（従来は0まで下がっていた）。</p>
           </div>
 
           <!-- 7 -->
@@ -590,7 +591,10 @@
     </div>
   </div>
 
-  <!-- 類似企業ポップアップ -->
+  <p class="text-xs text-slate-400 mt-4 mb-2 text-center">データは本ブラウザ内のみで処理されます（サーバー送信なし）</p>
+  </div><!-- /dashboardContent-fs -->
+
+  <!-- 類似企業ポップアップ（FS/IS 両ダッシュボードの外側に配置：タブ切替時も表示可能に） -->
   <div id="similarModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-start justify-center z-50 py-8 overflow-y-auto">
     <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-4xl mx-4">
       <div class="flex items-center justify-between mb-3 pb-3 border-b" style="border-bottom-color:#f59e0b">
@@ -601,9 +605,6 @@
       <div id="similarModalBody" class="text-sm text-slate-700 overflow-x-auto"></div>
     </div>
   </div>
-
-  <p class="text-xs text-slate-400 mt-4 mb-2 text-center">データは本ブラウザ内のみで処理されます（サーバー送信なし）</p>
-  </div><!-- /dashboardContent-fs -->
 
   <!-- IS ダッシュボードコンテンツ -->
   <div id="dashboardContent-is" class="hidden">
@@ -788,12 +789,17 @@
           <h3 id="isMetricDetailTitle" class="font-semibold text-slate-800 text-lg">詳細</h3>
           <button onclick="closeIsMetricDetail()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
         </div>
-        <!-- 過去受注した企業ボタン（kind=apoかつグループ以外の時のみ表示） -->
-        <div id="isMetricDetailPastWonBtnWrap" class="hidden mb-3">
+        <!-- 過去受注した企業ボタン / リスケした企業一覧ボタン（kind=apoかつグループ以外の時のみ表示） -->
+        <div id="isMetricDetailPastWonBtnWrap" class="hidden mb-3 flex flex-wrap gap-2">
           <button onclick="openPastWonModal()"
             class="text-[12px] font-semibold rounded-full px-3 py-1.5 hover:opacity-80 transition-opacity"
             style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;">
             🏆 過去受注した企業を見る
+          </button>
+          <button onclick="openReschedModal()"
+            class="text-[12px] font-semibold rounded-full px-3 py-1.5 hover:opacity-80 transition-opacity"
+            style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;">
+            🔄 リスケした企業一覧
           </button>
         </div>
         <div id="isMetricDetailBody" class="text-sm text-slate-700"></div>
@@ -808,6 +814,17 @@
           <button onclick="closePastWonModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
         </div>
         <div id="pastWonModalBody" class="text-sm text-slate-700 overflow-y-auto" style="flex:1 1 auto;min-height:0;"></div>
+      </div>
+    </div>
+
+    <!-- リスケした企業モーダル -->
+    <div id="reschedModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4 py-8">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl flex flex-col overflow-hidden" style="max-height:90vh;">
+        <div class="flex items-center justify-between px-6 py-4 border-b shrink-0" style="border-bottom-color:#ef4444">
+          <h3 id="reschedModalTitle" class="font-semibold text-slate-800 text-lg">🔄 リスケした企業一覧</h3>
+          <button onclick="closeReschedModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+        </div>
+        <div id="reschedModalBody" class="text-sm text-slate-700 overflow-y-auto" style="flex:1 1 auto;min-height:0;"></div>
       </div>
     </div>
 
@@ -1511,8 +1528,20 @@ function openSimilarModal(companyEnc, industryEnc, productEnc) {
       const be = (b.employees != null) ? Number(b.employees) : -1;
       return be - ae;
     });
+    // 企業名 → Google検索（公式サイト）リンク生成
+    const companyLink = (c) => {
+      const name = (c.name || '').trim();
+      if (!name) return '<span class="text-slate-300">-</span>';
+      const q = encodeURIComponent(name + ' 公式サイト');
+      const url = `https://www.google.com/search?q=${q}`;
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer"
+                style="color:#0284c7;text-decoration:none;font-weight:500;cursor:pointer;"
+                onmouseover="this.style.textDecoration='underline'"
+                onmouseout="this.style.textDecoration='none'"
+                title="Googleで「${name} 公式サイト」を検索">${name}</a>`;
+    };
     const rows = sorted.map(c => `<tr class="border-b" style="border-color:#f1f5f9">
-      <td class="px-3 py-1.5 text-[12px] font-medium text-slate-700">${c.name || '-'}</td>
+      <td class="px-3 py-1.5 text-[12px] font-medium">${companyLink(c)}</td>
       <td class="px-3 py-1.5 text-center whitespace-nowrap">${ryouikiLabel(c)}</td>
       <td class="px-3 py-1.5 text-[11px] text-slate-600 whitespace-nowrap">${c.location || '-'}</td>
       <td class="px-3 py-1.5 text-[11px] text-slate-600 whitespace-nowrap">${c.industry || '-'}</td>
@@ -2180,14 +2209,23 @@ function getBizDaysRatio(monthStr) {
   return total > 0 ? remaining / total : 0;
 }
 
+// 時間減衰の柔らかさ係数 (0=減衰なし, 1=従来通り)
+// soft = 1 - (1 - ratio) × DECAY_SOFTNESS
+// 0.5 にすると、残営業日比率の影響を半分に抑える（月末でも勝率の50%は残る）
+const DECAY_SOFTNESS = 0.5;
+function softenedBizRatio(ratio) {
+  return 1 - (1 - ratio) * DECAY_SOFTNESS;
+}
+
 function calcLanding(member, pipe, months) {
   let total = 0;
   months.forEach(m => {
     const ratio = getBizDaysRatio(m);
+    const soft = softenedBizRatio(ratio);
     pipe.filter(d => d.name === member && d.month === m).forEach(d => {
       if (d.stage === 'E') return;
       let rate = getWinRate(d.stage, d.product);
-      if (TIME_DECAY_STAGES.includes(d.stage)) rate *= ratio;
+      if (TIME_DECAY_STAGES.includes(d.stage)) rate *= soft;
       rate *= getStaleFactor(d);
       total += d.amount * rate;
     });
@@ -2282,6 +2320,7 @@ function render() {
   document.getElementById('kpi-lande-amount').textContent = fmt(totals.land + totals.landE);
   document.getElementById('kpi-lande-rate').textContent = pct(tLErate);
   document.getElementById('kpi-lande-rate').className = 'text-sm font-bold ' + landColor(tLErate);
+
   // 達成可能性バッジ
   const badge = document.getElementById('kpi-achieve-badge');
   if (tLrate >= 1) {
@@ -2305,7 +2344,7 @@ function render() {
 
   // メンバー詳細データを保存（アコーディオンテーブル用）
   _chartDetailRows   = rows;
-  _chartDetailTotals = { ...totals, tJneed, tYneed, tJrate, tYrate, tLrate };
+  _chartDetailTotals = { ...totals, tJneed, tYneed, tJrate, tYrate, tLrate, tSrate };
   // モーダルが開いていれば再描画
   const modal = document.getElementById('chartDetailModal');
   if (modal && !modal.classList.contains('hidden')) {
@@ -4340,17 +4379,21 @@ function renderChartDetailTable(type, containerId) {
   } else if (type === 'landing') {
     thead = `<tr style="background:${col.bg};color:${col.text}">
       <th class="px-2 py-1.5 text-left text-[11px]">担当者</th>
-      <th class="px-2 py-1.5 text-right text-[11px]">売上目標</th>
-      <th class="px-2 py-1.5 text-right text-[11px]">予想着地額</th>
-      <th class="px-2 py-1.5 text-right text-[11px]">達成予想%</th>
+      <th class="px-2 py-1.5 text-right text-[11px]">受注金額（目標）</th>
+      <th class="px-2 py-1.5 text-right text-[11px]">受注金額（予想）</th>
+      <th class="px-2 py-1.5 text-right text-[11px]">達成予想率</th>
+      <th class="px-2 py-1.5 text-right text-[11px]">受注金額（実績）</th>
+      <th class="px-2 py-1.5 text-right text-[11px]">達成率</th>
     </tr>`;
     bodyRows = rows.map(r => {
-      const lRC = r.target === 0 ? 'text-slate-400' : landColor(r.lRate);
-      return `<tr class="border-b hover:bg-slate-50 text-xs">
+      const wonAmt = (r.won && r.won.amount) ? r.won.amount : 0;
+      return `<tr class="border-b hover:bg-slate-100 text-xs" style="background:#f8fafc;color:#475569;">
         <td class="px-2 py-1.5 font-medium">${r.name}</td>
-        <td class="px-2 py-1.5 text-right text-slate-500">${fmt(r.target)}</td>
-        <td class="px-2 py-1.5 text-right font-semibold text-violet-700">${fmt(r.land)}</td>
-        <td class="px-2 py-1.5 text-right font-bold ${lRC}">${r.target > 0 ? pct(r.lRate) : '—'}</td>
+        <td class="px-2 py-1.5 text-right">${fmt(r.target)}</td>
+        <td class="px-2 py-1.5 text-right">${fmt(r.land)}</td>
+        <td class="px-2 py-1.5 text-right">${r.target > 0 ? pct(r.lRate) : '—'}</td>
+        <td class="px-2 py-1.5 text-right">${fmt(wonAmt)}</td>
+        <td class="px-2 py-1.5 text-right">${r.target > 0 ? pct(r.sRate) : '—'}</td>
       </tr>`;
     }).join('');
     footRow = `<tr class="text-xs font-bold" style="background:${col.bg};color:${col.text}">
@@ -4358,6 +4401,8 @@ function renderChartDetailTable(type, containerId) {
       <td class="px-2 py-1.5 text-right">${fmt(t.target)}</td>
       <td class="px-2 py-1.5 text-right">${fmt(t.land)}</td>
       <td class="px-2 py-1.5 text-right">${pct(t.tLrate)}</td>
+      <td class="px-2 py-1.5 text-right">${fmt(t.s)}</td>
+      <td class="px-2 py-1.5 text-right">${pct(t.tSrate)}</td>
     </tr>`;
   }
 
@@ -4782,15 +4827,10 @@ function _getMemberDealsForKind(member, kind, months) {
   if (kind === 'apo') {
     // I列「アポ作成日」が期間内、E含む全ステージ＋失注／チャーン／代理店も対象
     // 担当者カウントはE列「レコード作成者」（_getMemberDealsForKind 上部の memDeals 分岐で適用済み）
-    // 未商談化理由(R列)による除外:
-    //   - 「商談してない（リスケ等）」 → 常に除外
-    //   - 「ターゲット外（エントリー数50名等）」 → 含めてOK（除外しない）
-    return memDeals.filter(d => {
-      if (!dateInMonths(d.apoCreatedDate)) return false;
-      const reason = (d.mishoshoReason || '').trim();
-      if (reason.includes('商談してない') || reason.includes('リスケ')) return false;
-      return true;
-    });
+    // 未商談化理由(R列)による除外なし:
+    //   - 「商談してない（リスケ等）」 → 含める
+    //   - 「ターゲット外（エントリー数50名等）」 → 含める
+    return memDeals.filter(d => dateInMonths(d.apoCreatedDate));
   }
   if (kind === 'jisshi') {
     // FS初回アポ実施日(J列)が期間内、E含む全ステージ
@@ -5006,6 +5046,56 @@ function openIsMetricDetail(memberArg, kind, label) {
 
   const deals = _getMemberDealsForKind(memberKey, kind, months);
 
+  // ★ apoの場合のみ: 同じメンバー範囲のリスケ案件の平均リードタイムを算出
+  //   - リスケ判定: 未商談化理由に「リスケ」or「商談してない」を含む
+  //   - リードタイム: FS初回アポ実施日 − アポ作成日 (日)
+  let _reschedAvgDays = null;
+  if (kind === 'apo') {
+    const _toDateAny = (v) => {
+      if (v == null || v === '') return null;
+      if (v instanceof Date) return isNaN(v) ? null : v;
+      const s = String(v).trim();
+      if (!s) return null;
+      const d = new Date(s.replace(/\//g, '-'));
+      return isNaN(d) ? null : d;
+    };
+    const _ltDays = (d) => {
+      const a = _toDateAny(d.apoCreatedDate);
+      const b = _toDateAny(d.appointDate);
+      if (!a || !b) return null;
+      return Math.round((b.getTime() - a.getTime()) / 86400000);
+    };
+    // メンバー絞り込み（リスケ平均算出用に同じmemberKeyで全期間allDealsを参照）
+    const allDeals = [...pipeline, ...lostDeals];
+    let baseDeals;
+    if (memberKey === '__ALL__') baseDeals = allDeals;
+    else if (Array.isArray(memberKey)) {
+      const set = new Set(memberKey);
+      baseDeals = allDeals.filter(d => set.has((d.recordCreator || '').trim()));
+    } else baseDeals = allDeals.filter(d => (d.recordCreator || '').trim() === memberKey);
+    const reschedLts = baseDeals.filter(d => {
+      const r = (d.mishoshoReason || '').trim();
+      return r.includes('リスケ') || r.includes('商談してない');
+    }).map(_ltDays).filter(v => v != null);
+    if (reschedLts.length > 0) {
+      _reschedAvgDays = Math.round(reschedLts.reduce((s,v)=>s+v,0) / reschedLts.length);
+    }
+    // 各dealに leadTime を埋め込み（rowHtml で使う）
+    deals.forEach(d => { d._apoLeadTime = _ltDays(d); });
+  }
+
+  // リスケ状態判定（apo用）
+  function _reschedStatusHtml(d) {
+    const reason = (d.mishoshoReason || '').trim();
+    if (reason.includes('リスケ') || reason.includes('商談してない')) {
+      return `<span style="color:#dc2626;font-weight:600;">リスケ</span>`;
+    }
+    if (_reschedAvgDays != null && d._apoLeadTime != null && d._apoLeadTime >= _reschedAvgDays) {
+      return `<span style="color:#dc2626;font-weight:600;" title="リードタイム ${d._apoLeadTime}日 ≧ 平均 ${_reschedAvgDays}日">リスケ可能性あり</span>`;
+    }
+    return `<span style="color:#94a3b8;">-</span>`;
+  }
+
   // フォーマッタ
   function rowHtml(d) {
     const company = d.company || '?';
@@ -5016,8 +5106,8 @@ function openIsMetricDetail(memberArg, kind, label) {
       : `<span class="font-semibold" style="color:${meta.color}">${company}</span>`;
 
     if (kind === 'apo') {
-      // 企業名のみ
-      return `<li class="py-1">${companyHtml}</li>`;
+      // 企業名｜リスケ状態
+      return `<li class="py-1">${companyHtml} <span class="text-slate-400">｜</span> ${_reschedStatusHtml(d)}</li>`;
     }
     if (kind === 'jisshi') {
       // 失注（未商談）= lostLabel '未ヨミ化': 未商談化理由を表示
@@ -5112,7 +5202,8 @@ function openIsMetricDetail(memberArg, kind, label) {
 let _pastWonContext = null; // { memberArg, label }
 let _pastWonSortKey = 'closeMonth';      // 'closeMonth' | 'leadSource' | 'product'
 let _pastWonSortDir = 'desc';            // 'asc' | 'desc'
-let _pastWonFilter  = null;              // null=全表示, 'curFY25', 'curFY26', 'reup', 'nurt'
+let _pastWonFY      = null;              // null=未選択, 'FY2025', 'FY2026'
+let _pastWonFilter  = null;              // null=全表示, 'cur','reup','nurt'（FY確定後のサブ）
 
 function closePastWonModal() {
   document.getElementById('pastWonModal').classList.add('hidden');
@@ -5125,19 +5216,34 @@ function _fyOfDate(date) {
   const m = date.getMonth() + 1; // 1-12
   return (m >= 4) ? y : (y - 1);  // 4-12月 = その年のFY, 1-3月 = 前年のFY
 }
+// 'YYYY/MM' 形式のクローズ月→FY
+function _fyOfMonth(monthStr) {
+  if (!monthStr) return null;
+  const m = String(monthStr).match(/^(\d{4})[\/\-](\d{2})/);
+  if (!m) return null;
+  const y = parseInt(m[1], 10);
+  const mo = parseInt(m[2], 10);
+  return (mo >= 4) ? y : (y - 1);
+}
 
-// 分類（FY非依存）
+// 分類: 各カテゴリにFYを付与（FY2025 / FY2026）
+//   当期リード: リード作成日とアポ作成日が同一FY
+//   再アップ / ナーチャリング: クローズ日のFYで分類
 function _pastWonClassify(d) {
   const fyLead = _fyOfDate(d.leadCreatedDate);
   const fyApo  = _fyOfDate(d.apoCreatedDate);
+
   if (fyLead != null && fyApo === fyLead) {
-    if (fyLead === 2025) return { key: 'curFY25', label: '当期リード(FY2025)', bg: '#dcfce7', color: '#15803d' };
-    if (fyLead === 2026) return { key: 'curFY26', label: '当期リード(FY2026)', bg: '#d1fae5', color: '#047857' };
+    if (fyLead === 2025) return { sub: 'cur', label: '当期リード', fy: 'FY2025', bg: '#dcfce7', color: '#15803d' };
+    if (fyLead === 2026) return { sub: 'cur', label: '当期リード', fy: 'FY2026', bg: '#d1fae5', color: '#047857' };
   }
+  const fyClose = _fyOfMonth(d.month);
+  const fyKey = fyClose === 2025 ? 'FY2025' : fyClose === 2026 ? 'FY2026' : null;
+
   if (d.reupload) {
-    return { key: 'reup', label: '再アップ', bg: '#fef3c7', color: '#92400e' };
+    return { sub: 'reup', label: '再アップ', fy: fyKey, bg: '#fef3c7', color: '#92400e' };
   }
-  return { key: 'nurt', label: 'ナーチャリング', bg: '#e0e7ff', color: '#3730a3' };
+  return { sub: 'nurt', label: 'ナーチャリング', fy: fyKey, bg: '#e0e7ff', color: '#3730a3' };
 }
 
 function pastWonSetSort(key) {
@@ -5145,13 +5251,19 @@ function pastWonSetSort(key) {
     _pastWonSortDir = (_pastWonSortDir === 'asc') ? 'desc' : 'asc';
   } else {
     _pastWonSortKey = key;
-    _pastWonSortDir = key === 'closeMonth' ? 'desc' : 'asc'; // クローズ月だけ初期は降順、文字列系は昇順
+    _pastWonSortDir = key === 'closeMonth' ? 'desc' : 'asc';
   }
   _renderPastWonBody();
 }
 
-function pastWonSetFilter(key) {
-  _pastWonFilter = (_pastWonFilter === key) ? null : key;
+function pastWonSetFY(fy) {
+  _pastWonFY = (_pastWonFY === fy) ? null : fy;
+  _pastWonFilter = null; // FY切替時にサブフィルタはリセット
+  _renderPastWonBody();
+}
+
+function pastWonSetFilter(sub) {
+  _pastWonFilter = (_pastWonFilter === sub) ? null : sub;
   _renderPastWonBody();
 }
 
@@ -5183,14 +5295,26 @@ function _renderPastWonBody() {
     return sin || chu || '-';
   }
 
-  // カテゴリ別カウント（フィルタ前）
-  const counts = { curFY25: 0, curFY26: 0, reup: 0, nurt: 0 };
-  wonAll.forEach(d => { counts[_pastWonClassify(d).key]++; });
+  // FY×サブカテゴリ別カウント（フィルタ前）
+  const counts = {
+    FY2025: { cur: 0, reup: 0, nurt: 0, total: 0 },
+    FY2026: { cur: 0, reup: 0, nurt: 0, total: 0 }
+  };
+  wonAll.forEach(d => {
+    const c = _pastWonClassify(d);
+    if (c.fy && counts[c.fy]) {
+      counts[c.fy][c.sub]++;
+      counts[c.fy].total++;
+    }
+  });
 
-  // フィルタ適用
-  const filtered = _pastWonFilter
-    ? wonAll.filter(d => _pastWonClassify(d).key === _pastWonFilter)
-    : wonAll;
+  // フィルタ適用: FY → サブの順
+  const filtered = wonAll.filter(d => {
+    const c = _pastWonClassify(d);
+    if (_pastWonFY && c.fy !== _pastWonFY) return false;
+    if (_pastWonFilter && c.sub !== _pastWonFilter) return false;
+    return true;
+  });
 
   // ソート
   const _sortVal = (d) => {
@@ -5217,7 +5341,8 @@ function _renderPastWonBody() {
     const companyHtml = hubUrl
       ? `<a href="${hubUrl}" target="_blank" rel="noopener" class="font-semibold hover:underline" style="color:#10b981">${d.company || '?'}</a>`
       : `<span class="font-semibold" style="color:#10b981">${d.company || '?'}</span>`;
-    const badge = `<span class="rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap" style="background:${c.bg};color:${c.color}">${c.label}</span>`;
+    const badgeLabel = c.fy ? `${c.label}(${c.fy})` : c.label;
+    const badge = `<span class="rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap" style="background:${c.bg};color:${c.color}">${badgeLabel}</span>`;
     const closeMonth = d.month || '-';
     return `<tr class="border-b" style="border-color:#f1f5f9">
       <td style="padding:6px 8px;font-size:12px;">${companyHtml}</td>
@@ -5229,26 +5354,44 @@ function _renderPastWonBody() {
     </tr>`;
   }).join('');
 
-  // フィルタチップ
-  const chip = (key, bg, border, color, lbl, n) => {
-    const active = _pastWonFilter === key;
+  // 第1階層: FY2025 / FY2026 タブ
+  const fyTab = (fy, accent, lightBg) => {
+    const active = _pastWonFY === fy;
+    const totalForFy = counts[fy].total;
+    const bg = active ? accent : '#ffffff';
+    const color = active ? '#ffffff' : accent;
+    const ring = active ? `font-weight:700;` : '';
+    return `<span onclick="pastWonSetFY('${fy}')"
+              style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:9999px;background:${bg};border:1.5px solid ${accent};color:${color};cursor:pointer;user-select:none;font-size:12px;${ring}"
+              title="${active ? 'クリックで解除' : `クリックで ${fy} のサブカテゴリを表示`}">${fy} <span style="font-size:11px;opacity:0.85">${totalForFy}件</span></span>`;
+  };
+
+  // 第2階層: サブカテゴリ（FY確定後に表示）
+  const subChip = (sub, bg, border, color, lbl) => {
+    const active = _pastWonFilter === sub;
+    const n = _pastWonFY ? counts[_pastWonFY][sub] : 0;
     const ring = active ? `box-shadow:0 0 0 2px ${color};font-weight:700;` : '';
-    return `<span onclick="pastWonSetFilter('${key}')"
-              style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:9999px;background:${bg};border:1px solid ${border};color:${color};cursor:pointer;user-select:none;font-size:11px;${ring}"
+    return `<span onclick="pastWonSetFilter('${sub}')"
+              style="display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:9999px;background:${bg};border:1px solid ${border};color:${color};cursor:pointer;user-select:none;font-size:11px;${ring}"
               title="${active ? 'クリックで解除' : 'クリックでこのカテゴリのみ表示'}">${lbl} ${n}件</span>`;
   };
-  const clearChip = _pastWonFilter
-    ? `<span onclick="pastWonSetFilter('${_pastWonFilter}')" style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:9999px;background:#ffffff;border:1px dashed #94a3b8;color:#475569;cursor:pointer;font-size:11px;">✕ 全表示</span>`
-    : '';
-  const chipsRow = `
-    <div style="display:flex;flex-wrap:wrap;gap:6px;">
-      ${chip('curFY25', '#dcfce7', '#bbf7d0', '#15803d', '当期リード(FY2025)', counts.curFY25)}
-      ${chip('curFY26', '#d1fae5', '#a7f3d0', '#047857', '当期リード(FY2026)', counts.curFY26)}
-      ${chip('reup',    '#fef3c7', '#fcd34d', '#92400e', '再アップ',            counts.reup)}
-      ${chip('nurt',    '#e0e7ff', '#c7d2fe', '#3730a3', 'ナーチャリング',      counts.nurt)}
-      ${clearChip}
-    </div>
-  `;
+
+  const fyRow = `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      ${fyTab('FY2025', '#15803d', '#dcfce7')}
+      ${fyTab('FY2026', '#047857', '#d1fae5')}
+      ${_pastWonFY ? `<span style="font-size:10px;color:#94a3b8;margin-left:6px;">← 再クリックで解除</span>` : ''}
+    </div>`;
+
+  const subRow = _pastWonFY ? `
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding-left:6px;border-left:3px solid #cbd5e1;">
+      ${subChip('cur',  '#dcfce7', '#bbf7d0', '#15803d', '当期リード')}
+      ${subChip('reup', '#fef3c7', '#fcd34d', '#92400e', '再アップ')}
+      ${subChip('nurt', '#e0e7ff', '#c7d2fe', '#3730a3', 'ナーチャリング')}
+      ${_pastWonFilter ? `<span onclick="pastWonSetFilter('${_pastWonFilter}')" style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:9999px;background:#ffffff;border:1px dashed #94a3b8;color:#475569;cursor:pointer;font-size:11px;">✕ サブ解除</span>` : ''}
+    </div>` : '';
+
+  const chipsRow = fyRow + subRow;
 
   // 列幅
   const COL_W = ['24%', '12%', '13%', '13%', '14%', '24%'];
@@ -5313,6 +5456,184 @@ function openPastWonModal() {
   _pastWonFilter  = null;
   _renderPastWonBody();
   document.getElementById('pastWonModal').classList.remove('hidden');
+}
+
+// ============================================================
+// 「リスケした企業一覧」モーダル
+// 条件: 未商談化理由(R列)に「リスケ」「商談してない」を含む案件
+// 表示: 企業名 / リードソース / 検討/対象サービス / 取得～実施までのリードタイム
+//   リードタイム = FS初回アポ実施日(J列) - アポ作成日(I列) [日数]
+// ============================================================
+let _reschedSortKey = 'leadTime';  // 'leadTime' | 'leadSource' | 'product'
+let _reschedSortDir = 'desc';
+
+function closeReschedModal() {
+  document.getElementById('reschedModal').classList.add('hidden');
+}
+
+function reschedSetSort(key) {
+  if (_reschedSortKey === key) {
+    _reschedSortDir = (_reschedSortDir === 'asc') ? 'desc' : 'asc';
+  } else {
+    _reschedSortKey = key;
+    _reschedSortDir = key === 'leadTime' ? 'desc' : 'asc';
+  }
+  _renderReschedBody();
+}
+
+function _renderReschedBody() {
+  if (!_pastWonContext) return;
+  const { memberArg, label } = _pastWonContext;
+  const allDeals = [...pipeline, ...lostDeals];
+  // メンバー絞り込み
+  let memDeals;
+  if (memberArg === '__ALL__') {
+    memDeals = allDeals;
+  } else {
+    memDeals = allDeals.filter(d => (d.recordCreator || '').trim() === memberArg);
+  }
+  // リスケ判定: 未商談化理由に「リスケ」「商談してない」を含む
+  const reschedDeals = memDeals.filter(d => {
+    const reason = (d.mishoshoReason || '').trim();
+    return reason.includes('リスケ') || reason.includes('商談してない');
+  });
+
+  // リードタイム計算
+  // apoCreatedDate は Date オブジェクト、appointDate は 'YYYY/MM/DD' 文字列なので両対応
+  const toDateAny = (v) => {
+    if (v == null || v === '') return null;
+    if (v instanceof Date) return isNaN(v) ? null : v;
+    const s = String(v).trim();
+    if (!s) return null;
+    const d = new Date(s.replace(/\//g, '-'));
+    return isNaN(d) ? null : d;
+  };
+  const leadTimeDays = (d) => {
+    const apoD = toDateAny(d.apoCreatedDate);
+    const appD = toDateAny(d.appointDate);
+    if (!apoD || !appD) return null;
+    return Math.round((appD.getTime() - apoD.getTime()) / 86400000);
+  };
+
+  // ソート
+  const _sortVal = (d) => {
+    if (_reschedSortKey === 'leadTime')   {
+      const lt = leadTimeDays(d);
+      return lt == null ? -Infinity : lt;
+    }
+    if (_reschedSortKey === 'leadSource') return (d.leadSource || '').trim();
+    if (_reschedSortKey === 'product')    return (d.product    || '').trim();
+    return '';
+  };
+  reschedDeals.sort((a, b) => {
+    const av = _sortVal(a);
+    const bv = _sortVal(b);
+    if (typeof av === 'number' && typeof bv === 'number') {
+      return _reschedSortDir === 'asc' ? av - bv : bv - av;
+    }
+    const sa = String(av || '');
+    const sb = String(bv || '');
+    if (!sa && !sb) return 0;
+    if (!sa) return 1;
+    if (!sb) return -1;
+    return _reschedSortDir === 'asc' ? sa.localeCompare(sb, 'ja') : sb.localeCompare(sa, 'ja');
+  });
+
+  // ソートアイコン
+  const arrowFor = (key) => {
+    if (_reschedSortKey !== key) return '<span style="color:#cbd5e1;font-size:9px;">▲▼</span>';
+    return _reschedSortDir === 'asc'
+      ? '<span style="color:#ef4444;font-weight:bold;">▲</span>'
+      : '<span style="color:#ef4444;font-weight:bold;">▼</span>';
+  };
+
+  // 日付フォーマッタ（〇〇〇〇年〇〇月〇〇日）
+  const fmtJpDate = (v) => {
+    const d = toDateAny(v);
+    if (!d) return '';
+    return `${d.getFullYear()}年${String(d.getMonth()+1).padStart(2,'0')}月${String(d.getDate()).padStart(2,'0')}日`;
+  };
+
+  // 平均リードタイムを算出（nullを除く）
+  const ltValues = reschedDeals.map(leadTimeDays).filter(v => v != null);
+  const avgLt = ltValues.length > 0
+    ? Math.round(ltValues.reduce((s,v) => s+v, 0) / ltValues.length)
+    : null;
+
+  // 列幅: 企業名 / リードソース / 検討対象 / リードタイム / アポ作成日 / FS初回アポ実施日
+  const COL_W = ['22%', '14%', '16%', '14%', '17%', '17%'];
+  const hStyle = `padding:8px 8px;font-size:11px;font-weight:600;color:#475569;background:#ffffff;white-space:nowrap;`;
+  const sortableH = (key, lbl, extra) => {
+    const isActive = _reschedSortKey === key;
+    const bgOverride = isActive ? 'background:#fee2e2;' : '';
+    return `<div style="${hStyle}${bgOverride}cursor:pointer;user-select:none;${extra||''}"
+              onclick="reschedSetSort('${key}')"
+              title="クリックで${lbl}を昇順/降順">${lbl} ${arrowFor(key)}</div>`;
+  };
+
+  // 行HTML
+  const rows = reschedDeals.map(d => {
+    const lt = leadTimeDays(d);
+    const ltStr = lt == null ? '<span style="color:#94a3b8;">—</span>'
+                            : `<span style="color:${lt > 60 ? '#dc2626' : lt > 30 ? '#d97706' : '#475569'};font-weight:600;">${lt}日</span>`;
+    const apoStr = fmtJpDate(d.apoCreatedDate) || '<span style="color:#94a3b8;">—</span>';
+    const appStr = fmtJpDate(d.appointDate)    || '<span style="color:#94a3b8;">—</span>';
+    const hubUrl = d.hubspotId ? `https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}` : null;
+    const companyHtml = hubUrl
+      ? `<a href="${hubUrl}" target="_blank" rel="noopener" class="font-semibold hover:underline" style="color:#dc2626">${d.company || '?'}</a>`
+      : `<span class="font-semibold" style="color:#dc2626">${d.company || '?'}</span>`;
+    return `<tr style="border-bottom:1px solid #f1f5f9;">
+      <td style="padding:6px 8px;font-size:12px;">${companyHtml}</td>
+      <td style="padding:6px 8px;font-size:11px;color:#475569;white-space:nowrap;">${d.leadSource || '-'}</td>
+      <td style="padding:6px 8px;font-size:11px;color:#475569;white-space:nowrap;">${d.product || '-'}</td>
+      <td style="padding:6px 8px;font-size:11px;text-align:right;">${ltStr}</td>
+      <td style="padding:6px 8px;font-size:11px;color:#475569;text-align:center;white-space:nowrap;">${apoStr}</td>
+      <td style="padding:6px 8px;font-size:11px;color:#475569;text-align:center;white-space:nowrap;">${appStr}</td>
+    </tr>`;
+  }).join('');
+
+  const titleEl = document.getElementById('reschedModalTitle');
+  const avgLabel = avgLt == null ? '' : ` / 平均 ${avgLt}日`;
+  if (titleEl) titleEl.textContent = `🔄 ${label} - リスケした企業一覧（${reschedDeals.length}件${avgLabel}）`;
+
+  document.getElementById('reschedModalBody').innerHTML = `
+    <div style="position:sticky;top:0;background:#ffffff;z-index:30;box-shadow:0 1px 0 #e2e8f0;">
+      <div style="padding:12px 24px 8px 24px;">
+        <p style="font-size:11px;color:#94a3b8;margin:0;">
+          ※ 未商談化理由に「リスケ」「商談してない」を含む案件を抽出 / リードタイム = FS初回アポ実施日 − アポ作成日（日数）<br>
+          色: 30日以内=グレー / 31〜60日=橙 / 61日以上=赤
+        </p>
+      </div>
+      <div style="display:grid;grid-template-columns:${COL_W.join(' ')};border-bottom:2px solid #ef4444;background:#ffffff;">
+        <div style="${hStyle}text-align:left;padding-left:24px;">企業名</div>
+        ${sortableH('leadSource', 'リードソース',       'text-align:left;')}
+        ${sortableH('product',    '検討/対象サービス',  'text-align:left;')}
+        ${sortableH('leadTime',   '取得～実施リードタイム', 'text-align:right;')}
+        <div style="${hStyle}text-align:center;">アポ作成日</div>
+        <div style="${hStyle}text-align:center;padding-right:24px;">FS初回アポ実施日</div>
+      </div>
+    </div>
+    <div style="padding:0 24px 16px 24px;">
+    ${reschedDeals.length === 0
+      ? '<p style="text-align:center;color:#94a3b8;padding:32px 0;">該当案件なし</p>'
+      : `<table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+          <colgroup>
+            <col style="width:${COL_W[0]}"><col style="width:${COL_W[1]}"><col style="width:${COL_W[2]}"><col style="width:${COL_W[3]}"><col style="width:${COL_W[4]}"><col style="width:${COL_W[5]}">
+          </colgroup>
+          <tbody>${rows}</tbody>
+        </table>`
+    }
+    </div>
+  `;
+}
+
+function openReschedModal() {
+  if (!_pastWonContext) return;
+  // state をリセット
+  _reschedSortKey = 'leadTime';
+  _reschedSortDir = 'desc';
+  _renderReschedBody();
+  document.getElementById('reschedModal').classList.remove('hidden');
 }
 
 // ============================================================
@@ -5855,7 +6176,12 @@ function doCompare() {
   }
   const selected = snapshots.filter(s => selectedSnapIds.has(s.id));
   selected.sort((a, b) => new Date(a.id) - new Date(b.id));
-  showCompareModal(selected);
+  try {
+    showCompareModal(selected);
+  } catch (err) {
+    console.error('[doCompare] エラー:', err);
+    alert('比較モーダルの表示でエラーが発生しました:\n' + (err && err.message ? err.message : err) + '\n\n(F12 でコンソールを確認してください)');
+  }
 }
 
 // ===== 比較モーダル共有データ（タブ切り替え用） =====
@@ -6004,11 +6330,12 @@ function showCompareModal(snaps) {
         : `<span class="text-[10px] font-semibold shrink-0 px-1.5 py-0.5 rounded" style="background:#f0fdf4;color:#059669">📅 ${lm}/${ld2}</span>`;
     }
 
+    const nameShort = (d.name || '').split(' ')[0] || '?';
     return `<div class="flex items-center gap-2 px-2 py-1.5 rounded text-[11px]" style="background:${bg}">
       <div class="flex items-center gap-0.5 shrink-0">${trajectoryBadges(traj)}</div>
       <a ${hub} class="flex-1 truncate font-medium hover:underline" style="color:#1e293b" title="${d.company||''}">${d.company||'?'}</a>
       ${dateChangeHtml}
-      <span class="text-[10px] font-semibold shrink-0 px-1.5 py-0.5 rounded-full" style="background:${mColor}20;color:${mColor}">${d.name.split(' ')[0]}</span>
+      <span class="text-[10px] font-semibold shrink-0 px-1.5 py-0.5 rounded-full" style="background:${mColor}20;color:${mColor}">${nameShort}</span>
     </div>`;
   }
 
@@ -6126,7 +6453,7 @@ function showCompareModal(snaps) {
 
   // メンバー別タブ
   const activeMembers = MEMBERS.filter(m =>
-    snaps.some(snap => snap.pipeline.some(d => d.name === m))
+    snaps.some(snap => (snap.pipeline || []).some(d => d && d.name === m))
   );
   let memberHtml = snapHeaderHtml;
   activeMembers.forEach((m, mi) => {
