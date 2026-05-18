@@ -1528,17 +1528,30 @@ function openSimilarModal(companyEnc, industryEnc, productEnc) {
       const be = (b.employees != null) ? Number(b.employees) : -1;
       return be - ae;
     });
-    // 企業名 → Google検索（公式サイト）リンク生成
+    // インタビュー記事セル: URL があればハイパーリンク化、無ければテキスト or yes/no バッジ
+    const interviewCell = (c) => {
+      const text = String(c.canInterview || '').trim();
+      const url  = String(c.interviewUrl || '').trim();
+      if (url && /^https?:\/\//i.test(url)) {
+        const label = text && text !== '#N/A' ? text : '記事を見る';
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer"
+                  style="color:#0284c7;text-decoration:underline;font-weight:500;cursor:pointer;display:inline-block;max-width:320px;white-space:normal;text-align:left;line-height:1.35;"
+                  title="インタビュー記事を開く">${label}</a>`;
+      }
+      // URL 無しは従来通り
+      return yesNoBadge(text);
+    };
+    // 企業名 → Google検索（採用）リンク生成
     const companyLink = (c) => {
       const name = (c.name || '').trim();
       if (!name) return '<span class="text-slate-300">-</span>';
-      const q = encodeURIComponent(name + ' 公式サイト');
+      const q = encodeURIComponent(name + ' 採用');
       const url = `https://www.google.com/search?q=${q}`;
       return `<a href="${url}" target="_blank" rel="noopener noreferrer"
                 style="color:#0284c7;text-decoration:none;font-weight:500;cursor:pointer;"
                 onmouseover="this.style.textDecoration='underline'"
                 onmouseout="this.style.textDecoration='none'"
-                title="Googleで「${name} 公式サイト」を検索">${name}</a>`;
+                title="Googleで「${name} 採用」を検索">${name}</a>`;
     };
     const rows = sorted.map(c => `<tr class="border-b" style="border-color:#f1f5f9">
       <td class="px-3 py-1.5 text-[12px] font-medium">${companyLink(c)}</td>
@@ -1547,7 +1560,7 @@ function openSimilarModal(companyEnc, industryEnc, productEnc) {
       <td class="px-3 py-1.5 text-[11px] text-slate-600 whitespace-nowrap">${c.industry || '-'}</td>
       <td class="px-3 py-1.5 text-[11px] text-right text-slate-600 whitespace-nowrap">${c.employees != null ? c.employees.toLocaleString() + '人' : '-'}</td>
       <td class="px-3 py-1.5 text-center whitespace-nowrap">${yesNoBadge(c.canPublish)}</td>
-      <td class="px-3 py-1.5 text-center">${yesNoBadge(c.canInterview)}</td>
+      <td class="px-3 py-1.5 text-left">${interviewCell(c)}</td>
       <td class="px-3 py-1.5 text-center whitespace-nowrap">${yesNoBadge(c.lineUse)}</td>
     </tr>`).join('');
     body.innerHTML = `<table class="w-full text-sm">
