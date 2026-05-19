@@ -1088,10 +1088,11 @@ const IS_TARGETS = {
   '川上 陸斗': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[15,15,6], '2026/11':[15,15,6], '2026/12':[15,15,6], '2027/01':[15,15,6], '2027/02':[15,15,6], '2027/03':[15,15,6] },
   '久保 智花': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[15,15,6], '2026/11':[15,15,6], '2026/12':[15,15,6], '2027/01':[15,15,6], '2027/02':[15,15,6], '2027/03':[15,15,6] },
   '降籏 唯斗': { '2026/04':[10,5,2], '2026/05':[10,10,4], '2026/06':[15,15,6], '2026/07':[20,20,8], '2026/08':[20,20,8], '2026/09':[20,20,8], '2026/10':[20,20,8], '2026/11':[20,20,8], '2026/12':[20,20,8], '2027/01':[20,20,8], '2027/02':[20,20,8], '2027/03':[20,20,8] },
+  '一色 柚穂': { '2026/04':[0,0,0], '2026/05':[6,6,2], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[20,20,8], '2026/11':[20,20,8], '2026/12':[20,20,8], '2027/01':[20,20,8], '2027/02':[20,20,8], '2027/03':[20,20,8] },
 };
 
 const IS_MEMBERS_FY2025 = ["駒田 智士", "吉住 碧斗", "田中 俊也", "大井 駿空", "福永 将也", "大山 耕太郎", "谷原 葵衣", "中村 雅", "宮原 亘輝", "テレアポ代行", "池田 美亜", "本島 翼", "西 倖平", "田代 大和", "深澤 陸", "長谷部 琴音", "宇野澤 彰子", "廣澤 未来", "大野 杏海", "柴原 かやね", "小島 萌"];
-const IS_MEMBERS_FY2026 = ["駒田 智士", "吉住 碧斗", "田中 俊也", "大井 駿空", "福永 将也", "大山 耕太郎", "谷原 葵衣", "中村 雅", "高橋 玲衣", "近藤 璃空", "宇佐美 朱莉", "開発 茉子", "前田 朱梨", "吉井 琉杏", "宮原 亘輝", "降籏 唯斗", "川上 陸斗", "久保 智花", "テレアポ代行", "池田 美亜", "本島 翼", "西 倖平", "田代 大和"];
+const IS_MEMBERS_FY2026 = ["駒田 智士", "吉住 碧斗", "田中 俊也", "大井 駿空", "福永 将也", "大山 耕太郎", "谷原 葵衣", "中村 雅", "高橋 玲衣", "近藤 璃空", "宇佐美 朱莉", "開発 茉子", "前田 朱梨", "吉井 琉杏", "宮原 亘輝", "降籏 唯斗", "川上 陸斗", "久保 智花", "一色 柚穂", "テレアポ代行", "池田 美亜", "本島 翼", "西 倖平", "田代 大和"];
 
 function getIsTargetFor(member, monthStr) {
   const t = (IS_TARGETS[member] || {})[monthStr];
@@ -2406,18 +2407,51 @@ let isListNo  = [];
 
 function _normalizeListRow(r) {
   return {
-    company:     String(r.company     || '').trim(),
-    companyId:   String(r.companyId   || '').trim(),
-    lastname:    String(r.lastname    || '').trim(),
-    firstname:   String(r.firstname   || '').trim(),
-    contactId:   String(r.contactId   || '').trim(),
-    owner:       String(r.owner       || '').trim(),
-    status:      String(r.status      || '').trim(),
-    lastContact: String(r.lastContact || '').trim(),
-    lastMet:     String(r.lastMet     || '').trim(),
-    nextCall:    String(r.nextCall    || '').trim(),
-    recycle:     String(r.recycle     || '').trim(),
+    company:        String(r.company        || '').trim(),
+    companyId:      String(r.companyId      || '').trim(),
+    lastname:       String(r.lastname       || '').trim(),
+    firstname:      String(r.firstname      || '').trim(),
+    contactId:      String(r.contactId      || '').trim(),
+    owner:          String(r.owner          || '').trim(),
+    status:         String(r.status         || '').trim(),
+    perceptionFlow: String(r.perceptionFlow || '').trim(),  // H列：パーセプションフロー
+    lastContact:    String(r.lastContact    || '').trim(),
+    lastMet:        String(r.lastMet        || '').trim(),
+    nextCall:       String(r.nextCall       || '').trim(),
+    recycle:        String(r.recycle        || '').trim(),
   };
+}
+
+// パーセプションフロー 優先順位（上ほど高優先・index小さいほど高優先）
+const PERCEPTION_FLOW_PRIORITY = [
+  '日程調整待ち',
+  '商談化',
+  '比較検討',
+  '導入検討',
+  '興味関心',
+  '課題認知',
+  '課題不明',
+  '対応終了',
+  '対応中',
+  '未対応',
+];
+// パーセプションフロー比較用のランク（小さいほど高優先、見つからない/空は最下位）
+function _perceptionRank(v) {
+  const s = String(v || '').trim();
+  if (!s) return 999;
+  const idx = PERCEPTION_FLOW_PRIORITY.indexOf(s);
+  return idx === -1 ? 998 : idx; // リスト外は空より上位だが既知値より下位
+}
+// パーセプションフローを優先順位で選択（同一企業の複数コンタクトをマージする時に使用）
+function _pickPriorityPerception(list) {
+  let best = '';
+  let bestRank = 999;
+  list.forEach(r => {
+    const v = String(r.perceptionFlow || '').trim();
+    const rank = _perceptionRank(v);
+    if (rank < bestRank) { bestRank = rank; best = v; }
+  });
+  return best;
 }
 
 // 会社IDで重複排除（IDが空欄なら 会社名で判定）
@@ -2489,17 +2523,20 @@ function _mergeLatestCompanyRow(list) {
     for (const r of list) { if (r[field]) return r[field]; }
     return '';
   };
+  // パーセプションフロー: 優先順位で最も高いものを採用
+  const perceptionVal = _pickPriorityPerception(list);
   return {
-    company:     firstNonEmpty('company'),
-    companyId:   firstNonEmpty('companyId'),
-    owner:       firstNonEmpty('owner'),
-    status:      statusVal,
-    lastContact: pickLatestDateStr('lastContact'),
-    lastMet:     pickLatestDateStr('lastMet'),
-    nextCall:    pickLatestDateStr('nextCall'),
-    recycle:     firstNonEmpty('recycle'),
-    contacts:    list.slice(), // 同一企業の各コンタクト（トグル表示用）
-    _mergedCount: list.length, // デバッグ用
+    company:        firstNonEmpty('company'),
+    companyId:      firstNonEmpty('companyId'),
+    owner:          firstNonEmpty('owner'),
+    status:         statusVal,
+    perceptionFlow: perceptionVal,
+    lastContact:    pickLatestDateStr('lastContact'),
+    lastMet:        pickLatestDateStr('lastMet'),
+    nextCall:       pickLatestDateStr('nextCall'),
+    recycle:        firstNonEmpty('recycle'),
+    contacts:       list.slice(), // 同一企業の各コンタクト（トグル表示用）
+    _mergedCount:   list.length, // デバッグ用
   };
 }
 
@@ -2935,7 +2972,7 @@ function _renderIsListLevel3(kind, owner) {
     let html = `<tr style="background:${bg};border-bottom:1px solid #f1f5f9;border-left:3px solid ${leftBar};">
       <td style="padding:4px 8px;font-size:11px;font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${toggleBtn}${companyCell}${countBadge}</td>
       <td style="padding:4px 8px;font-size:11px;text-align:center;white-space:nowrap;">
-        ${r.status ? `<span style="background:${accentBg};color:${accent};font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;">${r.status}</span>` : '—'}
+        ${r.perceptionFlow ? `<span style="background:${accentBg};color:${accent};font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;">${r.perceptionFlow}</span>` : '—'}
       </td>
       <td style="padding:4px 8px;font-size:11px;color:#475569;text-align:center;white-space:nowrap;">${safeLastContact || '—'}</td>
       <td style="padding:4px 8px;font-size:11px;color:#475569;text-align:center;white-space:nowrap;">${safeLastMet || '—'}</td>
@@ -4868,6 +4905,7 @@ const IS_TABLE_ROWS_FY2026 = [
   { name:'吉井 琉杏', color:'sky' },
   { name:'宮原 亘輝', color:'sky' },
   { name:'川上 陸斗', color:'sky' },
+  { name:'一色 柚穂', color:'sky' },
   // 駒田ユニット（緑）
   { name:'駒田 智士', color:'emerald' },
   { name:'大井 駿空', color:'emerald' },
@@ -4895,7 +4933,7 @@ const IS_UNITS_FY2026 = {
   '吉住ユニット': ['吉住 碧斗','福永 将也','田中 俊也'],
   '駒田ユニット': ['駒田 智士','大井 駿空','大山 耕太郎'],
   'MKグループ':  ['池田 美亜','本島 翼','西 倖平','田代 大和'],
-  '新卒メンバー': ['近藤 璃空','前田 朱梨','吉井 琉杏','宮原 亘輝','川上 陸斗','谷原 葵衣','中村 雅','高橋 玲衣','宇佐美 朱莉','開発 茉子','久保 智花'],
+  '新卒メンバー': ['近藤 璃空','前田 朱梨','吉井 琉杏','宮原 亘輝','川上 陸斗','一色 柚穂','谷原 葵衣','中村 雅','高橋 玲衣','宇佐美 朱莉','開発 茉子','久保 智花'],
 };
 
 // 行カラー: 全て白背景（点線で区切り）
