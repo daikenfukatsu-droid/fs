@@ -1891,7 +1891,12 @@ function normalizeRow(row, hubspotId = null) {
     if (idVal) hubspotId = String(idVal).trim() || null;
   }
   const company = String(find('取引名','案件名','会社名') || '').trim();
-  const rawMember = String(find('取引担当者','担当者','FS','営業','氏名','メンバー') || '').trim();
+  // ★ 旧字体→新字体 正規化（惠→恵 など。HubSpot側で旧字体が使われていても揺れ吸収）
+  const _normalizeKanjiVariant = (s) => String(s || '')
+    .replace(/惠/g, '恵')   // 旧「惠」→新「恵」
+    .replace(/﨑/g, '崎')   // 立﨑(U+FA11)→崎（参考）
+    .replace(/邊/g, '辺').replace(/邉/g, '辺'); // 渡邊/渡邉→渡辺（参考）
+  const rawMember = _normalizeKanjiVariant(String(find('取引担当者','担当者','FS','営業','氏名','メンバー') || '').trim());
   const dateRaw = find('クローズ日','受注予定月','予定月','年月','クロージング','close','決済月') || '';
   const appointRaw = find('FS初回アポ実施日','初回アポ実施日','アポ実施日','アポ日','初回アポ') || '';
   const amountRaw = find('金額（計上）','金額','売上','受注金額','amount');
@@ -2406,13 +2411,16 @@ let isListYes = [];
 let isListNo  = [];
 
 function _normalizeListRow(r) {
+  // ★ 旧字体→新字体（惠→恵 等）担当者名の揺れを吸収
+  const _normName = (s) => String(s || '')
+    .replace(/惠/g, '恵').replace(/﨑/g, '崎').replace(/邊/g, '辺').replace(/邉/g, '辺');
   return {
     company:        String(r.company        || '').trim(),
     companyId:      String(r.companyId      || '').trim(),
     lastname:       String(r.lastname       || '').trim(),
     firstname:      String(r.firstname      || '').trim(),
     contactId:      String(r.contactId      || '').trim(),
-    owner:          String(r.owner          || '').trim(),
+    owner:          _normName(r.owner).trim(),
     status:         String(r.status         || '').trim(),
     perceptionFlow: String(r.perceptionFlow || '').trim(),  // H列：パーセプションフロー
     lastContact:    String(r.lastContact    || '').trim(),
@@ -2906,31 +2914,38 @@ function _renderIsListLevel3(kind, owner) {
     : ownerRows.filter(r => _category(r) === _isListL3FilterCat);
 
   // コンタクト1件分のセル組み立て（トグル展開行で使用）
+  // カラム: 姓 | 名 | 状況(パーセプションフロー) | 前回の連絡 | 最終接触日 | 次回架電日
   const _renderContactSubRow = (c, bg) => {
     const cId = String(c.contactId || '').trim();
     const lastNm = String(c.lastname  || '').trim();
     const firstNm = String(c.firstname || '').trim();
+    const perception = String(c.perceptionFlow || '').trim();
     const hubContactUrl = cId
       ? `https://app.hubspot.com/contacts/${HUBSPOT_PORTAL_ID}/contact/${cId}`
       : '';
     const lastNameCell = hubContactUrl
-      ? `<a href="${hubContactUrl}" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:none;cursor:pointer;font-weight:600;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" title="HubSpotでコンタクトを開く">${lastNm || '—'}</a>`
-      : `<span style="color:#1e40af;font-weight:600;">${lastNm || '—'}</span>`;
+      ? `<a href="${hubContactUrl}" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:none;cursor:pointer;font-weight:600;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" title="HubSpotでコンタクトを開く">${lastNm || '-'}</a>`
+      : `<span style="color:#1e40af;font-weight:600;">${lastNm || '-'}</span>`;
     const lc = _validDateStr(c.lastContact);
+    const lm = _validDateStr(c.lastMet);
     const nc = _validDateStr(c.nextCall);
-    let ncCell = '—';
+    let ncCell = '-';
     if (nc) {
       const d = new Date(nc.replace(/\//g, '-')); d.setHours(0,0,0,0);
       const diff = Math.floor((d - today) / 86400000);
       const color = diff < 0 ? '#ef4444' : diff === 0 ? '#f97316' : '#16a34a';
       ncCell = `<span style="color:${color};font-weight:600;">${nc}</span>`;
     }
+    const perceptionCell = perception
+      ? `<span style="background:${accentBg};color:${accent};font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;">${perception}</span>`
+      : '-';
     return `<tr style="background:${bg};border-bottom:1px solid #e2e8f0;">
       <td style="padding:4px 8px 4px 28px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${lastNameCell}</td>
-      <td style="padding:4px 8px;font-size:11px;color:#334155;text-align:center;white-space:nowrap;">${firstNm || '—'}</td>
-      <td style="padding:4px 8px;font-size:11px;color:#475569;text-align:center;white-space:nowrap;">${lc || '—'}</td>
+      <td style="padding:4px 8px;font-size:11px;color:#334155;text-align:center;white-space:nowrap;">${firstNm || '-'}</td>
+      <td style="padding:4px 8px;font-size:11px;text-align:center;white-space:nowrap;">${perceptionCell}</td>
+      <td style="padding:4px 8px;font-size:11px;color:#475569;text-align:center;white-space:nowrap;">${lc || '-'}</td>
+      <td style="padding:4px 8px;font-size:11px;color:#475569;text-align:center;white-space:nowrap;">${lm || '-'}</td>
       <td style="padding:4px 8px;font-size:11px;text-align:center;white-space:nowrap;">${ncCell}</td>
-      <td style="padding:4px 8px;font-size:11px;color:#475569;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${String(c.owner || '').trim() || '—'}</td>
     </tr>`;
   };
 
@@ -2986,15 +3001,16 @@ function _renderIsListLevel3(kind, owner) {
         <td colspan="5" style="padding:0 8px 8px 28px;">
           <table style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e2e8f0;border-radius:4px;table-layout:fixed;">
             <colgroup>
-              <col style="width:22%"><col style="width:14%"><col style="width:18%"><col style="width:18%"><col style="width:28%">
+              <col style="width:18%"><col style="width:12%"><col style="width:18%"><col style="width:16%"><col style="width:16%"><col style="width:20%">
             </colgroup>
             <thead>
               <tr style="background:#f8fafc;">
                 <th style="padding:4px 8px 4px 28px;font-size:10px;color:#64748b;font-weight:600;text-align:left;border-bottom:1px solid #e2e8f0;">姓</th>
                 <th style="padding:4px 8px;font-size:10px;color:#64748b;font-weight:600;text-align:center;border-bottom:1px solid #e2e8f0;">名</th>
+                <th style="padding:4px 8px;font-size:10px;color:#64748b;font-weight:600;text-align:center;border-bottom:1px solid #e2e8f0;">状況</th>
                 <th style="padding:4px 8px;font-size:10px;color:#64748b;font-weight:600;text-align:center;border-bottom:1px solid #e2e8f0;">前回の連絡</th>
+                <th style="padding:4px 8px;font-size:10px;color:#64748b;font-weight:600;text-align:center;border-bottom:1px solid #e2e8f0;">最終接触日</th>
                 <th style="padding:4px 8px;font-size:10px;color:#64748b;font-weight:600;text-align:center;border-bottom:1px solid #e2e8f0;">次回架電日</th>
-                <th style="padding:4px 8px;font-size:10px;color:#64748b;font-weight:600;text-align:center;border-bottom:1px solid #e2e8f0;">コンタクト担当者</th>
               </tr>
             </thead>
             <tbody>${subRows}</tbody>
