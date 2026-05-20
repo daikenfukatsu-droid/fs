@@ -2630,9 +2630,109 @@ let _isListL3SortDir = 'asc';
 let _isListL3FilterCat = null;
 // Level3 トグル展開状態（企業ごと）: Set of companyKey
 let _isListL3Expanded = new Set();
+// Level3 選択状態（一括出力用）: Set of companyKey
+let _isListL3Selected = new Set();
+// Level3 出力用: ckey → { row, catLabel } のルックアップ（フィルタで隠れても保持）
+let _isListL3RowsByKey = {};
+// Level3 現在フィルタ後に表示中の行（一括選択トグル用）
+let _isListL3CurrentRows = [];
+// カテゴリ → 出力ラベル
+const IS_CAT_EXPORT_LABEL = { 1: '未来', 2: '直近3か月', 3: '3か月以上前', 4: '未分類' };
 
 // HubSpot Portal ID（コンタクト遷移用）
 const HUBSPOT_PORTAL_ID = '23871469';
+
+// ===== 一括選択ハンドラ =====
+function isListL3ToggleSelect(ckey, checked) {
+  if (checked) _isListL3Selected.add(ckey);
+  else _isListL3Selected.delete(ckey);
+  // ヘッダーの「全選択」チェック状態だけ更新（全再描画は重いので最小限）
+  const selAll = document.getElementById('isListL3SelectAll');
+  if (selAll && Array.isArray(_isListL3CurrentRows)) {
+    const allKeys = _isListL3CurrentRows.map(r => String(r.companyId || r.company || ''));
+    selAll.checked = allKeys.length > 0 && allKeys.every(k => _isListL3Selected.has(k));
+  }
+  _isListL3UpdateSelCount();
+}
+function isListL3ToggleSelectAll(checked) {
+  (_isListL3CurrentRows || []).forEach(r => {
+    const k = String(r.companyId || r.company || '');
+    if (checked) _isListL3Selected.add(k); else _isListL3Selected.delete(k);
+  });
+  if (_isListLevel === 3 && _isListOwner) _renderIsListLevel3(_isListKind, _isListOwner);
+}
+function _isListL3UpdateSelCount() {
+  const el = document.getElementById('isListL3SelCount');
+  if (el) el.textContent = _isListL3Selected.size;
+}
+
+// ===== 一括出力（Excel / CSV） =====
+function _isListL3CollectRows() {
+  const header = ['企業名', '企業ID', '姓', '名', 'コンタクトID', 'コンタクト担当者', 'カテゴリ'];
+  const out = [header];
+  // 選択キーを、表示順（_isListL3CurrentRows優先→残り）で並べる
+  const orderedKeys = [];
+  (_isListL3CurrentRows || []).forEach(r => {
+    const k = String(r.companyId || r.company || '');
+    if (_isListL3Selected.has(k) && !orderedKeys.includes(k)) orderedKeys.push(k);
+  });
+  _isListL3Selected.forEach(k => { if (!orderedKeys.includes(k)) orderedKeys.push(k); });
+
+  orderedKeys.forEach(k => {
+    const entry = _isListL3RowsByKey[k];
+    if (!entry) return;
+    const r = entry.row;
+    const catLabel = entry.catLabel || '';
+    const contacts = Array.isArray(r.contacts) && r.contacts.length ? r.contacts : [r];
+    contacts.forEach(c => {
+      out.push([
+        r.company   || '',
+        r.companyId || '',
+        c.lastname  || '',
+        c.firstname || '',
+        c.contactId || '',
+        c.owner     || '',
+        catLabel
+      ]);
+    });
+  });
+  return out;
+}
+function _isListL3ExportFileBase() {
+  const kindLabel = _isListKind === 'yes' ? 'リサイクルYes' : 'リサイクルNo';
+  const owner = (_isListOwner || '').replace(/\s+/g, '');
+  const d = new Date();
+  const stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  return `IS保有リスト_${kindLabel}_${owner}_${stamp}`;
+}
+function isListL3ExportExcel() {
+  const data = _isListL3CollectRows();
+  if (data.length <= 1) { alert('企業を選択してください。'); return; }
+  if (typeof XLSX === 'undefined') { alert('Excelライブラリが読み込まれていません。CSVをご利用ください。'); return; }
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:28},{wch:12},{wch:10},{wch:10},{wch:14},{wch:16},{wch:12}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'IS保有リスト');
+  XLSX.writeFile(wb, _isListL3ExportFileBase() + '.xlsx');
+}
+function isListL3ExportCsv() {
+  const data = _isListL3CollectRows();
+  if (data.length <= 1) { alert('企業を選択してください。'); return; }
+  const esc = (v) => {
+    const s = String(v == null ? '' : v);
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const csv = data.map(row => row.map(esc).join(',')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = _isListL3ExportFileBase() + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 function isListToggleCompany(key) {
   if (_isListL3Expanded.has(key)) _isListL3Expanded.delete(key);
@@ -2665,6 +2765,7 @@ function openIsListModal() {
   _isListLevel = 1; _isListKind = null; _isListOwner = null;
   _isListL3FilterCat = null;
   _isListL3Expanded = new Set();
+  _isListL3Selected = new Set();
   document.getElementById('isListBack').classList.add('hidden');
   document.getElementById('isListModalTitle').textContent = '📋 IS 保有リスト詳細';
   _renderIsListLevel1();
@@ -2679,6 +2780,7 @@ function isListBackToLevel1() {
   _isListLevel = 1; _isListKind = null; _isListOwner = null;
   _isListL3FilterCat = null;
   _isListL3Expanded = new Set();
+  _isListL3Selected = new Set();
   document.getElementById('isListBack').classList.add('hidden');
   document.getElementById('isListModalTitle').textContent = '📋 IS 保有リスト詳細';
   _renderIsListLevel1();
@@ -2688,6 +2790,7 @@ function isListDrillTo(kind) {
   _isListLevel = 2; _isListKind = kind; _isListOwner = null;
   _isListL3FilterCat = null;
   _isListL3Expanded = new Set();
+  _isListL3Selected = new Set();
   document.getElementById('isListBack').classList.remove('hidden');
   const label = kind === 'yes' ? 'リサイクルコンタクト_Yes' : 'リサイクルコンタクト_No';
   document.getElementById('isListModalTitle').textContent = '📋 ' + label + ' / 担当者別';
@@ -2698,6 +2801,7 @@ function isListDrillToOwner(owner) {
   _isListLevel = 3; _isListOwner = owner;
   _isListL3FilterCat = null; // 担当者切替時はフィルタリセット
   _isListL3Expanded = new Set(); // トグル展開状態もリセット
+  _isListL3Selected = new Set(); // 選択状態もリセット
   document.getElementById('isListBack').classList.remove('hidden');
   const label = _isListKind === 'yes' ? 'リサイクルYes' : 'リサイクルNo';
   document.getElementById('isListModalTitle').textContent = `📋 ${label} / ${owner}`;
@@ -2913,6 +3017,14 @@ function _renderIsListLevel3(kind, owner) {
     ? ownerRows
     : ownerRows.filter(r => _category(r) === _isListL3FilterCat);
 
+  // ★ 一括出力用: 全行(ownerRows)を ckey→{row, catLabel} で保持。表示中行も保持
+  _isListL3RowsByKey = {};
+  ownerRows.forEach(r => {
+    const k = String(r.companyId || r.company || '');
+    _isListL3RowsByKey[k] = { row: r, catLabel: IS_CAT_EXPORT_LABEL[_category(r)] || '' };
+  });
+  _isListL3CurrentRows = filteredRows;
+
   // コンタクト1件分のセル組み立て（トグル展開行で使用）
   // カラム: 姓 | 名 | 状況(パーセプションフロー) | 前回の連絡 | 最終接触日 | 次回架電日
   const _renderContactSubRow = (c, bg) => {
@@ -2984,7 +3096,15 @@ function _renderIsListLevel3(kind, owner) {
       title="担当者一覧を${expanded ? '閉じる' : '開く'}（${contacts.length}件）">${arrow}</span>`;
     const countBadge = `<span style="font-size:9px;color:#64748b;margin-left:4px;">(${contacts.length})</span>`;
 
+    // ★ 選択チェックボックス
+    const isSel = _isListL3Selected.has(ckey);
+    const checkCell = `<td style="padding:4px 4px;text-align:center;vertical-align:middle;">
+      <input type="checkbox" data-ckey="${_escapeHtml(ckey)}" ${isSel ? 'checked' : ''}
+        onclick="event.stopPropagation();isListL3ToggleSelect(this.getAttribute('data-ckey'), this.checked)"
+        style="cursor:pointer;width:14px;height:14px;"></td>`;
+
     let html = `<tr style="background:${bg};border-bottom:1px solid #f1f5f9;border-left:3px solid ${leftBar};">
+      ${checkCell}
       <td style="padding:4px 8px;font-size:11px;font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${toggleBtn}${companyCell}${countBadge}</td>
       <td style="padding:4px 8px;font-size:11px;text-align:center;white-space:nowrap;">
         ${r.perceptionFlow ? `<span style="background:${accentBg};color:${accent};font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;">${r.perceptionFlow}</span>` : '—'}
@@ -2998,7 +3118,7 @@ function _renderIsListLevel3(kind, owner) {
       // サブテーブル: 姓 | 名 | 前回の連絡 | 次回架電日 | コンタクト担当者
       const subRows = contacts.map(c => _renderContactSubRow(c, '#ffffff')).join('');
       html += `<tr style="background:${bg};border-left:3px solid ${leftBar};">
-        <td colspan="5" style="padding:0 8px 8px 28px;">
+        <td colspan="6" style="padding:0 8px 8px 28px;">
           <table style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e2e8f0;border-radius:4px;table-layout:fixed;">
             <colgroup>
               <col style="width:18%"><col style="width:12%"><col style="width:18%"><col style="width:16%"><col style="width:16%"><col style="width:20%">
@@ -3035,10 +3155,14 @@ function _renderIsListLevel3(kind, owner) {
   const _sortLabel = { lastContact: '前回の連絡', lastMet: '最終接触日', nextCall: '次回架電日' };
   const _sortInfo = `${_sortLabel[_isListL3SortKey]} ${_isListL3SortDir === 'asc' ? '昇順' : '降順'}`;
 
-  // 列幅
-  const COL_W = ['30%', '16%', '16%', '16%', '22%'];
+  // 列幅（先頭にチェックボックス列を追加）
+  const COL_W = ['5%', '27%', '15%', '15%', '15%', '23%'];
   const hStyle = `padding:6px 8px;font-size:11px;font-weight:600;color:#475569;background:#ffffff;white-space:nowrap;`;
   const hClickable = `${hStyle}cursor:pointer;user-select:none;`;
+
+  // ★ 全選択チェック状態（表示中の全行が選択済みか）
+  const _allKeysVisible = filteredRows.map(r => String(r.companyId || r.company || ''));
+  const _allSelected = _allKeysVisible.length > 0 && _allKeysVisible.every(k => _isListL3Selected.has(k));
 
   // カテゴリ別カウント（フィルタ前の総数）
   let cnt1=0, cnt2=0, cnt3=0, cnt4=0;
@@ -3071,13 +3195,25 @@ function _renderIsListLevel3(kind, owner) {
   document.getElementById('isListModalBody').innerHTML = `
     <div style="position:sticky;top:0;background:#ffffff;z-index:30;box-shadow:0 1px 0 #e2e8f0;">
       <div style="padding:12px 24px 6px 24px;">
-        <p style="font-size:12px;color:#64748b;margin:0 0 6px 0;">
-          <b style="color:${accent}">${filteredRows.length}</b> 社${_filterInfo}
-          <span style="font-size:10px;color:#94a3b8;margin-left:6px;">${_sortInfo}</span>
-        </p>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:0 0 6px 0;">
+          <p style="font-size:12px;color:#64748b;margin:0;">
+            <b style="color:${accent}">${filteredRows.length}</b> 社${_filterInfo}
+            <span style="font-size:10px;color:#94a3b8;margin-left:6px;">${_sortInfo}</span>
+            <span style="font-size:10px;color:${accent};margin-left:8px;">選択 <b id="isListL3SelCount">${_isListL3Selected.size}</b> 社</span>
+          </p>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button onclick="isListL3ExportExcel()" title="選択した企業を Excel(.xlsx) で出力"
+              style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px;border:1px solid ${accent};background:${accent};color:#ffffff;cursor:pointer;white-space:nowrap;">⬇ Excel</button>
+            <button onclick="isListL3ExportCsv()" title="選択した企業を CSV で出力"
+              style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px;border:1px solid ${accent};background:#ffffff;color:${accent};cursor:pointer;white-space:nowrap;">⬇ CSV</button>
+          </div>
+        </div>
         ${legendRow}
       </div>
       <div style="display:grid;grid-template-columns:${COL_W.join(' ')};border-bottom:2px solid ${accent};background:#ffffff;">
+        <div style="${hStyle}text-align:center;" title="表示中の企業を全選択/解除">
+          <input type="checkbox" id="isListL3SelectAll" ${_allSelected ? 'checked' : ''}
+            onclick="isListL3ToggleSelectAll(this.checked)" style="cursor:pointer;width:14px;height:14px;"></div>
         <div style="${hStyle}text-align:left;">会社名</div>
         <div style="${hStyle}text-align:center;">状況</div>
         <div style="${hClickable}text-align:center;" onclick="isListSortL3('lastContact')" title="昇順/降順切替">前回の連絡 ${sortArrow('lastContact')}</div>
@@ -3088,7 +3224,7 @@ function _renderIsListLevel3(kind, owner) {
     <div style="padding:0 24px 16px 24px;">
     <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
       <colgroup>
-        <col style="width:${COL_W[0]}"><col style="width:${COL_W[1]}"><col style="width:${COL_W[2]}"><col style="width:${COL_W[3]}"><col style="width:${COL_W[4]}">
+        <col style="width:${COL_W[0]}"><col style="width:${COL_W[1]}"><col style="width:${COL_W[2]}"><col style="width:${COL_W[3]}"><col style="width:${COL_W[4]}"><col style="width:${COL_W[5]}">
       </colgroup>
       <tbody>${companyRows}</tbody>
     </table>
@@ -3400,7 +3536,7 @@ function openIsKpiJisshiLevel3(timeKey) {
   }
 
   const filterBarHtml = `
-    <div style="position:sticky;top:0;background:${tDef.lightBg};z-index:5;padding-bottom:10px;margin-bottom:8px;">
+    <div id="jisshiL3FilterBar" style="position:sticky;top:0;background:${tDef.lightBg};z-index:6;padding:2px 0 10px 0;margin-bottom:0;">
       <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
         <span style="font-size:11px;font-weight:700;color:#475569;margin-right:4px;">リードソース:</span>
         ${majorBtns}
@@ -3420,6 +3556,15 @@ function openIsKpiJisshiLevel3(timeKey) {
       if (k === 'stage') {
         av = STAGE_ORDER_VAL[a.stage] ?? 99;
         bv = STAGE_ORDER_VAL[b.stage] ?? 99;
+      } else if (k === 'name') {
+        av = String(a.name || '');
+        bv = String(b.name || '');
+      } else if (k === 'recordCreator') {
+        av = String(a.recordCreator || '');
+        bv = String(b.recordCreator || '');
+      } else if (k === 'product') {
+        av = String(a.product || '');
+        bv = String(b.product || '');
       } else if (k === 'leadSource') {
         av = String(a.leadSource || '');
         bv = String(b.leadSource || '');
@@ -3453,7 +3598,7 @@ function openIsKpiJisshiLevel3(timeKey) {
   const thSortable = (key, label, align) => {
     const isActive = _jisshiL3State.sortKey === key;
     const bg = isActive ? tDef.lightBg : '#f8fafc';
-    return `<th style="padding:4px 6px;font-size:10px;font-weight:600;color:#64748b;text-align:${align};background:${bg};cursor:pointer;user-select:none;white-space:nowrap;"
+    return `<th class="jisshiL3-th" style="padding:4px 6px;font-size:10px;font-weight:600;color:#64748b;text-align:${align};background:${bg};cursor:pointer;user-select:none;white-space:nowrap;position:sticky;z-index:4;box-shadow:inset 0 -2px 0 #e2e8f0;"
               onclick="_setJisshiL3Sort('${key}')"
               title="クリックで昇順/降順">${label} ${sortArrow(key)}</th>`;
   };
@@ -3500,12 +3645,12 @@ function openIsKpiJisshiLevel3(timeKey) {
         </colgroup>
         <thead>
           <tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0;">
-            <th style="padding:4px 6px;font-size:10px;font-weight:600;color:#64748b;text-align:left;white-space:nowrap;">取引名</th>
-            <th style="padding:4px 6px;font-size:10px;font-weight:600;color:#64748b;text-align:left;white-space:nowrap;">取引担当者</th>
-            <th style="padding:4px 6px;font-size:10px;font-weight:600;color:#64748b;text-align:left;white-space:nowrap;">レコード作成者</th>
+            <th class="jisshiL3-th" style="padding:4px 6px;font-size:10px;font-weight:600;color:#64748b;text-align:left;white-space:nowrap;background:#f8fafc;position:sticky;z-index:4;box-shadow:inset 0 -2px 0 #e2e8f0;">取引名</th>
+            ${thSortable('name',        '取引担当者', 'left')}
+            ${thSortable('recordCreator','レコード作成者', 'left')}
             ${thSortable('stage',       '取引ステージ', 'center')}
-            <th style="padding:4px 6px;font-size:10px;font-weight:600;color:#64748b;text-align:right;white-space:nowrap;">金額</th>
-            <th style="padding:4px 6px;font-size:10px;font-weight:600;color:#64748b;text-align:center;white-space:nowrap;">検討/対象サービス</th>
+            <th class="jisshiL3-th" style="padding:4px 6px;font-size:10px;font-weight:600;color:#64748b;text-align:right;white-space:nowrap;background:#f8fafc;position:sticky;z-index:4;box-shadow:inset 0 -2px 0 #e2e8f0;">金額</th>
+            ${thSortable('product',     '検討/対象サービス', 'center')}
             ${thSortable('leadSource',  'リードソース', 'left')}
             ${thSortable('appointDate', 'FS初回アポ実施日', 'center')}
             ${thSortable('leadCreated', 'リード作成日_Hubspot', 'center')}
@@ -3517,6 +3662,13 @@ function openIsKpiJisshiLevel3(timeKey) {
   body.innerHTML = filterBarHtml + dataHtml;
   modal.classList.remove('hidden');
   modal.classList.add('flex');
+
+  // ★ 表ヘッダー(thead)を、固定中のフィルタバーの真下に追従固定させる
+  requestAnimationFrame(() => {
+    const fb = document.getElementById('jisshiL3FilterBar');
+    const top = fb ? fb.offsetHeight : 0;
+    body.querySelectorAll('thead th.jisshiL3-th').forEach(th => { th.style.top = top + 'px'; });
+  });
 }
 
 function _escapeHtml(s) {
