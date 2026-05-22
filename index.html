@@ -97,8 +97,8 @@
             <table class="w-full border-collapse text-[11px]">
               <thead><tr class="bg-slate-50"><th class="border border-slate-200 px-2 py-1 text-left">種別</th><th class="border border-slate-200 px-2 py-1 text-left">対象</th><th class="border border-slate-200 px-2 py-1 text-left">基準</th></tr></thead>
               <tbody>
-                <tr><td class="border border-slate-200 px-2 py-1 font-semibold" style="color:#0284c7">実施積載</td><td class="border border-slate-200 px-2 py-1">D+C+C++B+A</td><td class="border border-slate-200 px-2 py-1">目標 × <b>5倍</b></td></tr>
-                <tr><td class="border border-slate-200 px-2 py-1 font-semibold text-emerald-600">ヨミ積載</td><td class="border border-slate-200 px-2 py-1">C+C++B+A</td><td class="border border-slate-200 px-2 py-1">目標 × <b>3倍</b></td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold" style="color:#0284c7">実施積載</td><td class="border border-slate-200 px-2 py-1">D+C+C++B+A+S</td><td class="border border-slate-200 px-2 py-1">目標 × <b>5倍</b></td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold text-emerald-600">ヨミ積載</td><td class="border border-slate-200 px-2 py-1">C+C++B+A+S</td><td class="border border-slate-200 px-2 py-1">目標 × <b>3倍</b></td></tr>
                 <tr><td class="border border-slate-200 px-2 py-1 font-semibold text-amber-600">カスタム積載</td><td class="border border-slate-200 px-2 py-1">任意組み合わせ</td><td class="border border-slate-200 px-2 py-1">D含む→×5倍 / 含まず→×3倍</td></tr>
                 <tr><td class="border border-slate-200 px-2 py-1 font-semibold text-emerald-700">受注実績</td><td class="border border-slate-200 px-2 py-1">S</td><td class="border border-slate-200 px-2 py-1">目標達成</td></tr>
                 <tr><td class="border border-slate-200 px-2 py-1 font-semibold" style="color:#94a3b8">E案件</td><td class="border border-slate-200 px-2 py-1">E</td><td class="border border-slate-200 px-2 py-1 text-slate-400">積載に含めない（件数・金額は表示）</td></tr>
@@ -421,6 +421,7 @@
           <button id="sekisai-btn-CP" onclick="toggleSekisaiStage('C+')" class="px-2 py-0.5 text-[11px] font-bold rounded border transition-colors">C+</button>
           <button id="sekisai-btn-B"  onclick="toggleSekisaiStage('B')"  class="px-2 py-0.5 text-[11px] font-bold rounded border transition-colors">B</button>
           <button id="sekisai-btn-A"  onclick="toggleSekisaiStage('A')"  class="px-2 py-0.5 text-[11px] font-bold rounded border transition-colors">A</button>
+          <button id="sekisai-btn-S"  onclick="toggleSekisaiStage('S')"  class="px-2 py-0.5 text-[11px] font-bold rounded border transition-colors">S</button>
         </div>
       </div>
       <p id="kpi-sekisai-amount" class="text-xl font-bold text-slate-800">¥0</p>
@@ -1597,7 +1598,7 @@ const LOST_STAGE_MAP = {
 };
 let currentMode = 'month';
 let currentFY = 'FY2026'; // 'FY2025' | 'FY2026'
-let sekisaiStages = new Set(['D','C','C+','B','A']); // 積載KPI選択ステージ
+let sekisaiStages = new Set(['D','C','C+','B','A','S']); // 積載KPI選択ステージ（S=受注を含む）
 let _chartDetailRows = [];   // グラフ詳細アコーディオン用データ
 let _chartDetailTotals = {}; // 同上（合計行）
 let currentPeriod = '2026/05';
@@ -2165,8 +2166,8 @@ function getPipelineFor(member, pipe, months) {
     return { amount: f.reduce((s,r)=>s+r.amount,0), count: f.length };
   };
   return {
-    jisshi: sum(['D','C','C+','B','A']),
-    yomi: sum(['C','C+','B','A']),
+    jisshi: sum(['D','C','C+','B','A','S']),  // ★ S(受注)を含める
+    yomi: sum(['C','C+','B','A','S']),         // ★ S(受注)を含める
     e: sum(['E']), d: sum(['D']), c: sum(['C']),
     cp: sum(['C+']), b: sum(['B']), a: sum(['A']), s: sum(['S'])
   };
@@ -2191,8 +2192,8 @@ function aggregateTotals(pipe, months) {
   const extraRows = pipe.filter(r => !memberSet.has(r.name) && months.includes(r.month));
   const exSum = (stages) => extraRows.filter(r => stages.includes(r.stage)).reduce((s,r) => s+r.amount, 0);
   const exCnt = (stages) => extraRows.filter(r => stages.includes(r.stage)).length;
-  t.j  += exSum(['D','C','C+','B','A']); t.jc += exCnt(['D','C','C+','B','A']);
-  t.y  += exSum(['C','C+','B','A']);     t.yc += exCnt(['C','C+','B','A']);
+  t.j  += exSum(['D','C','C+','B','A','S']); t.jc += exCnt(['D','C','C+','B','A','S']);  // ★ S含める
+  t.y  += exSum(['C','C+','B','A','S']);     t.yc += exCnt(['C','C+','B','A','S']);      // ★ S含める
   t.s  += exSum(['S']);                  t.sc += exCnt(['S']);
 
   return t;
@@ -2639,6 +2640,82 @@ let _isListL3CurrentRows = [];
 // カテゴリ → 出力ラベル
 const IS_CAT_EXPORT_LABEL = { 1: '未来', 2: '直近3か月', 3: '3か月以上前', 4: '未分類' };
 
+// ===== パーセプションフロー（状況）表示用 =====
+// 表示順・配色（ユーザー指定順）。値なしは '空欄'
+const PERCEPTION_FLOW_DISPLAY = [
+  { key: '日程調整待ち', bar: '#0d9488', bg: '#f0fdfa', border: '#99f6e4', text: '#0f766e' },
+  { key: '比較検討',     bar: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', text: '#0369a1' },
+  { key: '導入検討',     bar: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', text: '#1d4ed8' },
+  { key: '興味関心',     bar: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', text: '#15803d' },
+  { key: '課題認知',     bar: '#84cc16', bg: '#f7fee7', border: '#d9f99d', text: '#4d7c0f' },
+  { key: '課題不明',     bar: '#eab308', bg: '#fefce8', border: '#fde68a', text: '#a16207' },
+  { key: '商談化',       bar: '#9333ea', bg: '#faf5ff', border: '#e9d5ff', text: '#7e22ce' },
+  { key: '対応終了',     bar: '#dc2626', bg: '#fef2f2', border: '#fecaca', text: '#b91c1c' },
+  { key: '対応中',       bar: '#f97316', bg: '#fff7ed', border: '#fed7aa', text: '#c2410c' },
+  { key: '未対応',       bar: '#64748b', bg: '#f8fafc', border: '#cbd5e1', text: '#475569' },
+  { key: '空欄',         bar: '#cbd5e1', bg: '#f8fafc', border: '#e2e8f0', text: '#94a3b8' },
+];
+const PERC_META = {};
+PERCEPTION_FLOW_DISPLAY.forEach(p => { PERC_META[p.key] = p; });
+const PERC_KEYS = PERCEPTION_FLOW_DISPLAY.map(p => p.key);
+// 行のパーセプションフロー値を表示区分キーに正規化（未知値・空は '空欄'）
+function _percKey(r) {
+  const v = String(r && r.perceptionFlow || '').trim();
+  if (!v) return '空欄';
+  return PERC_META[v] ? v : '空欄';
+}
+// 担当者ごとのパーセプションフロー内訳（_byOwnerStats と同じ重複統合ロジック）
+function _byOwnerPercStats(rows) {
+  const groups = {};
+  rows.forEach(r => {
+    const owner = r.owner || '不明';
+    const key = r.companyId || r.company || '';
+    if (!key) return;
+    if (!groups[owner]) groups[owner] = new Map();
+    if (!groups[owner].has(key)) groups[owner].set(key, []);
+    groups[owner].get(key).push(r);
+  });
+  const result = {};
+  Object.entries(groups).forEach(([owner, companyMap]) => {
+    const counts = {};
+    PERC_KEYS.forEach(k => { counts[k] = 0; });
+    companyMap.forEach(rowList => {
+      const merged = rowList.length === 1 ? rowList[0] : _mergeLatestCompanyRow(rowList);
+      counts[_percKey(merged)]++;
+    });
+    result[owner] = { total: companyMap.size, counts };
+  });
+  return result;
+}
+
+// ビューモード: 'todo'=次回架電タイミング4区分 / 'perception'=パーセプションフロー
+let _isListViewMode = 'todo';
+// Level3 パーセプションフィルタ（null=全表示, それ以外は区分キー）
+let _isListL3FilterPerc = null;
+
+function isListSetViewMode(mode) {
+  if (_isListViewMode === mode) return;
+  _isListViewMode = mode;
+  _isListL3FilterCat = null;   // モード切替時はフィルタをリセット
+  _isListL3FilterPerc = null;
+  if (_isListLevel === 2 && _isListKind) _renderIsListLevel2(_isListKind);
+  else if (_isListLevel === 3 && _isListOwner) _renderIsListLevel3(_isListKind, _isListOwner);
+}
+
+function isListFilterL3Perc(key) {
+  _isListL3FilterPerc = (_isListL3FilterPerc === key) ? null : key;
+  if (_isListLevel === 3 && _isListOwner) _renderIsListLevel3(_isListKind, _isListOwner);
+}
+
+// [📋 todo] / [🎯 パーセプションフロー] トグル
+function _isListViewToggleHtml(accent) {
+  const btn = (m, label) => {
+    const on = (_isListViewMode === m);
+    return `<button onclick="isListSetViewMode('${m}')" style="font-size:11px;font-weight:${on ? 700 : 600};padding:5px 14px;border:none;border-radius:7px;cursor:pointer;background:${on ? accent : 'transparent'};color:${on ? '#ffffff' : '#64748b'};${on ? 'box-shadow:0 1px 2px rgba(0,0,0,0.12);' : ''}">${label}</button>`;
+  };
+  return `<div style="display:inline-flex;gap:2px;padding:3px;background:#f1f5f9;border-radius:9px;">${btn('todo', '📋 todo')}${btn('perception', '🎯 パーセプションフロー')}</div>`;
+}
+
 // HubSpot Portal ID（コンタクト遷移用）
 const HUBSPOT_PORTAL_ID = '23871469';
 
@@ -2763,7 +2840,9 @@ function isListFilterL3Cat(cat) {
 
 function openIsListModal() {
   _isListLevel = 1; _isListKind = null; _isListOwner = null;
+  _isListViewMode = 'todo';
   _isListL3FilterCat = null;
+  _isListL3FilterPerc = null;
   _isListL3Expanded = new Set();
   _isListL3Selected = new Set();
   document.getElementById('isListBack').classList.add('hidden');
@@ -2779,6 +2858,7 @@ function closeIsListModal() {
 function isListBackToLevel1() {
   _isListLevel = 1; _isListKind = null; _isListOwner = null;
   _isListL3FilterCat = null;
+  _isListL3FilterPerc = null;
   _isListL3Expanded = new Set();
   _isListL3Selected = new Set();
   document.getElementById('isListBack').classList.add('hidden');
@@ -2789,6 +2869,7 @@ function isListBackToLevel1() {
 function isListDrillTo(kind) {
   _isListLevel = 2; _isListKind = kind; _isListOwner = null;
   _isListL3FilterCat = null;
+  _isListL3FilterPerc = null;
   _isListL3Expanded = new Set();
   _isListL3Selected = new Set();
   document.getElementById('isListBack').classList.remove('hidden');
@@ -2800,6 +2881,7 @@ function isListDrillTo(kind) {
 function isListDrillToOwner(owner) {
   _isListLevel = 3; _isListOwner = owner;
   _isListL3FilterCat = null; // 担当者切替時はフィルタリセット
+  _isListL3FilterPerc = null;
   _isListL3Expanded = new Set(); // トグル展開状態もリセット
   _isListL3Selected = new Set(); // 選択状態もリセット
   document.getElementById('isListBack').classList.remove('hidden');
@@ -2850,7 +2932,8 @@ function _renderIsListLevel1() {
 
 function _renderIsListLevel2(kind) {
   const rows = kind === 'yes' ? isListYes : isListNo;
-  const ownerStats = _byOwnerStats(rows);
+  const isPerc = (_isListViewMode === 'perception');
+  const ownerStats = isPerc ? _byOwnerPercStats(rows) : _byOwnerStats(rows);
   const total = _dedupRows(rows).length;
   const accent = kind === 'yes' ? '#0284c7' : '#10b981';
 
@@ -2863,86 +2946,132 @@ function _renderIsListLevel2(kind) {
     return b[1].total - a[1].total;
   });
 
-  if (sortedOwners.length === 0) {
-    document.getElementById('isListModalBody').innerHTML =
-      '<p class="text-slate-400 text-center py-8">該当データなし</p>';
-    return;
-  }
-
-  // 4カテゴリの色
-  const COLOR_C1 = '#16a34a'; // ①次回架電未来=緑
-  const COLOR_C2 = '#f59e0b'; // ②直近連絡あり=橙
-  const COLOR_C3 = '#ef4444'; // ③3か月以上前=赤
-  const COLOR_C4 = '#94a3b8'; // ④未分類=グレー
-
-  // 全体集計（凡例用）
-  let grandC1=0, grandC2=0, grandC3=0, grandC4=0;
-  Object.values(ownerStats).forEach(s => {
-    grandC1 += s.cat1; grandC2 += s.cat2; grandC3 += s.cat3; grandC4 += s.cat4;
-  });
-  const grandTotal = grandC1 + grandC2 + grandC3 + grandC4;
-  const pctG = (v) => grandTotal > 0 ? Math.round(v / grandTotal * 1000) / 10 : 0;
-
-  const ownerRows = sortedOwners.map(([owner, s]) => {
-    const isIsMember = isMemberSet.has(owner);
-    const esc = owner.replace(/'/g, "\\'");
-    const p1 = s.total > 0 ? s.cat1 / s.total * 100 : 0;
-    const p2 = s.total > 0 ? s.cat2 / s.total * 100 : 0;
-    const p3 = s.total > 0 ? s.cat3 / s.total * 100 : 0;
-    const p4 = s.total > 0 ? s.cat4 / s.total * 100 : 0;
-    const seg = (pct, color, label, n) => pct > 0
-      ? `<div style="width:${pct}%;background:${color};height:100%;" title="${label}: ${n}社 (${pct.toFixed(1)}%)"></div>`
-      : '';
-    const stacked = `<div style="display:flex;height:10px;border-radius:9999px;overflow:hidden;background:#f1f5f9;">
-      ${seg(p1, COLOR_C1, '①次回架電未来', s.cat1)}
-      ${seg(p2, COLOR_C2, '②直近3か月連絡', s.cat2)}
-      ${seg(p3, COLOR_C3, '③3か月以上前', s.cat3)}
-      ${seg(p4, COLOR_C4, '④未分類',     s.cat4)}
-    </div>
-    <div style="display:flex;gap:6px;margin-top:3px;font-size:9px;color:#64748b;">
-      <span style="color:${COLOR_C1};">①${s.cat1}</span>
-      <span style="color:${COLOR_C2};">②${s.cat2}</span>
-      <span style="color:${COLOR_C3};">③${s.cat3}</span>
-      <span style="color:${COLOR_C4};">④${s.cat4}</span>
-    </div>`;
-    return `<tr class="border-b cursor-pointer hover:bg-slate-50 transition-colors" style="border-color:#f1f5f9"
-              onclick="isListDrillToOwner('${esc}')">
-      <td class="px-3 py-2 text-[12px] ${isIsMember ? 'font-semibold text-slate-700' : 'text-slate-500'}">
-        ${owner}${isIsMember ? '' : ' <span class="text-[10px] text-slate-400">(IS外)</span>'}
-      </td>
-      <td class="px-3 py-2 text-right text-[13px] font-bold" style="color:${accent}">${s.total}<span class="text-[10px] font-normal text-slate-400 ml-0.5">社</span></td>
-      <td class="px-3 py-2" style="width:44%">${stacked}</td>
-      <td class="px-2 py-2 text-[11px] text-slate-400">›</td>
-    </tr>`;
-  }).join('');
-
-  // 凡例＋全体内訳
-  const legend = `
-    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:11px;">
-      <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:${COLOR_C1};border-radius:2px;display:inline-block;"></span>① 次回架電 未来 <b>${grandC1}</b>社 (${pctG(grandC1)}%)</span>
-      <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:${COLOR_C2};border-radius:2px;display:inline-block;"></span>② 直近3か月連絡＋次回架電なし/過去 <b>${grandC2}</b>社 (${pctG(grandC2)}%)</span>
-      <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:${COLOR_C3};border-radius:2px;display:inline-block;"></span>③ 前回連絡 3か月以上前 <b>${grandC3}</b>社 (${pctG(grandC3)}%)</span>
-      <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:${COLOR_C4};border-radius:2px;display:inline-block;"></span>④ 未分類（連絡履歴なし） <b>${grandC4}</b>社 (${pctG(grandC4)}%)</span>
-    </div>
-  `;
-
-  // 背景色: Level2はモーダルを白に戻す
   const _card = document.getElementById('isListModalCard');
   if (_card) _card.style.background = '#ffffff';
 
-  // 列幅をテーブルとヘッダー(div)で揃えるため明示
+  // 共通: トグル＋見出し
+  const headTop = `
+    <div style="padding:12px 24px 6px 24px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        <p class="text-[12px] text-slate-500" style="margin:0;">合計 <b style="color:${accent}">${total}</b> 社（重複統合済み）　<span class="text-[11px] text-slate-400">担当者をクリックで企業一覧</span></p>
+        ${_isListViewToggleHtml(accent)}
+      </div>`;
+
+  if (sortedOwners.length === 0) {
+    document.getElementById('isListModalBody').innerHTML =
+      headTop + '</div><p class="text-slate-400 text-center py-8">該当データなし</p>';
+    return;
+  }
+
   const COL_W = ['30%', '20%', '42%', '8%'];
   const hStyle = `padding:8px 12px;font-size:11px;font-weight:600;color:#475569;background:#ffffff;`;
+
+  let legend = '', ownerRows = '';
+
+  if (isPerc) {
+    // ===== パーセプションフロー内訳 =====
+    const grand = {}; PERC_KEYS.forEach(k => { grand[k] = 0; });
+    Object.values(ownerStats).forEach(s => { PERC_KEYS.forEach(k => { grand[k] += (s.counts[k] || 0); }); });
+    const grandTotal = PERC_KEYS.reduce((sum, k) => sum + grand[k], 0);
+    const pctG = (v) => grandTotal > 0 ? Math.round(v / grandTotal * 1000) / 10 : 0;
+
+    legend = `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:11px;">
+      ${PERCEPTION_FLOW_DISPLAY.filter(p => grand[p.key] > 0).map(p =>
+        `<span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:${p.bar};border-radius:2px;display:inline-block;"></span>${p.key} <b>${grand[p.key]}</b>社 (${pctG(grand[p.key])}%)</span>`
+      ).join('')}
+    </div>`;
+
+    ownerRows = sortedOwners.map(([owner, s]) => {
+      const isIsMember = isMemberSet.has(owner);
+      const esc = owner.replace(/'/g, "\\'");
+      const segs = PERCEPTION_FLOW_DISPLAY.map(p => {
+        const n = s.counts[p.key] || 0;
+        if (n <= 0) return '';
+        const pct = s.total > 0 ? n / s.total * 100 : 0;
+        return `<div style="width:${pct}%;background:${p.bar};height:100%;" title="${p.key}: ${n}社 (${pct.toFixed(1)}%)"></div>`;
+      }).join('');
+      const counts = PERCEPTION_FLOW_DISPLAY.filter(p => (s.counts[p.key] || 0) > 0).map(p =>
+        `<span style="color:${p.text};">${p.key}${s.counts[p.key]}</span>`
+      ).join('');
+      const stacked = `<div style="display:flex;height:10px;border-radius:9999px;overflow:hidden;background:#f1f5f9;">${segs}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:3px;font-size:9px;">${counts}</div>`;
+      return `<tr class="border-b cursor-pointer hover:bg-slate-50 transition-colors" style="border-color:#f1f5f9"
+                onclick="isListDrillToOwner('${esc}')">
+        <td class="px-3 py-2 text-[12px] ${isIsMember ? 'font-semibold text-slate-700' : 'text-slate-500'}">
+          ${owner}${isIsMember ? '' : ' <span class="text-[10px] text-slate-400">(IS外)</span>'}
+        </td>
+        <td class="px-3 py-2 text-right text-[13px] font-bold" style="color:${accent}">${s.total}<span class="text-[10px] font-normal text-slate-400 ml-0.5">社</span></td>
+        <td class="px-3 py-2" style="width:44%">${stacked}</td>
+        <td class="px-2 py-2 text-[11px] text-slate-400">›</td>
+      </tr>`;
+    }).join('');
+  } else {
+    // ===== todo（次回架電タイミング4区分） =====
+    const COLOR_C1 = '#16a34a'; // ①次回架電未来=緑
+    const COLOR_C2 = '#f59e0b'; // ②直近連絡あり=橙
+    const COLOR_C3 = '#ef4444'; // ③3か月以上前=赤
+    const COLOR_C4 = '#94a3b8'; // ④未分類=グレー
+
+    let grandC1=0, grandC2=0, grandC3=0, grandC4=0;
+    Object.values(ownerStats).forEach(s => {
+      grandC1 += s.cat1; grandC2 += s.cat2; grandC3 += s.cat3; grandC4 += s.cat4;
+    });
+    const grandTotal = grandC1 + grandC2 + grandC3 + grandC4;
+    const pctG = (v) => grandTotal > 0 ? Math.round(v / grandTotal * 1000) / 10 : 0;
+
+    ownerRows = sortedOwners.map(([owner, s]) => {
+      const isIsMember = isMemberSet.has(owner);
+      const esc = owner.replace(/'/g, "\\'");
+      const p1 = s.total > 0 ? s.cat1 / s.total * 100 : 0;
+      const p2 = s.total > 0 ? s.cat2 / s.total * 100 : 0;
+      const p3 = s.total > 0 ? s.cat3 / s.total * 100 : 0;
+      const p4 = s.total > 0 ? s.cat4 / s.total * 100 : 0;
+      const seg = (pct, color, label, n) => pct > 0
+        ? `<div style="width:${pct}%;background:${color};height:100%;" title="${label}: ${n}社 (${pct.toFixed(1)}%)"></div>`
+        : '';
+      const stacked = `<div style="display:flex;height:10px;border-radius:9999px;overflow:hidden;background:#f1f5f9;">
+        ${seg(p1, COLOR_C1, '①次回架電未来', s.cat1)}
+        ${seg(p2, COLOR_C2, '②直近3か月連絡', s.cat2)}
+        ${seg(p3, COLOR_C3, '③3か月以上前', s.cat3)}
+        ${seg(p4, COLOR_C4, '④未分類',     s.cat4)}
+      </div>
+      <div style="display:flex;gap:6px;margin-top:3px;font-size:9px;color:#64748b;">
+        <span style="color:${COLOR_C1};">①${s.cat1}</span>
+        <span style="color:${COLOR_C2};">②${s.cat2}</span>
+        <span style="color:${COLOR_C3};">③${s.cat3}</span>
+        <span style="color:${COLOR_C4};">④${s.cat4}</span>
+      </div>`;
+      return `<tr class="border-b cursor-pointer hover:bg-slate-50 transition-colors" style="border-color:#f1f5f9"
+                onclick="isListDrillToOwner('${esc}')">
+        <td class="px-3 py-2 text-[12px] ${isIsMember ? 'font-semibold text-slate-700' : 'text-slate-500'}">
+          ${owner}${isIsMember ? '' : ' <span class="text-[10px] text-slate-400">(IS外)</span>'}
+        </td>
+        <td class="px-3 py-2 text-right text-[13px] font-bold" style="color:${accent}">${s.total}<span class="text-[10px] font-normal text-slate-400 ml-0.5">社</span></td>
+        <td class="px-3 py-2" style="width:44%">${stacked}</td>
+        <td class="px-2 py-2 text-[11px] text-slate-400">›</td>
+      </tr>`;
+    }).join('');
+
+    legend = `
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;font-size:11px;">
+        <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:${COLOR_C1};border-radius:2px;display:inline-block;"></span>① 次回架電 未来 <b>${grandC1}</b>社 (${pctG(grandC1)}%)</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:${COLOR_C2};border-radius:2px;display:inline-block;"></span>② 直近3か月連絡＋次回架電なし/過去 <b>${grandC2}</b>社 (${pctG(grandC2)}%)</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:${COLOR_C3};border-radius:2px;display:inline-block;"></span>③ 前回連絡 3か月以上前 <b>${grandC3}</b>社 (${pctG(grandC3)}%)</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:${COLOR_C4};border-radius:2px;display:inline-block;"></span>④ 未分類（連絡履歴なし） <b>${grandC4}</b>社 (${pctG(grandC4)}%)</span>
+      </div>
+    `;
+  }
+
+  const breakdownLabel = isPerc ? '内訳（パーセプションフロー）' : '内訳（100%）';
   document.getElementById('isListModalBody').innerHTML = `
     <div style="position:sticky;top:0;background:#ffffff;z-index:30;box-shadow:0 1px 0 #e2e8f0;">
-      <div style="padding:12px 24px 6px 24px;">
-        <p class="text-[12px] text-slate-500 mb-2">合計 <b style="color:${accent}">${total}</b> 社（重複統合済み）　<span class="text-[11px] text-slate-400">担当者をクリックで企業一覧</span></p>
+      ${headTop}
         ${legend}
       </div>
       <div style="display:grid;grid-template-columns:${COL_W.join(' ')};border-bottom:2px solid ${accent};background:#ffffff;">
         <div style="${hStyle}text-align:left;">担当者</div>
         <div style="${hStyle}text-align:right;">保有数</div>
-        <div style="${hStyle}text-align:left;">内訳（100%）</div>
+        <div style="${hStyle}text-align:left;">${breakdownLabel}</div>
         <div style="${hStyle}"></div>
       </div>
     </div>
@@ -3008,20 +3137,25 @@ function _renderIsListLevel3(kind, owner) {
     if (!bv) return -1;
     return _sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
   });
+  const isPerc = (_isListViewMode === 'perception');
   // カテゴリ別の薄い背景（文字が読める明度・統一色）
   const CAT_BG     = { 1: '#f0fdf4', 2: '#fffbeb', 3: '#fef2f2', 4: '#f8fafc' };
   const CAT_BORDER = { 1: '#16a34a', 2: '#f59e0b', 3: '#ef4444', 4: '#94a3b8' };
+  // 行の背景・左ボーダー色（モードで切替）
+  const _rowBg     = (r) => isPerc ? (PERC_META[_percKey(r)] || PERC_META['空欄']).bg     : CAT_BG[_category(r)];
+  const _rowBorder = (r) => isPerc ? (PERC_META[_percKey(r)] || PERC_META['空欄']).border : CAT_BORDER[_category(r)];
 
-  // カテゴリフィルタを適用
-  const filteredRows = (_isListL3FilterCat == null)
-    ? ownerRows
-    : ownerRows.filter(r => _category(r) === _isListL3FilterCat);
+  // フィルタを適用（モードで基準を切替）
+  const filteredRows = isPerc
+    ? (_isListL3FilterPerc == null ? ownerRows : ownerRows.filter(r => _percKey(r) === _isListL3FilterPerc))
+    : (_isListL3FilterCat  == null ? ownerRows : ownerRows.filter(r => _category(r) === _isListL3FilterCat));
 
   // ★ 一括出力用: 全行(ownerRows)を ckey→{row, catLabel} で保持。表示中行も保持
   _isListL3RowsByKey = {};
   ownerRows.forEach(r => {
     const k = String(r.companyId || r.company || '');
-    _isListL3RowsByKey[k] = { row: r, catLabel: IS_CAT_EXPORT_LABEL[_category(r)] || '' };
+    const catLabel = isPerc ? _percKey(r) : (IS_CAT_EXPORT_LABEL[_category(r)] || '');
+    _isListL3RowsByKey[k] = { row: r, catLabel };
   });
   _isListL3CurrentRows = filteredRows;
 
@@ -3062,9 +3196,8 @@ function _renderIsListLevel3(kind, owner) {
   };
 
   const companyRows = filteredRows.map((r) => {
-    const cat = _category(r);
-    const bg = CAT_BG[cat];
-    const leftBar = CAT_BORDER[cat];
+    const bg = _rowBg(r);
+    const leftBar = _rowBorder(r);
     const safeLastContact = _validDateStr(r.lastContact);
     const safeLastMet     = _validDateStr(r.lastMet);
     const safeNextCall    = _validDateStr(r.nextCall);
@@ -3164,34 +3297,57 @@ function _renderIsListLevel3(kind, owner) {
   const _allKeysVisible = filteredRows.map(r => String(r.companyId || r.company || ''));
   const _allSelected = _allKeysVisible.length > 0 && _allKeysVisible.every(k => _isListL3Selected.has(k));
 
-  // カテゴリ別カウント（フィルタ前の総数）
-  let cnt1=0, cnt2=0, cnt3=0, cnt4=0;
-  ownerRows.forEach(r => { const c = _category(r); if (c===1) cnt1++; else if (c===2) cnt2++; else if (c===3) cnt3++; else cnt4++; });
-  // フィルタ可能チップ
-  const chip = (cat, bg, border, color, label, count) => {
-    const active = _isListL3FilterCat === cat;
-    const ringStyle = active ? `box-shadow:0 0 0 2px ${color};font-weight:700;` : '';
-    return `<span onclick="isListFilterL3Cat(${cat})"
-                  style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:9999px;background:${bg};border:1px solid ${border};color:${color};cursor:pointer;user-select:none;${ringStyle}"
-                  title="${active ? 'クリックでフィルタ解除' : 'クリックでこのカテゴリのみ表示'}">●${label} ${count}</span>`;
-  };
-  const clearChip = (_isListL3FilterCat != null)
-    ? `<span onclick="isListFilterL3Cat(null)" style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:9999px;background:#ffffff;border:1px dashed #94a3b8;color:#475569;cursor:pointer;user-select:none;" title="フィルタ解除">✕ 全表示</span>`
-    : '';
-  const legendRow = `
-    <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:10px;">
-      ${chip(1, '#f0fdf4', '#bbf7d0', '#15803d', '① 未来',         cnt1)}
-      ${chip(2, '#fffbeb', '#fde68a', '#b45309', '② 直近3か月',     cnt2)}
-      ${chip(3, '#fef2f2', '#fecaca', '#b91c1c', '③ 3か月以上前',   cnt3)}
-      ${chip(4, '#f8fafc', '#e2e8f0', '#475569', '④ 未分類',         cnt4)}
+  // フィルタ可能チップ（モードで切替）
+  let legendRow, _filterInfo;
+  if (isPerc) {
+    // パーセプションフロー別カウント（フィルタ前の総数）
+    const pcnt = {}; PERC_KEYS.forEach(k => { pcnt[k] = 0; });
+    ownerRows.forEach(r => { pcnt[_percKey(r)]++; });
+    const pchip = (p) => {
+      const active = _isListL3FilterPerc === p.key;
+      const ringStyle = active ? `box-shadow:0 0 0 2px ${p.text};font-weight:700;` : '';
+      return `<span onclick="isListFilterL3Perc('${p.key}')"
+                    style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:9999px;background:${p.bg};border:1px solid ${p.border};color:${p.text};cursor:pointer;user-select:none;${ringStyle}"
+                    title="${active ? 'クリックでフィルタ解除' : 'クリックでこの区分のみ表示'}"><span style="color:${p.bar};">●</span>${p.key} ${pcnt[p.key]}</span>`;
+    };
+    const clearChip = (_isListL3FilterPerc != null)
+      ? `<span onclick="isListFilterL3Perc(null)" style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:9999px;background:#ffffff;border:1px dashed #94a3b8;color:#475569;cursor:pointer;user-select:none;" title="フィルタ解除">✕ 全表示</span>`
+      : '';
+    legendRow = `<div style="display:flex;flex-wrap:wrap;gap:6px;font-size:10px;">
+      ${PERCEPTION_FLOW_DISPLAY.filter(p => pcnt[p.key] > 0).map(pchip).join('')}
       ${clearChip}
-    </div>
-  `;
-
-  const _catLabel = { 1: '①未来', 2: '②直近3か月', 3: '③3か月以上前', 4: '④未分類' };
-  const _filterInfo = _isListL3FilterCat
-    ? ` <span style="font-size:10px;color:${accent};">/ フィルタ: ${_catLabel[_isListL3FilterCat]} (${filteredRows.length}/${ownerRows.length}社)</span>`
-    : '';
+    </div>`;
+    _filterInfo = _isListL3FilterPerc
+      ? ` <span style="font-size:10px;color:${accent};">/ フィルタ: ${_isListL3FilterPerc} (${filteredRows.length}/${ownerRows.length}社)</span>`
+      : '';
+  } else {
+    // カテゴリ別カウント（フィルタ前の総数）
+    let cnt1=0, cnt2=0, cnt3=0, cnt4=0;
+    ownerRows.forEach(r => { const c = _category(r); if (c===1) cnt1++; else if (c===2) cnt2++; else if (c===3) cnt3++; else cnt4++; });
+    const chip = (cat, bg, border, color, label, count) => {
+      const active = _isListL3FilterCat === cat;
+      const ringStyle = active ? `box-shadow:0 0 0 2px ${color};font-weight:700;` : '';
+      return `<span onclick="isListFilterL3Cat(${cat})"
+                    style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:9999px;background:${bg};border:1px solid ${border};color:${color};cursor:pointer;user-select:none;${ringStyle}"
+                    title="${active ? 'クリックでフィルタ解除' : 'クリックでこのカテゴリのみ表示'}">●${label} ${count}</span>`;
+    };
+    const clearChip = (_isListL3FilterCat != null)
+      ? `<span onclick="isListFilterL3Cat(null)" style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:9999px;background:#ffffff;border:1px dashed #94a3b8;color:#475569;cursor:pointer;user-select:none;" title="フィルタ解除">✕ 全表示</span>`
+      : '';
+    legendRow = `
+      <div style="display:flex;flex-wrap:wrap;gap:6px;font-size:10px;">
+        ${chip(1, '#f0fdf4', '#bbf7d0', '#15803d', '① 未来',         cnt1)}
+        ${chip(2, '#fffbeb', '#fde68a', '#b45309', '② 直近3か月',     cnt2)}
+        ${chip(3, '#fef2f2', '#fecaca', '#b91c1c', '③ 3か月以上前',   cnt3)}
+        ${chip(4, '#f8fafc', '#e2e8f0', '#475569', '④ 未分類',         cnt4)}
+        ${clearChip}
+      </div>
+    `;
+    const _catLabel = { 1: '①未来', 2: '②直近3か月', 3: '③3か月以上前', 4: '④未分類' };
+    _filterInfo = _isListL3FilterCat
+      ? ` <span style="font-size:10px;color:${accent};">/ フィルタ: ${_catLabel[_isListL3FilterCat]} (${filteredRows.length}/${ownerRows.length}社)</span>`
+      : '';
+  }
   document.getElementById('isListModalBody').innerHTML = `
     <div style="position:sticky;top:0;background:#ffffff;z-index:30;box-shadow:0 1px 0 #e2e8f0;">
       <div style="padding:12px 24px 6px 24px;">
@@ -3208,6 +3364,7 @@ function _renderIsListLevel3(kind, owner) {
               style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px;border:1px solid ${accent};background:#ffffff;color:${accent};cursor:pointer;white-space:nowrap;">⬇ CSV</button>
           </div>
         </div>
+        <div style="margin:2px 0 8px 0;">${_isListViewToggleHtml(accent)}</div>
         ${legendRow}
       </div>
       <div style="display:grid;grid-template-columns:${COL_W.join(' ')};border-bottom:2px solid ${accent};background:#ffffff;">
@@ -4860,12 +5017,20 @@ function toggleChartMemberDeals(memberName, type) {
 
   // --- 案件取得 ---
   const months = getMonthsForPeriod();
-  const stages = type === 'jisshi' ? ['D','C','C+','B','A'] : ['C','C+','B','A'];
+  const stages = type === 'jisshi' ? ['D','C','C+','B','A','S'] : ['C','C+','B','A','S'];  // ★ S(受注)を含める
+  // ★ ステージ順位（S＞A＞B＞C＋＞C＞D）。同ステージ内はクローズ月→金額降順
+  const STAGE_SORT_VAL = { 'S':0, 'A':1, 'B':2, 'C+':3, 'C':4, 'D':5, 'E':6 };
   const deals  = getActivePipeline()
     .filter(d => d.name === memberName && months.includes(d.month) && stages.includes(d.stage))
-    .sort((a, b) => a.month < b.month ? -1 : a.month > b.month ? 1 : b.amount - a.amount);
+    .sort((a, b) => {
+      const sa = STAGE_SORT_VAL[a.stage] ?? 99;
+      const sb = STAGE_SORT_VAL[b.stage] ?? 99;
+      if (sa !== sb) return sa - sb;                     // ステージ順位（昇順=S先頭）
+      if (a.month !== b.month) return a.month < b.month ? -1 : 1; // 次にクローズ月昇順
+      return b.amount - a.amount;                        // 最後に金額降順
+    });
 
-  const STAGE_CLR = { A:'#ef4444', B:'#f97316', 'C+':'#eab308', C:'#22c55e', D:'#94a3b8', E:'#cbd5e1' };
+  const STAGE_CLR = { S:'#10b981', A:'#ef4444', B:'#f97316', 'C+':'#eab308', C:'#22c55e', D:'#94a3b8', E:'#cbd5e1' };
 
   const dealRows = deals.map((d, i) => {
     const bg = i % 2 === 0 ? '#ffffff' : '#f1f5f9';
@@ -5051,7 +5216,7 @@ function renderChartDetailTable(type, containerId) {
 }
 
 // ===== 積載 KPI (merged card) =====
-const SEKISAI_BTN_MAP = { 'D':'sekisai-btn-D', 'C':'sekisai-btn-C', 'C+':'sekisai-btn-CP', 'B':'sekisai-btn-B', 'A':'sekisai-btn-A' };
+const SEKISAI_BTN_MAP = { 'D':'sekisai-btn-D', 'C':'sekisai-btn-C', 'C+':'sekisai-btn-CP', 'B':'sekisai-btn-B', 'A':'sekisai-btn-A', 'S':'sekisai-btn-S' };
 let _lastSekisaiTotals = null;
 
 function updateSekisaiBtnStyles() {
@@ -5084,13 +5249,15 @@ function renderSekisaiKpi(totals) {
     'C+': { amt: totals.cp, cnt: totals.cpc },
     'B':  { amt: totals.b,  cnt: totals.bc  },
     'A':  { amt: totals.a,  cnt: totals.ac  },
+    'S':  { amt: totals.s,  cnt: totals.sc  },  // ★ S(受注)
   };
   let amount = 0, count = 0;
   sekisaiStages.forEach(s => { if (STAGE_DATA[s]) { amount += STAGE_DATA[s].amt; count += STAGE_DATA[s].cnt; } });
 
   const hasD = sekisaiStages.has('D');
-  const allSelected  = ['D','C','C+','B','A'].every(s => sekisaiStages.has(s)) && sekisaiStages.size === 5;
-  const yomiSelected = !hasD && ['C','C+','B','A'].every(s => sekisaiStages.has(s)) && sekisaiStages.size === 4;
+  // ★ 実施積載 = D+C+C++B+A+S(6) / ヨミ積載 = C+C++B+A+S(5)
+  const allSelected  = ['D','C','C+','B','A','S'].every(s => sekisaiStages.has(s)) && sekisaiStages.size === 6;
+  const yomiSelected = !hasD && ['C','C+','B','A','S'].every(s => sekisaiStages.has(s)) && sekisaiStages.size === 5;
 
   let label, mult;
   if      (allSelected)  { label = '実施積載'; mult = JISSHI_MULT; }
