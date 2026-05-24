@@ -2471,7 +2471,7 @@ function _pickPriorityPerception(list) {
 function _dedupRows(rows) {
   const groups = new Map();
   rows.forEach(r => {
-    const key = r.companyId || r.company || '';
+    const key = r.companyId || r.company || (r.contactId ? 'c:' + r.contactId : '');
     if (!key) return;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(r);
@@ -2554,7 +2554,7 @@ function _byOwnerUnique(rows) {
   const map = {};
   rows.forEach(r => {
     const owner = r.owner || '不明';
-    const key = r.companyId || r.company || '';
+    const key = r.companyId || r.company || (r.contactId ? 'c:' + r.contactId : '');
     if (!key) return;
     if (!map[owner]) map[owner] = new Set();
     map[owner].add(key);
@@ -2571,7 +2571,7 @@ function _byOwnerStats(rows) {
   const groups = {};
   rows.forEach(r => {
     const owner = r.owner || '不明';
-    const key = r.companyId || r.company || '';
+    const key = r.companyId || r.company || (r.contactId ? 'c:' + r.contactId : '');
     if (!key) return;
     if (!groups[owner]) groups[owner] = new Map();
     if (!groups[owner].has(key)) groups[owner].set(key, []);
@@ -2669,7 +2669,7 @@ function _byOwnerPercStats(rows) {
   const groups = {};
   rows.forEach(r => {
     const owner = r.owner || '不明';
-    const key = r.companyId || r.company || '';
+    const key = r.companyId || r.company || (r.contactId ? 'c:' + r.contactId : '');
     if (!key) return;
     if (!groups[owner]) groups[owner] = new Map();
     if (!groups[owner].has(key)) groups[owner].set(key, []);
@@ -2726,14 +2726,14 @@ function isListL3ToggleSelect(ckey, checked) {
   // ヘッダーの「全選択」チェック状態だけ更新（全再描画は重いので最小限）
   const selAll = document.getElementById('isListL3SelectAll');
   if (selAll && Array.isArray(_isListL3CurrentRows)) {
-    const allKeys = _isListL3CurrentRows.map(r => String(r.companyId || r.company || ''));
+    const allKeys = _isListL3CurrentRows.map(r => String(r.companyId || r.company || (r.contactId ? 'c:' + r.contactId : '')));
     selAll.checked = allKeys.length > 0 && allKeys.every(k => _isListL3Selected.has(k));
   }
   _isListL3UpdateSelCount();
 }
 function isListL3ToggleSelectAll(checked) {
   (_isListL3CurrentRows || []).forEach(r => {
-    const k = String(r.companyId || r.company || '');
+    const k = String(r.companyId || r.company || (r.contactId ? 'c:' + r.contactId : ''));
     if (checked) _isListL3Selected.add(k); else _isListL3Selected.delete(k);
   });
   if (_isListLevel === 3 && _isListOwner) _renderIsListLevel3(_isListKind, _isListOwner);
@@ -2750,7 +2750,7 @@ function _isListL3CollectRows() {
   // 選択キーを、表示順（_isListL3CurrentRows優先→残り）で並べる
   const orderedKeys = [];
   (_isListL3CurrentRows || []).forEach(r => {
-    const k = String(r.companyId || r.company || '');
+    const k = String(r.companyId || r.company || (r.contactId ? 'c:' + r.contactId : ''));
     if (_isListL3Selected.has(k) && !orderedKeys.includes(k)) orderedKeys.push(k);
   });
   _isListL3Selected.forEach(k => { if (!orderedKeys.includes(k)) orderedKeys.push(k); });
@@ -2762,10 +2762,16 @@ function _isListL3CollectRows() {
     const catLabel = entry.catLabel || '';
     const contacts = Array.isArray(r.contacts) && r.contacts.length ? r.contacts : [r];
     contacts.forEach(c => {
+      const _cid = String(c.contactId || '').trim();
+      const _ln  = String(c.lastname  || '').trim();
+      const _fn  = String(c.firstname || '').trim();
+      const _coid = String(c.companyId || '').trim();
+      // 会社ID・姓・名がすべて空でコンタクトIDのみ有り → 姓にコンタクトIDを記入
+      const _lnOut = (!_coid && _cid && !_ln && !_fn) ? _cid : (c.lastname || '');
       out.push([
         r.company   || '',
         r.companyId || '',
-        c.lastname  || '',
+        _lnOut,
         c.firstname || '',
         c.contactId || '',
         c.owner     || '',
@@ -3153,7 +3159,7 @@ function _renderIsListLevel3(kind, owner) {
   // ★ 一括出力用: 全行(ownerRows)を ckey→{row, catLabel} で保持。表示中行も保持
   _isListL3RowsByKey = {};
   ownerRows.forEach(r => {
-    const k = String(r.companyId || r.company || '');
+    const k = String(r.companyId || r.company || (r.contactId ? 'c:' + r.contactId : ''));
     const catLabel = isPerc ? _percKey(r) : (IS_CAT_EXPORT_LABEL[_category(r)] || '');
     _isListL3RowsByKey[k] = { row: r, catLabel };
   });
@@ -3165,13 +3171,16 @@ function _renderIsListLevel3(kind, owner) {
     const cId = String(c.contactId || '').trim();
     const lastNm = String(c.lastname  || '').trim();
     const firstNm = String(c.firstname || '').trim();
+    const cCompanyId = String(c.companyId || '').trim();
+    // 会社ID・姓・名がすべて空でコンタクトIDのみ有り → 姓にコンタクトIDを表示
+    const lastNmDisp = (!cCompanyId && cId && !lastNm && !firstNm) ? cId : lastNm;
     const perception = String(c.perceptionFlow || '').trim();
     const hubContactUrl = cId
       ? `https://app.hubspot.com/contacts/${HUBSPOT_PORTAL_ID}/contact/${cId}`
       : '';
     const lastNameCell = hubContactUrl
-      ? `<a href="${hubContactUrl}" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:none;cursor:pointer;font-weight:600;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" title="HubSpotでコンタクトを開く">${lastNm || '-'}</a>`
-      : `<span style="color:#1e40af;font-weight:600;">${lastNm || '-'}</span>`;
+      ? `<a href="${hubContactUrl}" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:none;cursor:pointer;font-weight:600;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" title="HubSpotでコンタクトを開く">${lastNmDisp || '-'}</a>`
+      : `<span style="color:#1e40af;font-weight:600;">${lastNmDisp || '-'}</span>`;
     const lc = _validDateStr(c.lastContact);
     const lm = _validDateStr(c.lastMet);
     const nc = _validDateStr(c.nextCall);
@@ -3216,12 +3225,12 @@ function _renderIsListLevel3(kind, owner) {
       ? `https://app.hubspot.com/contacts/${HUBSPOT_PORTAL_ID}/record/0-2/${r.companyId}`
       : '';
     const companyCell = hubCompanyUrl
-      ? `<a href="${hubCompanyUrl}" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:none;cursor:pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" title="HubSpotで開く: ${r.company}">${r.company || '—'}</a>`
-      : `<span style="color:#1e40af;" title="${r.company}">${r.company || '—'}</span>`;
+      ? `<a href="${hubCompanyUrl}" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:none;cursor:pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" title="HubSpotで開く: ${r.company}">${r.company || '-'}</a>`
+      : `<span style="color:#1e40af;" title="${r.company}">${r.company || '-'}</span>`;
 
     // 担当者の一覧（トグル展開行）
     const contacts = Array.isArray(r.contacts) && r.contacts.length ? r.contacts : [r];
-    const ckey = String(r.companyId || r.company || '');
+    const ckey = String(r.companyId || r.company || (r.contactId ? 'c:' + r.contactId : ''));
     const expanded = _isListL3Expanded.has(ckey);
     const arrow = expanded ? '▼' : '▶';
     const toggleBtn = `<span onclick="event.stopPropagation();isListToggleCompany('${ckey.replace(/'/g, "\\'")}')"
@@ -3294,7 +3303,7 @@ function _renderIsListLevel3(kind, owner) {
   const hClickable = `${hStyle}cursor:pointer;user-select:none;`;
 
   // ★ 全選択チェック状態（表示中の全行が選択済みか）
-  const _allKeysVisible = filteredRows.map(r => String(r.companyId || r.company || ''));
+  const _allKeysVisible = filteredRows.map(r => String(r.companyId || r.company || (r.contactId ? 'c:' + r.contactId : '')));
   const _allSelected = _allKeysVisible.length > 0 && _allKeysVisible.every(k => _isListL3Selected.has(k));
 
   // フィルタ可能チップ（モードで切替）
