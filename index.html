@@ -5569,13 +5569,48 @@ function _renderLandingHierarchy(col) {
     };
   });
 
-  // 全体合計
+  // === その他: ユニット非所属メンバーの案件 ===
+  const _unitMemberSet = new Set();
+  _unitsDef.forEach(u => u.members.forEach(m => _unitMemberSet.add(m)));
+  const _otherDeals = activePipeline.filter(d =>
+    d.name && !_unitMemberSet.has(d.name) && months.includes(d.month) && d.stage !== 'E'
+  );
+  const _otherMemberMap = {};
+  _otherDeals.forEach(d => {
+    const mname = d.name;
+    if (!_otherMemberMap[mname]) _otherMemberMap[mname] = { name: mname, target: 0, wonAmt: 0, _rawMin: 0, _rawMid: 0, _rawMax: 0, deals: [] };
+    const o = _otherMemberMap[mname];
+    o.deals.push(d);
+    if (d.stage === 'S') o.wonAmt += (d.amount || 0);
+    const k = _landingDealKey(d);
+    const cls = _landingClassMap[k];
+    if (cls === 'min')      o._rawMin += (d.amount || 0);
+    else if (cls === 'mid') o._rawMid += (d.amount || 0);
+    else if (cls === 'max') o._rawMax += (d.amount || 0);
+  });
+  Object.values(_otherMemberMap).forEach(m => {
+    m.min = m._rawMin;
+    m.mid = m._rawMin + m._rawMid;
+    m.max = m._rawMin + m._rawMid + m._rawMax;
+  });
+  const _otherMembers = Object.values(_otherMemberMap).sort((a, b) => (b.wonAmt + b.max) - (a.wonAmt + a.max));
+  const otherAgg = _otherMembers.length ? {
+    unit: 'その他',
+    members: _otherMembers,
+    target: 0,
+    wonAmt: _otherMembers.reduce((s, m) => s + m.wonAmt, 0),
+    min:    _otherMembers.reduce((s, m) => s + m.min,    0),
+    mid:    _otherMembers.reduce((s, m) => s + m.mid,    0),
+    max:    _otherMembers.reduce((s, m) => s + m.max,    0),
+  } : null;
+
+  // 全体合計（その他も Min/Mid/Max・受注済みに反映。目標は据え置き）
   const tot = {
     target: unitAgg.reduce((s, u) => s + u.target, 0),
-    wonAmt: unitAgg.reduce((s, u) => s + u.wonAmt, 0),
-    min:    unitAgg.reduce((s, u) => s + u.min, 0),
-    mid:    unitAgg.reduce((s, u) => s + u.mid, 0),
-    max:    unitAgg.reduce((s, u) => s + u.max, 0),
+    wonAmt: unitAgg.reduce((s, u) => s + u.wonAmt, 0) + (otherAgg ? otherAgg.wonAmt : 0),
+    min:    unitAgg.reduce((s, u) => s + u.min,    0) + (otherAgg ? otherAgg.min    : 0),
+    mid:    unitAgg.reduce((s, u) => s + u.mid,    0) + (otherAgg ? otherAgg.mid    : 0),
+    max:    unitAgg.reduce((s, u) => s + u.max,    0) + (otherAgg ? otherAgg.max    : 0),
   };
 
   // ヘッダー（紫系）
@@ -5717,6 +5752,102 @@ function _renderLandingHierarchy(col) {
     }
   });
 
+  // ===== その他（ユニット非所属メンバー）の行 =====
+  if (otherAgg) {
+    const uKey = `unit:その他`;
+    const uOpen = _landingExpanded.has(uKey);
+    body += `<tr style="background:#f9fafb;border-bottom:1px solid #e5e7eb;cursor:pointer;" onclick="toggleLandingNode('${uKey.replace(/'/g,"\\'")}')">
+      <td style="padding:6px 4px;text-align:center;color:#64748b;font-weight:700;">${arrow(uOpen)}</td>
+      <td style="padding:6px 8px;font-weight:700;color:#64748b;font-size:12px;">その他 <span style="font-size:10px;color:#94a3b8;font-weight:400;">(${otherAgg.members.length}名・ユニット非所属)</span></td>
+      ${td(fmt(otherAgg.target), { fw: '700', color: '#94a3b8' })}
+      ${td(fmt(otherAgg.wonAmt), { fw: '700', color: '#059669' })}
+      ${td(fmt(otherAgg.min),    { fw: '700', color: '#dc2626' })}
+      ${td(fmt(otherAgg.mid),    { fw: '700', color: '#d97706' })}
+      ${td(fmt(otherAgg.max),    { fw: '700', color: '#0284c7' })}
+    </tr>`;
+    if (uOpen) {
+      otherAgg.members.forEach(m => {
+        const mKey = `mem:その他|${m.name}`;
+        const mOpen = _landingExpanded.has(mKey);
+        body += `<tr style="background:#f8fafc;border-bottom:1px solid #f1f5f9;cursor:pointer;" onclick="toggleLandingNode('${mKey.replace(/'/g,"\\'")}')">
+          <td style="padding:5px 4px;text-align:center;color:#64748b;padding-left:20px;">${arrow(mOpen)}</td>
+          <td style="padding:5px 8px;color:#334155;font-weight:600;font-size:11px;padding-left:24px;">${m.name} <span style="font-size:10px;color:#94a3b8;font-weight:400;">(${m.deals.length}件)</span></td>
+          ${td(fmt(m.target))}
+          ${td(fmt(m.wonAmt), { color: '#059669' })}
+          ${td(fmt(m.min), { color: '#dc2626' })}
+          ${td(fmt(m.mid), { color: '#d97706' })}
+          ${td(fmt(m.max), { color: '#0284c7' })}
+        </tr>`;
+        if (mOpen) {
+          if (m.deals.length === 0) {
+            body += `<tr style="background:#ffffff;"><td></td><td colspan="6" style="padding:6px 8px 6px 48px;font-size:10px;color:#94a3b8;">対象案件なし</td></tr>`;
+          } else {
+            const sortedDeals = m.deals.slice().sort((a, b) => (b.amount || 0) - (a.amount || 0));
+            body += `<tr style="background:#fafafa;border-bottom:1px solid #e2e8f0;">
+              <td></td>
+              <td colspan="6" style="padding:4px 6px 4px 28px;">
+                <div style="display:flex;gap:4px;align-items:center;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.3px;">
+                  <span style="flex:1.4;min-width:0;">企業名</span>
+                  <span style="width:42px;text-align:center;flex-shrink:0;">ステージ</span>
+                  <span style="width:62px;text-align:center;flex-shrink:0;">クローズ日</span>
+                  <span style="width:70px;text-align:center;flex-shrink:0;">検討ｻｰﾋﾞｽ</span>
+                  <span style="width:72px;text-align:right;flex-shrink:0;">金額</span>
+                  <span style="width:72px;text-align:center;flex-shrink:0;">分類</span>
+                  <span style="flex:1.6;min-width:0;">メモ</span>
+                </div>
+              </td>
+            </tr>`;
+            sortedDeals.forEach((d, idx) => {
+              const key = _landingDealKey(d);
+              const cls = _landingClassMap[key] || '';
+              const memo = _landingMemoMap[key] || '';
+              const hubUrl = d.hubspotId ? `https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}` : null;
+              const companyHtml = hubUrl
+                ? `<a href="${hubUrl}" target="_blank" rel="noopener" style="color:#0284c7;text-decoration:none;font-weight:500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${d.company || '-'}</a>`
+                : `<span style="color:#334155;font-weight:500;">${d.company || '-'}</span>`;
+              const sel = `<select onchange="setLandingDealClass('${key.replace(/'/g,"\\'")}', this.value)"
+                            style="font-size:10px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;background:white;cursor:pointer;width:70px;">
+                <option value=""    ${cls===''   ?'selected':''}>該当なし</option>
+                <option value="min" ${cls==='min'?'selected':''}>Min</option>
+                <option value="mid" ${cls==='mid'?'selected':''}>Mid</option>
+                <option value="max" ${cls==='max'?'selected':''}>Max</option>
+              </select>`;
+              const memoEsc = String(memo).replace(/"/g, '&quot;');
+              const memoTitle = memo ? `title="${memoEsc}"` : 'title="クリックしてメモを入力（改行可）"';
+              const memoInput = `<textarea rows="1"
+                onchange="setLandingDealMemo('${key.replace(/'/g,"\\'")}', this.value); this.title = this.value || 'クリックしてメモを入力（改行可）';"
+                onblur="setLandingDealMemo('${key.replace(/'/g,"\\'")}', this.value); this.style.height='22px';"
+                onfocus="this.style.borderColor='#0284c7'; this.style.height='80px';"
+                ${memoTitle}
+                placeholder="メモを入力（Enterで改行）..."
+                style="width:100%;font-size:10px;padding:3px 6px;border:1px solid #e2e8f0;border-radius:4px;background:#fffef7;outline:none;resize:vertical;height:22px;line-height:1.4;font-family:inherit;transition:height 0.15s;">${memoEsc}</textarea>`;
+              const stageLabel = d.stage === '失注' ? `失注（${d.lostLabel || ''}）` : (d.stage || '-');
+              let closeStr = '-';
+              if (d.month && d.closeDay) closeStr = `${d.month}/${String(d.closeDay).padStart(2,'0')}`;
+              else if (d.month) closeStr = d.month;
+              const stClass = (d.stage === '失注') ? 'stage-e' : (d.stage === 'S' ? 'stage-s' : (d.stage === 'A' ? 'stage-a' : (d.stage === 'B' ? 'stage-b' : (d.stage === 'C+' ? 'stage-cp' : (d.stage === 'C' ? 'stage-c' : (d.stage === 'D' ? 'stage-d' : 'stage-e'))))));
+              const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+              body += `<tr style="background:${rowBg};border-bottom:1px solid #f1f5f9;">
+                <td></td>
+                <td colspan="6" style="padding:4px 6px 4px 28px;">
+                  <div style="display:flex;gap:4px;align-items:center;font-size:11px;color:#475569;">
+                    <span style="flex:1.4;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d.company || ''}">${companyHtml}</span>
+                    <span class="${stClass}" style="width:42px;text-align:center;font-weight:700;font-size:10px;flex-shrink:0;">${stageLabel}</span>
+                    <span style="width:62px;text-align:center;color:#64748b;white-space:nowrap;font-size:10px;flex-shrink:0;">${closeStr}</span>
+                    <span style="width:70px;text-align:center;color:#0369a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;flex-shrink:0;" title="${d.product || ''}">${d.product || '-'}</span>
+                    <span style="width:72px;text-align:right;font-weight:600;color:#334155;white-space:nowrap;font-size:10px;flex-shrink:0;">${fmt(d.amount || 0)}</span>
+                    <span style="width:72px;text-align:center;flex-shrink:0;">${sel}</span>
+                    <span style="flex:1.6;min-width:0;align-self:center;">${memoInput}</span>
+                  </div>
+                </td>
+              </tr>`;
+            });
+          }
+        }
+      });
+    }
+  }
+
   // 全体合計行
   const footRow = `<tr style="background:${purpleBg};border-top:2px solid ${purple};color:${purple};">
     <td></td>
@@ -5839,7 +5970,8 @@ function _renderLandingTrendChart() {
   const allMembers = _unitsDef.reduce((arr, u) => arr.concat(u.members), []);
 
   // ===== スコープに応じた対象メンバー集合 =====
-  let targetMembers = null; // null = 全員（フィルタなし）
+  // 'all' でも 3ユニット所属メンバーに限定（その他＝非ユニットはチャートに反映しない）
+  let targetMembers = new Set(allMembers);
   if (_landingTrendScope === 'unit') {
     const unitName = _landingTrendUnitKey || (_unitsDef[0] && _unitsDef[0].unit) || '';
     const unit = _unitsDef.find(u => u.unit === unitName);
