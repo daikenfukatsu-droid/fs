@@ -1555,26 +1555,43 @@ function openSimilarModal(companyEnc, industryEnc, productEnc) {
                 onmouseout="this.style.textDecoration='none'"
                 title="Googleで「${name} 採用」を検索">${name}</a>`;
     };
+    // 求人ページ → career-cloud.asia の Google site検索リンク（企業名で検索）
+    const jobPageLink = (c) => {
+      const name = (c.name || '').trim();
+      if (!name) return '<span class="text-slate-300">-</span>';
+      const q = encodeURIComponent('site:www.career-cloud.asia/mid/entry/job/offer ' + name);
+      const url = `https://www.google.com/search?q=${q}`;
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer"
+                style="color:#0284c7;text-decoration:none;font-weight:500;cursor:pointer;font-size:11px;white-space:nowrap;"
+                onmouseover="this.style.textDecoration='underline'"
+                onmouseout="this.style.textDecoration='none'"
+                title="career-cloud で「${name}」の求人ページを検索">🔗 求人を見る</a>`;
+    };
     const rows = sorted.map(c => `<tr class="border-b" style="border-color:#f1f5f9">
-      <td class="px-3 py-1.5 text-[12px] font-medium">${companyLink(c)}</td>
-      <td class="px-3 py-1.5 text-center whitespace-nowrap">${ryouikiLabel(c)}</td>
-      <td class="px-3 py-1.5 text-[11px] text-slate-600 whitespace-nowrap">${c.location || '-'}</td>
-      <td class="px-3 py-1.5 text-[11px] text-slate-600 whitespace-nowrap">${c.industry || '-'}</td>
-      <td class="px-3 py-1.5 text-[11px] text-right text-slate-600 whitespace-nowrap">${c.employees != null ? c.employees.toLocaleString() + '人' : '-'}</td>
-      <td class="px-3 py-1.5 text-center whitespace-nowrap">${yesNoBadge(c.canPublish)}</td>
-      <td class="px-3 py-1.5 text-left">${interviewCell(c)}</td>
-      <td class="px-3 py-1.5 text-center whitespace-nowrap">${yesNoBadge(c.lineUse)}</td>
+      <td class="px-2 py-1 text-[12px] font-medium" style="overflow:hidden;text-overflow:ellipsis;">${companyLink(c)}</td>
+      <td class="px-2 py-1 text-center whitespace-nowrap">${ryouikiLabel(c)}</td>
+      <td class="px-2 py-1 text-[11px] text-slate-600 whitespace-nowrap">${c.location || '-'}</td>
+      <td class="px-2 py-1 text-[11px] text-slate-600" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.industry || '-'}</td>
+      <td class="px-2 py-1 text-[11px] text-right text-slate-600 whitespace-nowrap">${c.employees != null ? c.employees.toLocaleString() + '人' : '-'}</td>
+      <td class="px-2 py-1 text-center whitespace-nowrap">${yesNoBadge(c.canPublish)}</td>
+      <td class="px-2 py-1 text-left" style="overflow:hidden;">${interviewCell(c)}</td>
+      <td class="px-2 py-1 text-center whitespace-nowrap">${yesNoBadge(c.lineUse)}</td>
+      <td class="px-2 py-1 text-center">${jobPageLink(c)}</td>
     </tr>`).join('');
-    body.innerHTML = `<table class="w-full text-sm">
+    body.innerHTML = `<table class="w-full text-sm" style="table-layout:fixed;">
+      <colgroup>
+        <col style="width:18%"><col style="width:9%"><col style="width:7%"><col style="width:12%"><col style="width:8%"><col style="width:7%"><col style="width:23%"><col style="width:7%"><col style="width:9%">
+      </colgroup>
       <thead><tr class="border-b-2" style="border-color:#f59e0b">
-        <th class="px-3 py-2 text-left text-[11px] font-semibold text-slate-600">企業名</th>
-        <th class="px-3 py-2 text-center text-[11px] font-semibold text-slate-600 whitespace-nowrap">検討領域</th>
-        <th class="px-3 py-2 text-left text-[11px] font-semibold text-slate-600 whitespace-nowrap">所在地</th>
-        <th class="px-3 py-2 text-left text-[11px] font-semibold text-slate-600 whitespace-nowrap">業界</th>
-        <th class="px-3 py-2 text-right text-[11px] font-semibold text-slate-600 whitespace-nowrap">従業員数</th>
-        <th class="px-3 py-2 text-center text-[11px] font-semibold text-slate-600 whitespace-nowrap">掲載可否</th>
-        <th class="px-3 py-2 text-center text-[11px] font-semibold text-slate-600 whitespace-nowrap">インタビュー記事</th>
-        <th class="px-3 py-2 text-center text-[11px] font-semibold text-slate-600 whitespace-nowrap">LINE利用</th>
+        <th class="px-2 py-2 text-left text-[11px] font-semibold text-slate-600">企業名</th>
+        <th class="px-2 py-2 text-center text-[11px] font-semibold text-slate-600 whitespace-nowrap">検討領域</th>
+        <th class="px-2 py-2 text-left text-[11px] font-semibold text-slate-600 whitespace-nowrap">所在地</th>
+        <th class="px-2 py-2 text-left text-[11px] font-semibold text-slate-600 whitespace-nowrap">業界</th>
+        <th class="px-2 py-2 text-right text-[11px] font-semibold text-slate-600 whitespace-nowrap">従業員数</th>
+        <th class="px-2 py-2 text-center text-[11px] font-semibold text-slate-600 whitespace-nowrap">掲載可否</th>
+        <th class="px-2 py-2 text-center text-[11px] font-semibold text-slate-600 whitespace-nowrap">インタビュー記事</th>
+        <th class="px-2 py-2 text-center text-[11px] font-semibold text-slate-600 whitespace-nowrap">LINE利用</th>
+        <th class="px-2 py-2 text-center text-[11px] font-semibold text-slate-600 whitespace-nowrap">求人ページ</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
@@ -1713,6 +1730,21 @@ async function fetchFromSheets(silent = false) {
       customWinRates = json.winRates.customWinRates || {};
       eWinRate = json.winRates.eWinRate !== undefined ? json.winRates.eWinRate : 0.10;
     }
+
+    // ★ 共有データ：Min/Mid/Max 分類 & メモ（チーム全員で共有）
+    // GAS の最新値で localStorage を上書き（チーム同期）
+    if (json.landingClassMap && typeof json.landingClassMap === 'object') {
+      _landingClassMap = json.landingClassMap;
+      try { localStorage.setItem(LANDING_CLASS_KEY, JSON.stringify(_landingClassMap)); } catch(e) {}
+      console.log('[landingClassMap] 取得件数:', Object.keys(_landingClassMap).length);
+    }
+    if (json.landingMemoMap && typeof json.landingMemoMap === 'object') {
+      _landingMemoMap = json.landingMemoMap;
+      try { localStorage.setItem(LANDING_MEMO_KEY, JSON.stringify(_landingMemoMap)); } catch(e) {}
+      console.log('[landingMemoMap] 取得件数:', Object.keys(_landingMemoMap).length);
+    }
+    // ★ 自動ポーリング開始（初回のみ）
+    _startLandingPolling();
 
     // 類似企業マスタ
     if (Array.isArray(json.similarCompanies)) {
@@ -5494,9 +5526,12 @@ let _landingMemoMap = {};
 try { _landingMemoMap = JSON.parse(localStorage.getItem(LANDING_MEMO_KEY) || '{}'); } catch(e) { _landingMemoMap = {}; }
 // メモ更新時のハンドラ（再レンダリングはしない＝フォーカスが切れる原因になるため）
 function setLandingDealMemo(key, value) {
-  if (!value || !value.trim()) delete _landingMemoMap[key];
-  else _landingMemoMap[key] = value;
+  const v = (value && value.trim()) ? value : '';
+  if (!v) delete _landingMemoMap[key];
+  else _landingMemoMap[key] = v;
   try { localStorage.setItem(LANDING_MEMO_KEY, JSON.stringify(_landingMemoMap)); } catch(e) {}
+  // ★ GASにも同期（チーム共有）— fire and forget
+  try { gasPost('saveLandingMemo', { key: key, value: v, user: _getLandingSharedUser() }); } catch(e) {}
 }
 
 // 案件の安定キー（hubspotId 優先 / 無ければ会社名+担当+月）
@@ -5504,11 +5539,91 @@ function _landingDealKey(d) {
   return d.hubspotId ? `hs:${d.hubspotId}` : `${d.company}||${d.name}||${d.month}`;
 }
 
+// ============================================================
+// 共有データ 自動ポーリング（30秒ごとにGASから最新を取得）
+// ============================================================
+const LANDING_POLL_MS = 30000; // 30秒
+let _landingPollTimer = null;
+let _landingLastClassJson = '';
+let _landingLastMemoJson  = '';
+
+async function _pollLandingShared() {
+  if (!GAS_URL) return;
+  try {
+    const res = await fetch(GAS_URL + '?only=landing', { method: 'GET' });
+    if (!res.ok) return;
+    const json = await res.json();
+    if (!json || !json.ok) return;
+    let changed = false;
+    if (json.landingClassMap && typeof json.landingClassMap === 'object') {
+      const nj = JSON.stringify(json.landingClassMap);
+      if (nj !== _landingLastClassJson) {
+        _landingClassMap = json.landingClassMap;
+        try { localStorage.setItem(LANDING_CLASS_KEY, nj); } catch(e) {}
+        _landingLastClassJson = nj;
+        changed = true;
+      }
+    }
+    if (json.landingMemoMap && typeof json.landingMemoMap === 'object') {
+      const nj = JSON.stringify(json.landingMemoMap);
+      if (nj !== _landingLastMemoJson) {
+        _landingMemoMap = json.landingMemoMap;
+        try { localStorage.setItem(LANDING_MEMO_KEY, nj); } catch(e) {}
+        _landingLastMemoJson = nj;
+        changed = true;
+      }
+    }
+    if (changed) {
+      // 売上着地予想モーダルが開いている場合のみ再描画（ユーザー入力中はスキップ）
+      const modal = document.getElementById('chartDetailModal');
+      const isOpen = modal && !modal.classList.contains('hidden');
+      if (isOpen) {
+        const ae = document.activeElement;
+        const userTyping = ae && modal.contains(ae) && (ae.tagName === 'TEXTAREA' || ae.tagName === 'INPUT' || ae.tagName === 'SELECT');
+        if (!userTyping) {
+          try { renderChartDetailTable('landing', 'chartDetailModal-body'); } catch(e) {}
+          console.log('[landing poll] 共有データ更新を反映');
+        } else {
+          console.log('[landing poll] ユーザー入力中のため再描画スキップ');
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[landing poll] エラー:', e);
+  }
+}
+
+function _startLandingPolling() {
+  if (_landingPollTimer) return; // 多重起動防止
+  _landingLastClassJson = JSON.stringify(_landingClassMap || {});
+  _landingLastMemoJson  = JSON.stringify(_landingMemoMap  || {});
+  _landingPollTimer = setInterval(_pollLandingShared, LANDING_POLL_MS);
+  console.log('[landing poll] 開始: ' + (LANDING_POLL_MS / 1000) + '秒ごとに同期');
+}
+function _stopLandingPolling() {
+  if (_landingPollTimer) { clearInterval(_landingPollTimer); _landingPollTimer = null; }
+}
+
+// 共有保存時にどのユーザーが書いたかを記録（任意。初回は空でもOK）
+function _getLandingSharedUser() {
+  try {
+    let u = localStorage.getItem('fs-landing-shared-user') || '';
+    if (!u) {
+      u = (prompt('共有用のお名前を入力してください（分類/メモの変更履歴用・後から空でも可）') || '').trim();
+      if (u) localStorage.setItem('fs-landing-shared-user', u);
+    }
+    return u || '';
+  } catch (e) { return ''; }
+}
+
 // セレクト変更時のハンドラ
 function setLandingDealClass(key, value) {
-  if (!value || value === 'none' || value === '') delete _landingClassMap[key];
-  else _landingClassMap[key] = value;
+  const v = (!value || value === 'none' || value === '') ? '' : value;
+  if (!v) delete _landingClassMap[key];
+  else _landingClassMap[key] = v;
   try { localStorage.setItem(LANDING_CLASS_KEY, JSON.stringify(_landingClassMap)); } catch(e) {}
+  // ★ GASにも同期（チーム共有）— fire and forget
+  try { gasPost('saveLandingClass', { key: key, value: v, user: _getLandingSharedUser() }); } catch(e) {}
   // 部分再描画（合計値を更新）。最小限：renderChartDetailTable 再呼出し
   renderChartDetailTable('landing', 'chartDetailModal-body');
 }
