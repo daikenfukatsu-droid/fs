@@ -325,26 +325,22 @@
     <div class="flex gap-1 flex-wrap" id="periodTabs"></div>
   </div>
 
-  <!-- Snapshot Zone -->
+  <!-- Snapshot Zone: 自動保存（毎日23時）。閲覧用UIのみ復元（保存/全削除/担当者フィルタなどは削除済み） -->
   <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
     <div class="flex items-center justify-between mb-3">
       <button onclick="toggleSnapshotSection()" class="flex items-center gap-2 text-left hover:opacity-70 transition-opacity" title="クリックで折りたたみ／展開">
         <span id="snapshotToggleArrow" class="text-slate-500 text-sm">▼</span>
         <div>
           <h3 class="font-semibold text-slate-700 text-sm">📸 スナップショット（経過追跡）</h3>
-          <p class="text-xs text-slate-500 mt-0.5">現在の状態を保存して、積載率の推移を確認できます</p>
+          <p class="text-xs text-slate-500 mt-0.5">毎日23時に自動保存。期間で絞って積載率の推移を確認できます</p>
         </div>
       </button>
-      <div class="flex gap-2 flex-wrap items-center">
-        <label class="text-xs">担当者: <select id="snapMemberFilter" onchange="setSnapMember(this.value)" class="ml-1 border rounded px-2 py-1"><option value="">全員</option></select></label>
-        <button onclick="saveSnapshot()" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold" style="background:#0284c7">📸 現在を保存</button>
+      <div class="flex gap-2 items-center">
         <button id="compareBtn" onclick="doCompare()" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold hidden" style="background:#7c3aed">📊 比較する</button>
-        <button onclick="clearAllSnapshots()" class="px-3 py-1.5 text-xs bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200">全削除</button>
-        <button onclick="openPassSetupModal()" class="px-3 py-1.5 text-xs bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200" title="削除パスワードを設定・変更">🔑</button>
       </div>
     </div>
     <div id="snapshotSection">
-      <div id="snapshotEmpty" class="text-xs text-slate-400 text-center py-4">まだスナップショットがありません。「📸 現在を保存」で現時点の状態を記録できます。</div>
+      <div id="snapshotEmpty" class="text-xs text-slate-400 text-center py-4">スナップショットがまだありません（毎日23時に自動保存されます）。</div>
       <div id="snapshotContent" class="hidden">
         <!-- 日付範囲選択 -->
         <div class="flex items-center gap-2 mb-3 p-2 bg-slate-50 rounded-lg">
@@ -369,7 +365,6 @@
                 <th class="px-2 py-2 text-right">実施積載</th>
                 <th class="px-2 py-2 text-right">ヨミ積載</th>
                 <th class="px-2 py-2 text-right">受注</th>
-                <th class="px-2 py-2 text-center">操作</th>
               </tr>
             </thead>
             <tbody id="snapshotList"></tbody>
@@ -378,6 +373,7 @@
       </div>
     </div>
   </div>
+
 
   <!-- Progress Chart -->
   <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
@@ -7876,6 +7872,8 @@ function renderSnapshots() {
 
   const empty = document.getElementById('snapshotEmpty');
   const content = document.getElementById('snapshotContent');
+  // ★ UI削除済み: DOM要素が無ければ何もしない（バックグラウンドのデータ読み込みのみ）
+  if (!empty || !content) return;
   if (snapshots.length === 0) {
     empty.classList.remove('hidden'); content.classList.add('hidden');
     return;
@@ -7912,7 +7910,6 @@ function renderSnapshots() {
       <td class="px-2 py-1.5 text-right"><b class="${p.stats.jRate>=100?'text-emerald-600':p.stats.jRate>=60?'text-sky-600':'text-slate-400'}">${p.stats.jRate.toFixed(0)}%</b> <span class="text-slate-400">(${fmt(p.stats.j)})</span></td>
       <td class="px-2 py-1.5 text-right"><b class="${p.stats.yRate>=100?'text-emerald-600':p.stats.yRate>=60?'text-sky-600':'text-slate-400'}">${p.stats.yRate.toFixed(0)}%</b> <span class="text-slate-400">(${fmt(p.stats.y)})</span></td>
       <td class="px-2 py-1.5 text-right"><b class="${p.stats.sRate>=100?'text-emerald-600':p.stats.sRate>0?'text-sky-600':'text-slate-400'}">${p.stats.sRate.toFixed(0)}%</b> <span class="text-slate-400">(${fmt(p.stats.s)})</span></td>
-      <td class="px-2 py-1.5 text-center"><button onclick="deleteSnapshot('${p.id}')" class="text-red-500 hover:text-red-700 text-xs">削除</button></td>
     </tr>`;
   }).join('');
 
