@@ -39,7 +39,7 @@
 
   <!-- Header (Tabs) -->
   <div class="mb-6">
-    <div class="rounded-xl mb-3 overflow-hidden flex" style="background-color:#0284c7">
+    <div class="rounded-xl mb-3 overflow-hidden flex relative" style="background-color:#0284c7">
       <button id="dashTab-fs" type="button" onclick="switchDashboard('fs')"
         class="flex-1 px-6 py-4 text-left transition-colors hover:bg-sky-700 focus:outline-none">
         <div class="flex items-center gap-2">
@@ -60,8 +60,54 @@
         </div>
         <p class="text-indigo-200 text-xs mt-0.5">準備中</p>
       </button>
+      <!-- 🔔 停滞案件アラート + 🔍 検索 -->
+      <div style="position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:10px;z-index:20;">
+        <button onclick="openGlobalSearch()" title="企業検索 (Ctrl+K)"
+          style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);border-radius:6px;color:white;padding:4px 8px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;">
+          <span style="font-size:13px;">🔍</span>
+          <span style="opacity:0.95;font-family:monospace;font-size:10px;">Ctrl+K</span>
+        </button>
+        <button id="alertBellBtn" onclick="toggleAlertDropdown(event)" title="停滞案件アラート"
+          style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);border-radius:6px;color:white;padding:4px 8px;font-size:14px;cursor:pointer;position:relative;line-height:1;">
+          🔔
+          <span id="alertBadge" class="hidden" style="position:absolute;top:-6px;right:-6px;background:#dc2626;color:white;font-size:10px;font-weight:700;padding:1px 5px;border-radius:9999px;min-width:18px;text-align:center;">0</span>
+        </button>
+      </div>
     </div>
   </div><!-- /.mb-6 (header tabs only) -->
+
+  <!-- 🔔 停滞案件アラート ドロップダウン -->
+  <div id="alertDropdown" style="display:none;position:fixed;top:80px;right:24px;width:380px;max-height:520px;overflow:hidden;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.15);z-index:1000;flex-direction:column;">
+    <div style="padding:12px 16px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;background:#f8fafc;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:14px;">⚠️</span>
+        <span style="font-size:13px;font-weight:700;color:#1e293b;">要対応 <span id="alertCountTotal">0</span>件</span>
+      </div>
+      <button onclick="document.getElementById('alertDropdown').classList.add('hidden')" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:16px;line-height:1;">✕</button>
+    </div>
+    <div id="alertDropdownBody" style="overflow-y:auto;flex:1;padding:4px 0;"></div>
+    <div style="padding:8px 16px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;background:#f8fafc;">
+      停滞30日+ / 架電予定超過 / 未商談E案件
+    </div>
+  </div>
+
+  <!-- 🔍 企業名横断検索パレット -->
+  <div id="globalSearchModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9999;align-items:flex-start;justify-content:center;padding-top:80px;">
+    <div style="width:560px;max-width:90vw;background:white;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;max-height:70vh;">
+      <div style="padding:10px 14px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:16px;color:#94a3b8;">🔍</span>
+        <input id="globalSearchInput" type="text" placeholder="企業名で横断検索…" autocomplete="off"
+          style="flex:1;border:none;outline:none;font-size:14px;background:transparent;">
+        <span style="background:#f1f5f9;color:#64748b;font-size:10px;padding:2px 6px;border-radius:4px;font-family:monospace;">ESC</span>
+      </div>
+      <div id="globalSearchResults" style="overflow-y:auto;flex:1;"></div>
+      <div style="padding:8px 14px;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:10px;font-size:10px;color:#94a3b8;background:#f8fafc;">
+        <span><span style="background:#fff;border:1px solid #e2e8f0;padding:1px 5px;border-radius:3px;font-family:monospace;">↑↓</span> 移動</span>
+        <span><span style="background:#fff;border:1px solid #e2e8f0;padding:1px 5px;border-radius:3px;font-family:monospace;">Enter</span> 開く</span>
+        <span style="margin-left:auto;">Ctrl+K で再起動</span>
+      </div>
+    </div>
+  </div>
 
   <!-- FS ダッシュボードコンテンツ（ルール + 全FS機能を包む） -->
   <div id="dashboardContent-fs">
@@ -328,19 +374,16 @@
   <!-- Snapshot Zone: 自動保存（毎日23時）。閲覧用UIのみ復元（保存/全削除/担当者フィルタなどは削除済み） -->
   <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
     <div class="flex items-center justify-between mb-3">
-      <button onclick="toggleSnapshotSection()" class="flex items-center gap-2 text-left hover:opacity-70 transition-opacity" title="クリックで折りたたみ／展開">
-        <span id="snapshotToggleArrow" class="text-slate-500 text-sm">▼</span>
-        <div>
-          <h3 class="font-semibold text-slate-700 text-sm">📸 スナップショット（経過追跡）</h3>
-          <p class="text-xs text-slate-500 mt-0.5">毎日23時に自動保存。期間で絞って積載率の推移を確認できます</p>
-        </div>
-      </button>
+      <div>
+        <h3 class="font-semibold text-slate-700 text-sm">📸 スナップショット（経過追跡）</h3>
+        <p class="text-xs text-slate-500 mt-0.5">ダッシュボードを開くと当日分を自動保存。期間で絞って積載率の推移を確認できます</p>
+      </div>
       <div class="flex gap-2 items-center">
-        <button id="compareBtn" onclick="doCompare()" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold hidden" style="background:#7c3aed">📊 比較する</button>
+        <button id="compareBtn" onclick="doCompare()" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold hidden" style="background:#0369a1">📊 比較する</button>
       </div>
     </div>
     <div id="snapshotSection">
-      <div id="snapshotEmpty" class="text-xs text-slate-400 text-center py-4">スナップショットがまだありません（毎日23時に自動保存されます）。</div>
+      <div id="snapshotEmpty" class="text-xs text-slate-400 text-center py-4">スナップショットがまだありません（ダッシュボードを開くと当日分が自動保存されます）。</div>
       <div id="snapshotContent" class="hidden">
         <!-- 日付範囲選択 -->
         <div class="flex items-center gap-2 mb-3 p-2 bg-slate-50 rounded-lg">
@@ -351,13 +394,14 @@
           <button onclick="applyDateRange()" class="px-3 py-1 text-xs text-white rounded-lg font-semibold hover:opacity-90 whitespace-nowrap" style="background:#475569">適用する</button>
           <button onclick="clearDateRange()" class="px-3 py-1 text-xs bg-white border text-slate-500 rounded-lg hover:bg-slate-100 whitespace-nowrap">クリア</button>
         </div>
-        <div class="overflow-x-auto">
+        <!-- スナップショット一覧テーブル: UIには非表示。データ取得・選択機能のために要素は残しておく -->
+        <div class="overflow-x-auto" style="display:none;">
           <table class="min-w-full text-xs">
             <thead class="bg-slate-50 text-slate-600">
               <tr>
                 <th class="px-2 py-2 text-center w-8">
                   <input type="checkbox" id="snapSelectAll" onchange="toggleSelectAll(this.checked)"
-                    class="w-3.5 h-3.5 cursor-pointer accent-violet-600" title="全選択 / 全解除">
+                    class="w-3.5 h-3.5 cursor-pointer accent-sky-600" title="全選択 / 全解除">
                 </th>
                 <th class="px-2 py-2 text-left">日時 <span class="text-slate-400 font-normal text-[10px]">Shift+クリックで範囲選択</span></th>
                 <th class="px-2 py-2 text-right">案件数</th>
@@ -428,23 +472,23 @@
       </div>
       <div class="w-full bg-slate-100 rounded-full h-2 mt-1"><div id="kpi-sekisai-bar" class="progress-bar h-2 rounded-full" style="width:0%;background:#0284c7"></div></div>
     </div>
-    <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 border-violet-400">
+    <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 border-sky-400">
       <div class="flex items-center justify-between mb-1">
         <p class="text-xs text-slate-500">🎯 売上着地予想</p>
-        <button onclick="openWinRatesModal()" class="text-slate-400 hover:text-violet-600 text-sm leading-none" title="勝率を設定">⚙️</button>
+        <button onclick="openWinRatesModal()" class="text-slate-400 hover:text-sky-700 text-sm leading-none" title="勝率を設定">⚙️</button>
       </div>
       <!-- BASE (D以上) -->
       <div class="flex items-baseline gap-1.5">
         <p id="kpi-land-amount" class="text-lg font-bold text-slate-800">¥0</p>
-        <span id="kpi-land-rate" class="text-sm font-bold text-violet-600">0%</span>
+        <span id="kpi-land-rate" class="text-sm font-bold text-sky-700">0%</span>
       </div>
       <p class="text-xs text-slate-400">D以上の確定パイプ</p>
-      <div class="w-full bg-slate-100 rounded-full h-1.5 mt-1"><div id="kpi-land-bar" class="progress-bar h-1.5 rounded-full bg-violet-400" style="width:0%"></div></div>
+      <div class="w-full bg-slate-100 rounded-full h-1.5 mt-1"><div id="kpi-land-bar" class="progress-bar h-1.5 rounded-full bg-sky-600" style="width:0%"></div></div>
       <!-- E込み -->
       <div class="border-t border-slate-100 mt-2 pt-2">
         <div class="flex items-baseline gap-1.5">
           <p id="kpi-lande-amount" class="text-base font-bold text-slate-700">¥0</p>
-          <span id="kpi-lande-rate" class="text-sm font-bold text-violet-500">0%</span>
+          <span id="kpi-lande-rate" class="text-sm font-bold text-sky-700">0%</span>
         </div>
         <p class="text-xs text-slate-400">E込み最大着地 <span id="kpi-land-ratio" class="text-slate-300"></span></p>
       </div>
@@ -492,7 +536,7 @@
     <div class="bg-white rounded-xl shadow-sm p-5">
       <div class="flex items-center justify-between mb-3">
         <h3 class="font-semibold text-slate-700 text-sm">FSメンバー別 売上着地予想（達成予想%）</h3>
-        <button onclick="openChartDetailModal('landing')" class="text-[11px] font-semibold px-2 py-0.5 rounded border border-violet-300 text-violet-600 hover:bg-violet-50 transition-colors">詳細</button>
+        <button onclick="openChartDetailModal('landing')" class="text-[11px] font-semibold px-2 py-0.5 rounded border border-sky-400 text-sky-700 hover:bg-sky-600 transition-colors">詳細</button>
       </div>
       <canvas id="landingChart" height="320"></canvas>
     </div>
@@ -546,45 +590,71 @@
 
   <!-- E Stage Calendar -->
   <div class="bg-white rounded-xl shadow-sm p-5 mt-6">
-    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-      <div>
-        <div>
-          <h3 class="font-semibold text-slate-700 text-sm">📅 商談カレンダー</h3>
-          <div class="flex items-center gap-3 mt-1">
-            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0ea5e9"></span><span class="text-slate-500">1回目（初回アポ・E案件）</span></span>
-            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#f97316"></span><span class="text-slate-500">2回目商談</span></span>
-            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#8b5cf6"></span><span class="text-slate-500">3回目商談</span></span>
+    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <h3 class="font-semibold text-slate-700 text-sm">📅 商談カレンダー</h3>
+      <!-- ★ ビュー切替タブ -->
+      <div class="flex rounded-lg overflow-hidden border" style="border-color:#0284c7">
+        <button id="eCalView-cal"    onclick="setECalView('cal')"    class="px-3 py-1.5 text-xs font-semibold" style="background:#0284c7;color:white">📅 カレンダー</button>
+        <button id="eCalView-today"  onclick="setECalView('today')"  class="px-3 py-1.5 text-xs font-semibold border-l" style="background:white;color:#0284c7;border-color:#0284c7">✓ 本日</button>
+        <button id="eCalView-weekly" onclick="setECalView('weekly')" class="px-3 py-1.5 text-xs font-semibold border-l" style="background:white;color:#0284c7;border-color:#0284c7">📊 週次</button>
+      </div>
+    </div>
+
+    <!-- ① カレンダービュー（既存） -->
+    <div id="eCalView-content-cal">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0ea5e9"></span><span class="text-slate-500">1回目（初回アポ・E案件）</span></span>
+          <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#f97316"></span><span class="text-slate-500">2回目商談</span></span>
+          <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0284c7"></span><span class="text-slate-500">3回目商談</span></span>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <div class="flex rounded-lg overflow-hidden border" style="border-color:#e2e8f0">
+            <button id="calTab-0" onclick="setCalTab(0)" class="px-3 py-1 text-xs font-semibold" style="background:#0284c7;color:white">全て</button>
+            <button id="calTab-1" onclick="setCalTab(1)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0ea5e9;border-color:#e2e8f0">1回目</button>
+            <button id="calTab-2" onclick="setCalTab(2)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#f97316;border-color:#e2e8f0">2回目</button>
+            <button id="calTab-3" onclick="setCalTab(3)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0284c7;border-color:#e2e8f0">3回目</button>
           </div>
+          <span id="eCalTotalBadge" class="text-xs font-semibold px-3 py-1 rounded-full" style="background:#dbeafe;color:#0284c7"></span>
+          <select id="eCalMemberFilter" onchange="setECalMember(this.value)" class="px-2 py-1 text-xs border rounded">
+            <option value="">全員</option>
+          </select>
         </div>
       </div>
-      <div class="flex items-center gap-2 flex-wrap">
-        <div class="flex rounded-lg overflow-hidden border" style="border-color:#e2e8f0">
-          <button id="calTab-0" onclick="setCalTab(0)" class="px-3 py-1 text-xs font-semibold" style="background:#0284c7;color:white">全て</button>
-          <button id="calTab-1" onclick="setCalTab(1)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0ea5e9;border-color:#e2e8f0">1回目</button>
-          <button id="calTab-2" onclick="setCalTab(2)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#f97316;border-color:#e2e8f0">2回目</button>
-          <button id="calTab-3" onclick="setCalTab(3)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#8b5cf6;border-color:#e2e8f0">3回目</button>
-        </div>
-        <span id="eCalTotalBadge" class="text-xs font-semibold px-3 py-1 rounded-full" style="background:#dbeafe;color:#0284c7"></span>
-        <select id="eCalMemberFilter" onchange="setECalMember(this.value)" class="px-2 py-1 text-xs border rounded">
-          <option value="">全員</option>
-        </select>
+      <!-- Snapshot indicator -->
+      <div id="eCalSnapBanner" class="hidden mb-3 px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2" style="background:#fef3c7;color:#92400e">
+        <span>📂</span><span id="eCalSnapLabel"></span>
+      </div>
+      <!-- Month Navigation -->
+      <div class="flex items-center justify-center gap-4 mb-4">
+        <button onclick="eCalPrevMonth()" class="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 font-bold">‹</button>
+        <span id="eCalMonthLabel" class="text-sm font-bold text-slate-700 w-28 text-center"></span>
+        <button onclick="eCalNextMonth()" class="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 font-bold">›</button>
+      </div>
+      <div id="eCalendar"></div>
+      <!-- E deals without date -->
+      <div id="eCalNoDaySection" class="hidden mt-4">
+        <p class="text-xs font-semibold text-slate-500 mb-2">📌 アポ実施日未設定のE案件（クローズ予定月：この月）</p>
+        <div id="eCalNoDayList" class="flex flex-wrap gap-2"></div>
       </div>
     </div>
-    <!-- Snapshot indicator -->
-    <div id="eCalSnapBanner" class="hidden mb-3 px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2" style="background:#fef3c7;color:#92400e">
-      <span>📂</span><span id="eCalSnapLabel"></span>
+
+    <!-- ② 本日ビュー -->
+    <div id="eCalView-content-today" class="hidden">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <p class="text-xs text-slate-500" id="eCalTodayLabel">本日 - / 合計 0件</p>
+        <span class="text-[10px] text-slate-400">1〜3回目すべて含む・件数降順</span>
+      </div>
+      <div id="eCalTodayBody" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
     </div>
-    <!-- Month Navigation -->
-    <div class="flex items-center justify-center gap-4 mb-4">
-      <button onclick="eCalPrevMonth()" class="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 font-bold">‹</button>
-      <span id="eCalMonthLabel" class="text-sm font-bold text-slate-700 w-28 text-center"></span>
-      <button onclick="eCalNextMonth()" class="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 font-bold">›</button>
-    </div>
-    <div id="eCalendar"></div>
-    <!-- E deals without date -->
-    <div id="eCalNoDaySection" class="hidden mt-4">
-      <p class="text-xs font-semibold text-slate-500 mb-2">📌 アポ実施日未設定のE案件（クローズ予定月：この月）</p>
-      <div id="eCalNoDayList" class="flex flex-wrap gap-2"></div>
+
+    <!-- ③ 週次グラフビュー -->
+    <div id="eCalView-content-weekly" class="hidden">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <p class="text-xs text-slate-500" id="eCalWeeklyLabel">今週 - / 合計 0件</p>
+        <span class="text-[10px] text-slate-400">1〜3回目すべて含む・メンバー別合計</span>
+      </div>
+      <div id="eCalWeeklyBody"></div>
     </div>
   </div>
 
@@ -682,16 +752,16 @@
     <!-- IS KPIカード（ファネル順: アポ取得数 → アポ実施数 → ヨミ化数 → 受注貢献） -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
       <!-- アポ取得数 -->
-      <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#8b5cf6">
+      <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#0284c7">
         <button onclick="openIsKpiDetailModal('apo')"
-          class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-violet-500 text-violet-600 hover:bg-violet-50">詳細</button>
+          class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-400 text-sky-700 hover:bg-sky-600">詳細</button>
         <p class="text-xs text-slate-500 mb-1">📞 アポ取得数</p>
         <div class="flex items-baseline gap-2">
           <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-apo-count">0</span><span class="text-sm font-normal text-slate-400 ml-1">件</span></p>
           <p class="text-xs text-slate-500">/ <span id="is-kpi-apo-target">0</span></p>
         </div>
         <div class="mt-1.5 h-2 bg-slate-100 rounded-full overflow-hidden">
-          <div id="is-kpi-apo-bar" class="progress-bar h-2 rounded-full bg-violet-500" style="width:0%"></div>
+          <div id="is-kpi-apo-bar" class="progress-bar h-2 rounded-full bg-sky-600" style="width:0%"></div>
         </div>
         <p class="text-[11px] text-slate-500 mt-1">達成率 <span id="is-kpi-apo-rate" class="font-semibold">0%</span></p>
       </div>
@@ -754,15 +824,15 @@
             <!-- グループヘッダー（IS配色: 各列に固有色） -->
             <tr class="text-white text-[10px]">
               <th rowspan="2" class="px-2 py-2 text-left whitespace-nowrap font-semibold sticky left-0 z-10 align-middle" style="background:#0284c7">担当者/月間</th>
-              <th colspan="3" class="px-2 py-1.5 text-center font-semibold border-l border-white/30" style="background:#8b5cf6">アポ取得数</th>
+              <th colspan="3" class="px-2 py-1.5 text-center font-semibold border-l border-white/30" style="background:#0284c7">アポ取得数</th>
               <th colspan="3" class="px-2 py-1.5 text-center font-semibold border-l border-white/30" style="background:#f59e0b">アポ実施数</th>
               <th colspan="4" class="px-2 py-1.5 text-center font-semibold border-l border-white/30" style="background:#0284c7">ヨミ化数</th>
               <th colspan="2" class="px-2 py-1.5 text-center font-semibold border-l border-white/30" style="background:#10b981">受注貢献</th>
             </tr>
             <tr class="text-slate-700 text-[10px]">
-              <th class="px-2 py-1.5 text-center font-semibold" style="background:#ede9fe">目標</th>
-              <th class="px-2 py-1.5 text-center font-semibold" style="background:#ede9fe">実績</th>
-              <th class="px-2 py-1.5 text-center font-semibold" style="background:#ede9fe">達成率</th>
+              <th class="px-2 py-1.5 text-center font-semibold" style="background:#e0f2fe">目標</th>
+              <th class="px-2 py-1.5 text-center font-semibold" style="background:#e0f2fe">実績</th>
+              <th class="px-2 py-1.5 text-center font-semibold" style="background:#e0f2fe">達成率</th>
               <th class="px-2 py-1.5 text-center font-semibold border-l border-slate-300" style="background:#fef3c7">目標</th>
               <th class="px-2 py-1.5 text-center font-semibold" style="background:#fef3c7">実績</th>
               <th class="px-2 py-1.5 text-center font-semibold" style="background:#fef3c7">達成率</th>
@@ -833,7 +903,7 @@
           <div class="flex items-center gap-3 mt-1">
             <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0ea5e9"></span><span class="text-slate-500">1回目（初回アポ・E案件）</span></span>
             <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#f97316"></span><span class="text-slate-500">2回目商談</span></span>
-            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#8b5cf6"></span><span class="text-slate-500">3回目商談</span></span>
+            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0284c7"></span><span class="text-slate-500">3回目商談</span></span>
           </div>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
@@ -841,7 +911,7 @@
             <button id="isCalTab-0" onclick="setIsCalTab(0)" class="px-3 py-1 text-xs font-semibold" style="background:#0284c7;color:white">全て</button>
             <button id="isCalTab-1" onclick="setIsCalTab(1)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0ea5e9;border-color:#e2e8f0">1回目</button>
             <button id="isCalTab-2" onclick="setIsCalTab(2)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#f97316;border-color:#e2e8f0">2回目</button>
-            <button id="isCalTab-3" onclick="setIsCalTab(3)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#8b5cf6;border-color:#e2e8f0">3回目</button>
+            <button id="isCalTab-3" onclick="setIsCalTab(3)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0284c7;border-color:#e2e8f0">3回目</button>
           </div>
           <span id="isCalTotalBadge" class="text-xs font-semibold px-3 py-1 rounded-full" style="background:#dbeafe;color:#0284c7"></span>
           <select id="isCalMemberFilter" onchange="setIsCalMember(this.value)" class="px-2 py-1 text-xs border rounded">
@@ -904,12 +974,12 @@
     <h3 class="font-semibold text-slate-800 mb-1">⚙️ 着地予想 勝率設定</h3>
     <p class="text-xs text-slate-500 mb-3">ステージ×検討サービスごとの勝率（%）を入力してください。※ 変更はブラウザに保存されます。</p>
     <!-- E案件設定 -->
-    <div class="mb-4 p-3 bg-violet-50 rounded-lg border border-violet-100">
+    <div class="mb-4 p-3 bg-sky-600 rounded-lg border border-sky-400">
       <div class="flex items-center gap-3">
         <span class="text-xs font-semibold text-slate-700 whitespace-nowrap">E案件 最終受注率</span>
         <div class="flex items-center gap-1">
           <input type="number" id="wr-e-rate" min="0" max="100" step="0.1" value="10"
-            class="w-14 border rounded px-1 py-0.5 text-right text-xs border-violet-300 bg-white" />
+            class="w-14 border rounded px-1 py-0.5 text-right text-xs border-sky-400 bg-white" />
           <span class="text-xs text-slate-500">%</span>
         </div>
         <span class="text-xs text-slate-400">E → 最終的にSになる確率（初期値10%）</span>
@@ -917,8 +987,8 @@
       <p class="text-xs text-slate-400 mt-1">残営業日比率×この確率で期待値を算出。スナップショット学習で将来自動補正。</p>
     </div>
     <div id="winRatesTableWrap" class="mb-4 overflow-x-auto"></div>
-    <div class="mt-3 p-3 bg-violet-50 rounded-lg text-xs text-slate-600">
-      <b class="text-violet-700">📌 滞留減衰について</b><br>
+    <div class="mt-3 p-3 bg-sky-600 rounded-lg text-xs text-slate-600">
+      <b class="text-sky-700">📌 滞留減衰について</b><br>
       D/C/C+/B は、スナップショット間で同じステージに留まった回数に応じて期待値が下がります。<br>
       減衰率: 1回あたり −12%、最低40%まで（スナップショットが溜まるほど自動で精度向上）
     </div>
@@ -1489,7 +1559,7 @@ function openSimilarModal(companyEnc, industryEnc, productEnc) {
       const sin = toNum(c.shinSotsu);
       const chu = toNum(c.chuTo);
       if (sin >= 1 && chu >= 1) {
-        return '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold" style="background:#ede9fe;color:#5b21b6">新卒・中途</span>';
+        return '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold" style="background:#e0f2fe;color:#0c4a6e">新卒・中途</span>';
       }
       if (sin >= 1) {
         return '<span class="px-1.5 py-0.5 rounded text-[10px] font-bold" style="background:#dbeafe;color:#1e40af">新卒</span>';
@@ -1616,6 +1686,326 @@ let _chartDetailRows = [];   // グラフ詳細アコーディオン用データ
 let _chartDetailTotals = {}; // 同上（合計行）
 let currentPeriod = '2026/05';
 let jisshiChart = null, yomiChart = null, landingChart = null, trendChart = null;
+// ============================================================
+// 🔴 安定性向上ユーティリティ（console抑制 + localStorage容量監視）
+// ============================================================
+// DEBUG_MODE=true でログ表示、false でログ抑制（本番用）
+const DEBUG_MODE = false;
+const dbg = {
+  log:  (...a) => { if (DEBUG_MODE) console.log(...a); },
+  warn: (...a) => { if (DEBUG_MODE) console.warn(...a); },
+  error: (...a) => console.error(...a),  // エラーは常に出す
+};
+
+// localStorage 容量監視（5MBの目安）
+const LS_MAX_BYTES = 5 * 1024 * 1024;
+function _getLocalStorageUsageBytes() {
+  let total = 0;
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      const v = localStorage.getItem(k);
+      if (k) total += k.length;
+      if (v) total += v.length;
+    }
+  } catch(e) {}
+  return total * 2; // UTF-16
+}
+function _localStorageCleanup() {
+  try {
+    const cutoff30 = new Date(); cutoff30.setDate(cutoff30.getDate() - 30);
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (!k) continue;
+      // 30日以前の IS_LIST_SNAP_v1_YYYY-MM-DD を削除
+      if (k.startsWith('IS_LIST_SNAP_v1_')) {
+        const dStr = k.substring('IS_LIST_SNAP_v1_'.length);
+        const d = new Date(dStr);
+        if (!isNaN(d) && d < cutoff30) localStorage.removeItem(k);
+      }
+    }
+  } catch(e) {}
+}
+function _localStorageGuard() {
+  const used = _getLocalStorageUsageBytes();
+  const ratio = used / LS_MAX_BYTES;
+  if (ratio > 0.8) {
+    console.warn(`[localStorage] 容量使用率 ${(ratio*100).toFixed(0)}% (${(used/1024).toFixed(0)}KB / ${(LS_MAX_BYTES/1024).toFixed(0)}KB) → 古いデータを自動掃除`);
+    _localStorageCleanup();
+  }
+  return { used, ratio };
+}
+// 起動 3秒後にチェック
+setTimeout(() => _localStorageGuard(), 3000);
+
+// ============================================================
+// 🔔 停滞案件アラート
+// 条件:
+//   ① C/C+/B/A ステージで30日以上同じステージ滞留
+//   ② 次回架電日が3日以上過ぎている (IS保有リスト由来)
+//   ③ アポ実施日(J列)から13日以上経過してまだ E ステージ
+// ============================================================
+function _calcStalledDeals() {
+  const alerts = { stuck: [], overdueCall: [], untouchedE: [] };
+  const today = new Date(); today.setHours(0,0,0,0);
+  const dPast = (s, days) => {
+    if (!s) return false;
+    const d = new Date(String(s).replace(/\//g, '-'));
+    if (isNaN(d)) return false;
+    const diff = Math.floor((today - d) / 86400000);
+    return diff >= days;
+  };
+
+  // ① 停滞30日+ (C以上ステージで appointDateから30日経過)
+  (typeof pipeline !== 'undefined' ? pipeline : []).forEach(d => {
+    if (!['C','C+','B','A'].includes(d.stage)) return;
+    if (dPast(d.appointDate, 30)) {
+      alerts.stuck.push({
+        type: '停滞30日+',
+        company: d.company || '?',
+        sub: `${d.stage} / ${d.name || '-'}`,
+        hubspotId: d.hubspotId,
+        days: Math.floor((today - new Date(String(d.appointDate).replace(/\//g,'-'))) / 86400000)
+      });
+    }
+  });
+
+  // ③ 未商談E案件 (Eステージ + appointDateから13日経過)
+  (typeof pipeline !== 'undefined' ? pipeline : []).forEach(d => {
+    if (d.stage !== 'E') return;
+    if (dPast(d.appointDate, 13)) {
+      alerts.untouchedE.push({
+        type: '未商談E',
+        company: d.company || '?',
+        sub: `E / アポ実施日から${Math.floor((today - new Date(String(d.appointDate).replace(/\//g,'-'))) / 86400000)}日経過`,
+        hubspotId: d.hubspotId
+      });
+    }
+  });
+
+  // ② 架電超過: IS保有リスト で次回架電日が3日以上過去
+  const allIs = [...(typeof isListYes!=='undefined'?isListYes:[]), ...(typeof isListNo!=='undefined'?isListNo:[])];
+  const seenCompanies = new Set();
+  allIs.forEach(r => {
+    const key = r.companyId || r.company;
+    if (!key || seenCompanies.has(key)) return;
+    if (!r.nextCall) return;
+    const d = new Date(String(r.nextCall).replace(/\//g, '-'));
+    if (isNaN(d) || d.getFullYear() < 2000) return;
+    const diff = Math.floor((today - d) / 86400000);
+    if (diff >= 3) {
+      seenCompanies.add(key);
+      alerts.overdueCall.push({
+        type: `${diff}日超過`,
+        company: r.company || '?',
+        sub: `次回架電 ${r.nextCall} / ${r.owner || '-'}`,
+        companyId: r.companyId
+      });
+    }
+  });
+
+  // 重要度順にソート
+  alerts.stuck.sort((a, b) => b.days - a.days);
+  alerts.overdueCall.sort((a, b) => parseInt(b.type) - parseInt(a.type));
+  return alerts;
+}
+
+function _renderAlertDropdown() {
+  const a = _calcStalledDeals();
+  const total = a.stuck.length + a.overdueCall.length + a.untouchedE.length;
+  // バッジ更新
+  const badge = document.getElementById('alertBadge');
+  if (badge) {
+    if (total > 0) {
+      badge.textContent = total > 99 ? '99+' : total;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  }
+  document.getElementById('alertCountTotal').textContent = total;
+  const body = document.getElementById('alertDropdownBody');
+  if (!body) return;
+  if (total === 0) {
+    body.innerHTML = `<p style="text-align:center;color:#94a3b8;padding:24px 16px;font-size:12px;">🎉 要対応案件なし</p>`;
+    return;
+  }
+  const itemHtml = (icon, color, bg, item) => {
+    const hubUrl = item.hubspotId
+      ? `https://app.hubspot.com/contacts/23871469/record/0-3/${item.hubspotId}`
+      : (item.companyId ? `https://app.hubspot.com/contacts/23871469/record/0-2/${item.companyId}` : null);
+    const click = hubUrl ? `onclick="window.open('${hubUrl}','_blank')" style="cursor:pointer;"` : '';
+    return `<div ${click} class="alert-row" style="padding:8px 14px;display:flex;align-items:flex-start;gap:8px;border-bottom:1px solid #f1f5f9;transition:background 0.1s;"
+      onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+      <span style="background:${bg};color:${color};font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;">${item.type}</span>
+      <div style="flex:1;min-width:0;">
+        <p style="font-size:12px;font-weight:500;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#1e293b;">${item.company}</p>
+        <p style="font-size:11px;color:#64748b;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.sub}</p>
+      </div>
+    </div>`;
+  };
+  let html = '';
+  if (a.stuck.length) {
+    html += `<div style="padding:6px 14px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;background:#fafafa;">停滞30日+ ${a.stuck.length}件</div>`;
+    html += a.stuck.slice(0, 30).map(it => itemHtml('⚠️', '#991b1b', '#fee2e2', it)).join('');
+  }
+  if (a.overdueCall.length) {
+    html += `<div style="padding:6px 14px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;background:#fafafa;">架電予定超過 ${a.overdueCall.length}件</div>`;
+    html += a.overdueCall.slice(0, 30).map(it => itemHtml('📞', '#92400e', '#fef3c7', it)).join('');
+  }
+  if (a.untouchedE.length) {
+    html += `<div style="padding:6px 14px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;background:#fafafa;">未商談E ${a.untouchedE.length}件</div>`;
+    html += a.untouchedE.slice(0, 30).map(it => itemHtml('💬', '#92400e', '#fed7aa', it)).join('');
+  }
+  body.innerHTML = html;
+}
+
+function toggleAlertDropdown(ev) {
+  if (ev) ev.stopPropagation();
+  const dd = document.getElementById('alertDropdown');
+  if (!dd) return;
+  if (dd.style.display === 'none' || dd.style.display === '') {
+    _renderAlertDropdown();
+    dd.style.display = 'flex';
+  } else {
+    dd.style.display = 'none';
+  }
+}
+
+// 外側クリックで閉じる
+document.addEventListener('click', (e) => {
+  const dd = document.getElementById('alertDropdown');
+  const btn = document.getElementById('alertBellBtn');
+  if (!dd || dd.style.display === 'none') return;
+  if (dd.contains(e.target) || (btn && btn.contains(e.target))) return;
+  dd.style.display = 'none';
+});
+
+// データ更新時にバッジカウントを再計算するため、render() の呼び出しを監視
+// 簡易対応: 5秒ごとにバッジを更新
+setInterval(() => {
+  try { _renderAlertDropdown(); } catch(e) {}
+}, 5000);
+
+// ============================================================
+// 🔍 企業名横断検索（Ctrl+K）
+// ============================================================
+let _searchSelectedIdx = 0;
+
+function openGlobalSearch() {
+  const modal = document.getElementById('globalSearchModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  const input = document.getElementById('globalSearchInput');
+  if (input) {
+    input.value = '';
+    setTimeout(() => input.focus(), 50);
+  }
+  _searchSelectedIdx = 0;
+  _renderSearchResults('');
+}
+function closeGlobalSearch() {
+  const modal = document.getElementById('globalSearchModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function _renderSearchResults(query) {
+  const body = document.getElementById('globalSearchResults');
+  if (!body) return;
+  const q = String(query || '').trim().toLowerCase();
+  if (!q) {
+    body.innerHTML = `<p style="text-align:center;color:#94a3b8;padding:32px 16px;font-size:12px;">企業名の一部を入力してください</p>`;
+    return;
+  }
+  const matchCompany = (name) => String(name || '').toLowerCase().includes(q);
+  // FS pipeline + lostDeals
+  const fsDeals = [...(typeof pipeline!=='undefined'?pipeline:[]), ...(typeof lostDeals!=='undefined'?lostDeals:[])]
+    .filter(d => matchCompany(d.company))
+    .slice(0, 12);
+  // IS保有リスト
+  const isAll = [...(typeof isListYes!=='undefined'?isListYes:[]), ...(typeof isListNo!=='undefined'?isListNo:[])];
+  const seenIs = new Set();
+  const isHits = isAll.filter(r => {
+    const key = r.companyId || r.company;
+    if (seenIs.has(key)) return false;
+    if (matchCompany(r.company)) { seenIs.add(key); return true; }
+    return false;
+  }).slice(0, 12);
+
+  if (fsDeals.length === 0 && isHits.length === 0) {
+    body.innerHTML = `<p style="text-align:center;color:#94a3b8;padding:32px 16px;font-size:12px;">該当なし</p>`;
+    return;
+  }
+
+  let html = '';
+  if (fsDeals.length) {
+    html += `<div style="padding:6px 14px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;background:#fafafa;">FS案件 ${fsDeals.length}件</div>`;
+    html += fsDeals.map((d, i) => {
+      const stageLabel = d.stage === '失注' ? `失注(${d.lostLabel || ''})` : (d.stage || '-');
+      const stageBg = d.stage === 'S' ? '#dcfce7' : d.stage === 'A' ? '#e0f2fe' : d.stage === 'B' ? '#dbeafe' : d.stage === 'C+' ? '#e0f2fe' : d.stage === 'C' ? '#e0f2fe' : d.stage === 'D' ? '#f1f5f9' : d.stage === 'E' ? '#f1f5f9' : '#fee2e2';
+      const stageColor = d.stage === 'S' ? '#166534' : d.stage === '失注' ? '#991b1b' : '#0369a1';
+      const url = d.hubspotId ? `https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}` : null;
+      const click = url ? `onclick="window.open('${url}','_blank')" style="cursor:pointer;"` : '';
+      return `<div ${click} class="search-row" style="padding:8px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;"
+        onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+        <span style="background:${stageBg};color:${stageColor};font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;min-width:32px;text-align:center;">${stageLabel}</span>
+        <div style="flex:1;min-width:0;">
+          <p style="font-size:13px;font-weight:500;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.company || '?'}</p>
+          <p style="font-size:11px;color:#64748b;margin:0;">${d.name || '-'} ・ ${d.product || '-'} ${d.amount ? ' ・ ¥' + d.amount.toLocaleString() : ''}</p>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  if (isHits.length) {
+    html += `<div style="padding:6px 14px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;background:#fafafa;">IS保有リスト ${isHits.length}件</div>`;
+    html += isHits.map(r => {
+      const url = r.companyId ? `https://app.hubspot.com/contacts/23871469/record/0-2/${r.companyId}` : null;
+      const click = url ? `onclick="window.open('${url}','_blank')" style="cursor:pointer;"` : '';
+      const isYes = String(r.recycle || '').toLowerCase() === 'true';
+      const tagBg = isYes ? '#e0f2fe' : '#d1fae5';
+      const tagColor = isYes ? '#0369a1' : '#065f46';
+      const tagText = isYes ? 'Yes' : 'No';
+      return `<div ${click} class="search-row" style="padding:8px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;"
+        onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+        <span style="background:${tagBg};color:${tagColor};font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;min-width:32px;text-align:center;">${tagText}</span>
+        <div style="flex:1;min-width:0;">
+          <p style="font-size:13px;font-weight:500;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.company || '?'}</p>
+          <p style="font-size:11px;color:#64748b;margin:0;">${r.perceptionFlow || '-'} ・ ${r.owner || '-'}</p>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  body.innerHTML = html;
+}
+
+// 入力ハンドラ
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('globalSearchInput');
+  if (input) {
+    input.addEventListener('input', (e) => _renderSearchResults(e.target.value));
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeGlobalSearch();
+    });
+  }
+  const modal = document.getElementById('globalSearchModal');
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeGlobalSearch();
+    });
+  }
+});
+
+// Ctrl+K / Cmd+K ショートカット
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    openGlobalSearch();
+  }
+  if (e.key === 'Escape') {
+    closeGlobalSearch();
+  }
+});
+
 let snapshots = [];
 let currentSnapMember = '';
 let eCalMember = '';
@@ -1695,9 +2085,9 @@ async function fetchFromSheets(silent = false) {
   if (!silent) setStatus('データ取得中...', '#0284c7');
 
   try {
-    // FS GAS にもタイムアウトを設定（30秒）
+    // FS GAS にもタイムアウトを設定（90秒に延長：類似企業マスタ + 週次スナップショット 読み込みが重いため）
     const fsCtrl = new AbortController();
-    const fsTimer = setTimeout(() => fsCtrl.abort(), 30000);
+    const fsTimer = setTimeout(() => fsCtrl.abort(), 90000);
     const res = await fetch(GAS_URL, { signal: fsCtrl.signal });
     clearTimeout(fsTimer);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1719,6 +2109,8 @@ async function fetchFromSheets(silent = false) {
         .sort((a, b) => new Date(a.id) - new Date(b.id));
       migrateSnapshotNames();
       persistSnapshots();
+      // ★ 当日分のスナップショットが未保存なら自動保存（毎日23時運用の代替）
+      setTimeout(() => autoSaveTodaySnapshot(), 1500);
     }
 
     // 受注率
@@ -1825,7 +2217,7 @@ async function fetchFromSheets(silent = false) {
   } catch (err) {
     if (!silent) {
       const msg = err.name === 'AbortError'
-        ? '❌ FS取得タイムアウト(30秒)。FS GASのデプロイ・readSimilarCompanies_を確認してください'
+        ? '❌ FS取得タイムアウト(90秒)。GAS処理が重い可能性。Apps Script実行ログを確認 / readWeeklySnapshots_やreadSimilarCompanies_を確認'
         : `❌ 取得エラー: ${err.message}`;
       setStatus(msg, '#dc2626');
     }
@@ -2255,7 +2647,7 @@ function statusOf(jRate, yRate, sRate, target) {
   return { label: '× 要対策', cls: 'bg-red-100 text-red-700' };
 }
 function barColor(r) { return r >= 1 ? 'bg-emerald-500' : r >= 0.6 ? 'bg-sky-500' : 'bg-slate-300'; }
-function landColor(r) { return r >= 1 ? 'text-emerald-600' : r >= 0.6 ? 'text-violet-600' : 'text-slate-400'; }
+function landColor(r) { return r >= 1 ? 'text-emerald-600' : r >= 0.6 ? 'text-sky-700' : 'text-slate-400'; }
 
 function getBizDaysRatio(monthStr) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -2317,6 +2709,8 @@ function render() {
     if (snapshotView) { saveBtn.disabled = true; saveBtn.classList.add('opacity-40', 'cursor-not-allowed'); }
     else { saveBtn.disabled = false; saveBtn.classList.remove('opacity-40', 'cursor-not-allowed'); }
   }
+  // 🔔 アラートバッジを再計算（render毎に最新化）
+  try { _renderAlertDropdown(); } catch(e) {}
 
   document.getElementById('periodLabel').textContent = '（' + getPeriodLabel() + '）';
   const months = getMonthsForPeriod();
@@ -2420,7 +2814,7 @@ function render() {
 
   drawChart('jisshiChart', jisshiChart, rows.map(r=>r.name), rows.map(r=>r.jRate*100), '#3b82f6', ref => jisshiChart = ref);
   drawChart('yomiChart', yomiChart, rows.map(r=>r.name), rows.map(r=>r.yRate*100), '#f59e0b', ref => yomiChart = ref);
-  drawChart('landingChart', landingChart, rows.map(r=>r.name), rows.map(r=>r.lRate*100), '#8b5cf6', ref => landingChart = ref, '達成予想');
+  drawChart('landingChart', landingChart, rows.map(r=>r.name), rows.map(r=>r.lRate*100), '#0284c7', ref => landingChart = ref, '達成予想');
 
   const memberSel = document.getElementById('dealFilterMember');
   if (memberSel) {
@@ -2690,11 +3084,11 @@ const IS_CAT_EXPORT_LABEL = { 1: '未来', 2: '直近3か月', 3: '3か月以上
 const PERCEPTION_FLOW_DISPLAY = [
   { key: '日程調整待ち', bar: '#0d9488', bg: '#f0fdfa', border: '#99f6e4', text: '#0f766e' },
   { key: '比較検討',     bar: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', text: '#0369a1' },
-  { key: '導入検討',     bar: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', text: '#1d4ed8' },
+  { key: '導入検討',     bar: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', text: '#075985' },
   { key: '興味関心',     bar: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0', text: '#15803d' },
   { key: '課題認知',     bar: '#84cc16', bg: '#f7fee7', border: '#d9f99d', text: '#4d7c0f' },
   { key: '課題不明',     bar: '#eab308', bg: '#fefce8', border: '#fde68a', text: '#a16207' },
-  { key: '商談化',       bar: '#9333ea', bg: '#faf5ff', border: '#e9d5ff', text: '#7e22ce' },
+  { key: '商談化',       bar: '#0284c7', bg: '#f0f9ff', border: '#bae6fd', text: '#075985' },
   { key: '対応終了',     bar: '#dc2626', bg: '#fef2f2', border: '#fecaca', text: '#b91c1c' },
   { key: '対応中',       bar: '#f97316', bg: '#fff7ed', border: '#fed7aa', text: '#c2410c' },
   { key: '未対応',       bar: '#64748b', bg: '#f8fafc', border: '#cbd5e1', text: '#475569' },
@@ -3814,7 +4208,7 @@ function renderIsKpis() {
 // ===== IS KPI 詳細（管理方法別カード + モーダル） =====
 const IS_KPI_MGMT_DEFS = [
   { key: 'excel',    label: 'Excel / スプレッドシート', color: '#0284c7', lightBg: '#e0f2fe' },
-  { key: 'ats',      label: '他社管理システム',         color: '#7c3aed', lightBg: '#f5f3ff' },
+  { key: 'ats',      label: '他社管理システム',         color: '#0369a1', lightBg: '#f0f9ff' },
   { key: 'kanrikun', label: '採用一括かんりくん',       color: '#059669', lightBg: '#d1fae5' },
   { key: 'media',    label: '媒体上管理',               color: '#d97706', lightBg: '#fef3c7' },
   { key: 'unknown',  label: '管理方法不明',             color: '#94a3b8', lightBg: '#f1f5f9' },
@@ -3845,7 +4239,7 @@ const _isKpiRawCache = {};    // { jisshi: [deals], ... } 実施数のリード�
 // ===== 実施数 リードソース別（B案: 時間軸大枠 → リードソース内訳） =====
 const JISSHI_TIME_DEFS = [
   { key: 'cur',  label: '当期リード',     color: '#15803d', lightBg: '#dcfce7' },
-  { key: 'nurt', label: 'ナーチャリング', color: '#3730a3', lightBg: '#e0e7ff' },
+  { key: 'nurt', label: 'ナーチャリング', color: '#0c4a6e', lightBg: '#e0e7ff' },
   { key: 'reup', label: '再アップ',       color: '#92400e', lightBg: '#fef3c7' },
 ];
 // 時間軸サブ判定（実施数用）
@@ -4591,7 +4985,7 @@ const LOST_CAT_DEFS_GLOBAL = [
   { key: 'ATS導入なし', color: '#f97316', textColor: '#c2410c', bg: '#ffedd5' },
   { key: '音信不通',    color: '#eab308', textColor: '#854d0e', bg: '#fef9c3' },
   { key: 'その他',      color: '#94a3b8', textColor: '#475569', bg: '#f1f5f9' },
-  { key: '未ヨミ化',    color: '#3b82f6', textColor: '#1d4ed8', bg: '#dbeafe' },
+  { key: '未ヨミ化',    color: '#3b82f6', textColor: '#075985', bg: '#dbeafe' },
 ];
 
 function _calcLeadTime(deal) {
@@ -4701,7 +5095,7 @@ function _buildLostListHtml(deals, gDef) {
                 : `<span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.company||'—'}</span>`}
             </td>
             <td style="${tdBase('right','#475569')}">${amt}</td>
-            <td style="${tdBase('right','#7c3aed')}">${lt}</td>
+            <td style="${tdBase('right','#0369a1')}">${lt}</td>
             <td style="${tdBase('left','#475569', ellipsis)}" title="${mgmtVal}">${mgmtVal}</td>
             <td style="${tdBase('center','#0369a1')}">${svc}</td>
             <td style="${tdBase('center','#334155')}">${reupHtml}</td>
@@ -4832,7 +5226,7 @@ const LOST_SVC_BTN_STYLES = {
   all:  { active: '#0284c7', activeBg: '#e0f2fe' },
   shin: { active: '#0ea5e9', activeBg: '#e0f2fe' },
   chu:  { active: '#f97316', activeBg: '#fff7ed' },
-  both: { active: '#8b5cf6', activeBg: '#f5f3ff' },
+  both: { active: '#0284c7', activeBg: '#f0f9ff' },
   unkn: { active: '#94a3b8', activeBg: '#f1f5f9' },
 };
 
@@ -4868,7 +5262,7 @@ function _matchLostSvc(deal) {
 // ===== リードソース別 =====
 const _MAJOR_COLORS = {
   'SDR':       { dark:'#0284c7', mid:'#38bdf8', light:'#e0f2fe' },
-  'BDR':       { dark:'#7c3aed', mid:'#a78bfa', light:'#ede9fe' },
+  'BDR':       { dark:'#0369a1', mid:'#38bdf8', light:'#e0f2fe' },
   'リファラル': { dark:'#059669', mid:'#34d399', light:'#d1fae5' },
   '再アップ':   { dark:'#d97706', mid:'#fbbf24', light:'#fef3c7' },
   'その他':    { dark:'#64748b', mid:'#94a3b8', light:'#f1f5f9' },
@@ -5055,7 +5449,7 @@ function renderLostAnalysis() {
   // 管理方法グループ定義
   const MGMT_DEFS = [
     { key: 'excel',    label: 'Excel / スプレッドシート', color: '#0284c7', lightBg: '#e0f2fe' },
-    { key: 'ats',      label: '他社管理システム',         color: '#7c3aed', lightBg: '#f5f3ff' },
+    { key: 'ats',      label: '他社管理システム',         color: '#0369a1', lightBg: '#f0f9ff' },
     { key: 'kanrikun', label: '採用一括かんりくん',       color: '#059669', lightBg: '#d1fae5' },
     { key: 'media',    label: '媒体上管理',               color: '#d97706', lightBg: '#fef3c7' },
     { key: 'unknown',  label: '管理方法不明',             color: '#94a3b8', lightBg: '#f1f5f9' },
@@ -5067,7 +5461,7 @@ function renderLostAnalysis() {
     { key: 'ATS導入なし', color: '#f97316', textColor: '#c2410c', bg: '#ffedd5' },
     { key: '音信不通',    color: '#eab308', textColor: '#854d0e', bg: '#fef9c3' },
     { key: 'その他',      color: '#94a3b8', textColor: '#475569', bg: '#f1f5f9' },
-    { key: '未ヨミ化',    color: '#3b82f6', textColor: '#1d4ed8', bg: '#dbeafe' },
+    { key: '未ヨミ化',    color: '#3b82f6', textColor: '#075985', bg: '#dbeafe' },
   ];
 
   // 管理方法でグループ化
@@ -5230,7 +5624,7 @@ function renderEMinorRates() {
         <div class="flex items-center gap-1 justify-center">
           <input type="number" min="0" max="100" step="0.1" value="${cur}"
             id="wr-emin-${mi}"
-            class="w-16 border rounded px-1 py-0.5 text-right text-xs ${hasCustom ? 'border-violet-400 bg-violet-50' : ''}" />
+            class="w-16 border rounded px-1 py-0.5 text-right text-xs ${hasCustom ? 'border-sky-400 bg-sky-600' : ''}" />
           <span class="text-slate-400">%</span>
         </div></td>
     </tr>`;
@@ -5258,7 +5652,7 @@ function renderWinRatesTable() {
         <div class="flex items-center gap-1 justify-center">
           <input type="number" min="0" max="100" step="0.1" value="${cur}"
             id="wr-${stage.replace('+','p')}-${prod}"
-            class="w-16 border rounded px-1 py-0.5 text-right text-xs ${hasCustom ? 'border-violet-400 bg-violet-50' : ''}" />
+            class="w-16 border rounded px-1 py-0.5 text-right text-xs ${hasCustom ? 'border-sky-400 bg-sky-600' : ''}" />
           <span class="text-slate-400">%</span>
         </div></td>`;
     });
@@ -5296,14 +5690,14 @@ function resetWinRates() {
 
 // ===== Eステージ カレンダー =====
 const MEMBER_COLORS = [
-  '#0284c7','#7c3aed','#059669','#d97706','#dc2626',
-  '#0891b2','#9333ea','#65a30d','#ea580c','#db2777','#64748b'
+  '#0284c7','#0369a1','#059669','#d97706','#dc2626',
+  '#0891b2','#0284c7','#65a30d','#ea580c','#db2777','#64748b'
 ];
 function memberColor(name) {
   const idx = MEMBERS.indexOf(name);
   return MEMBER_COLORS[idx >= 0 ? idx % MEMBER_COLORS.length : MEMBER_COLORS.length - 1];
 }
-const PRODUCT_BADGE = { '新卒': { bg: '#dbeafe', text: '#1d4ed8' }, '中途': { bg: '#dcfce7', text: '#15803d' }, '新卒・中途': { bg: '#ede9fe', text: '#6d28d9' } };
+const PRODUCT_BADGE = { '新卒': { bg: '#dbeafe', text: '#075985' }, '中途': { bg: '#dcfce7', text: '#15803d' }, '新卒・中途': { bg: '#e0f2fe', text: '#0c4a6e' } };
 const WEEK_LABELS = ['日','月','火','水','木','金','土'];
 
 // eCalViewMonth: "2026/05" 形式
@@ -5314,12 +5708,13 @@ let eCalViewMonth = (()=>{
 const E_CAL_MAX = 3; // 1日の最大表示件数
 let eCalExpandedDays = new Set(); // 展開中の日付 "YYYY/MM/DD"
 let eCalTab = 0; // 0=全て 1=1回目 2=2回目 3=3回目
+let eCalView = 'cal'; // 'cal' | 'today' | 'weekly'
 
 // ===== グラフ詳細モーダル =====
 const CHART_DETAIL_COLORS = {
   jisshi:  { bg: '#e0f2fe', text: '#0284c7', label: 'FSメンバー別 実施積載（目標×5）' },
   yomi:    { bg: '#fef3c7', text: '#d97706', label: 'FSメンバー別 ヨミ積載（目標×3）' },
-  landing: { bg: '#f5f3ff', text: '#7c3aed', label: 'FSメンバー別 売上着地予想' },
+  landing: { bg: '#f0f9ff', text: '#0369a1', label: 'FSメンバー別 売上着地予想' },
 };
 
 function openChartDetailModal(type) {
@@ -5392,7 +5787,7 @@ function toggleChartMemberDeals(memberName, type) {
       const p = dateStr.match(/\d{4}[\/\-](\d{2})[\/\-](\d{2})/);
       return p ? `<span style="color:${color};">${parseInt(p[1])}/${parseInt(p[2])}</span>` : null;
     };
-    let nxtDate = fmtAppt(d.appt3Date, '#8b5cf6') || fmtAppt(d.appt2Date, '#f97316') || '—';
+    let nxtDate = fmtAppt(d.appt3Date, '#0284c7') || fmtAppt(d.appt2Date, '#f97316') || '—';
     const companyCell = hubAttr
       ? `<a ${hubAttr} style="color:#0284c7;text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
            onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${d.company||'—'}</a>`
@@ -5405,7 +5800,7 @@ function toggleChartMemberDeals(memberName, type) {
       <td style="padding:3px 6px;font-size:11px;text-align:center;color:#475569;white-space:nowrap;">${closeDisp}</td>
       <td style="padding:3px 6px;font-size:11px;text-align:center;color:#0369a1;white-space:nowrap;">${svc}</td>
       <td style="padding:3px 6px;font-size:11px;text-align:right;color:#334155;white-space:nowrap;">${amt}</td>
-      <td style="padding:3px 6px;font-size:11px;text-align:right;color:#7c3aed;white-space:nowrap;">${ltDays}</td>
+      <td style="padding:3px 6px;font-size:11px;text-align:right;color:#0369a1;white-space:nowrap;">${ltDays}</td>
       <td style="padding:3px 6px;font-size:11px;text-align:center;white-space:nowrap;">${nxtDate}</td>
     </tr>`;
   }).join('');
@@ -5431,13 +5826,13 @@ function toggleChartMemberDeals(memberName, type) {
               <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#475569;text-align:center;border-bottom:1px solid #cbd5e1;">クローズ月</th>
               <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#475569;text-align:center;border-bottom:1px solid #cbd5e1;">検討サービス</th>
               <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#475569;text-align:right;border-bottom:1px solid #cbd5e1;">金額</th>
-              <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#7c3aed;text-align:right;border-bottom:1px solid #cbd5e1;">リードタイム</th>
+              <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#0369a1;text-align:right;border-bottom:1px solid #cbd5e1;">リードタイム</th>
               <th style="padding:3px 6px;font-size:10px;font-weight:600;color:#475569;text-align:center;border-bottom:1px solid #cbd5e1;">次回商談日</th>
             </tr>
           </thead>
           <tbody>${dealRows}</tbody>
         </table>
-        <p style="font-size:10px;color:#94a3b8;margin-top:4px;">次回商談日: <span style="color:#f97316;">橙=2回目</span> / <span style="color:#8b5cf6;">紫=3回目</span>　リードタイム: アポ作成日〜今日</p>`;
+        <p style="font-size:10px;color:#94a3b8;margin-top:4px;">次回商談日: <span style="color:#f97316;">橙=2回目</span> / <span style="color:#0284c7;">紫=3回目</span>　リードタイム: アポ作成日〜今日</p>`;
   }
 
   subRow.style.display = '';
@@ -5725,8 +6120,8 @@ function _renderLandingHierarchy(col) {
   };
 
   // ヘッダー（紫系）
-  const purple = '#7c3aed';
-  const purpleBg = '#f5f3ff';
+  const purple = '#0369a1';
+  const purpleBg = '#f0f9ff';
   const thS = `padding:6px 8px;font-size:11px;font-weight:700;color:${purple};background:${purpleBg};text-align:right;white-space:nowrap;`;
   const thL = thS + 'text-align:left;';
   const head = `
@@ -5758,7 +6153,7 @@ function _renderLandingHierarchy(col) {
     const uKey = `unit:${u.unit}`;
     const uOpen = _landingExpanded.has(uKey);
     // ユニット行
-    body += `<tr style="background:#faf5ff;border-bottom:1px solid #e9d5ff;cursor:pointer;" onclick="toggleLandingNode('${uKey.replace(/'/g,"\\'")}')">
+    body += `<tr style="background:#f0f9ff;border-bottom:1px solid #bae6fd;cursor:pointer;" onclick="toggleLandingNode('${uKey.replace(/'/g,"\\'")}')">
       <td style="padding:6px 4px;text-align:center;color:${purple};font-weight:700;">${arrow(uOpen)}</td>
       <td style="padding:6px 8px;font-weight:700;color:${purple};font-size:12px;">${u.unit} <span style="font-size:10px;color:#94a3b8;font-weight:400;">(${u.members.length}名)</span></td>
       ${td(fmt(u.target), { fw: '700', color: purple })}
@@ -5998,14 +6393,14 @@ function _renderLandingHierarchy(col) {
   else                                  periodOpts = [{ key: 'FY2025', label: 'FY2025' }, { key: 'FY2026', label: 'FY2026' }];
   const periodBtnsHtml = periodOpts.map(o => {
     const active = (currentMode === 'year') ? (o.key === currentFY) : (o.key === currentPeriod);
-    const bg = active ? '#e9d5ff' : '#ffffff';
+    const bg = active ? '#bae6fd' : '#ffffff';
     const fg = active ? purple    : '#64748b';
     const border = active ? purple : '#e2e8f0';
     return `<button onclick="setPeriod('${o.key}')"
               style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:9999px;border:1px solid ${border};background:${bg};color:${fg};cursor:pointer;">${o.label}</button>`;
   }).join('');
   const headerBar = `
-    <div style="position:sticky;top:0;background:#ffffff;z-index:10;padding:8px 0 10px;border-bottom:1px solid #e9d5ff;margin-bottom:8px;">
+    <div style="position:sticky;top:0;background:#ffffff;z-index:10;padding:8px 0 10px;border-bottom:1px solid #bae6fd;margin-bottom:8px;">
       <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px;">
         <span style="font-size:10px;font-weight:700;color:#64748b;margin-right:4px;">表示単位:</span>
         ${modeBtnsHtml}
@@ -6044,7 +6439,7 @@ function _renderLandingHierarchy(col) {
       ${_trendExtraSel}
     </div>` : '';
   const trendBlock = `
-    <div style="margin-top:18px;padding:12px;border:1px solid #e9d5ff;border-radius:8px;background:#fafafa;">
+    <div style="margin-top:18px;padding:12px;border:1px solid #bae6fd;border-radius:8px;background:#fafafa;">
       <div onclick="toggleLandingTrend()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
         <h4 style="font-size:12px;font-weight:700;color:${purple};margin:0;"><span style="display:inline-block;width:14px;color:#64748b;margin-right:4px;">${_trendArrow}</span>📈 週次トレンド（毎週金曜23時時点の合計）</h4>
         <span style="font-size:10px;color:#94a3b8;">${weeklySnapshots.length}週分の記録</span>
@@ -6134,7 +6529,7 @@ function _renderLandingTrendChart() {
     data: {
       labels,
       datasets: [
-        { label: '目標', data: targetArr, borderColor: '#7c3aed', borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0 },
+        { label: '目標', data: targetArr, borderColor: '#0369a1', borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0 },
         { label: '受注済み', data: wonArr, borderColor: '#059669', backgroundColor: '#05966920', borderWidth: 2, pointRadius: 3, tension: 0.2, fill: false },
         { label: 'Min',     data: minArr, borderColor: '#dc2626', backgroundColor: '#dc262620', borderWidth: 2, pointRadius: 3, tension: 0.2, fill: false },
         { label: 'Mid',     data: midArr, borderColor: '#d97706', backgroundColor: '#d9770620', borderWidth: 2, pointRadius: 3, tension: 0.2, fill: false },
@@ -6309,7 +6704,7 @@ function setCalTab(t) {
   eCalTab = t;
   eCalExpandedDays.clear();
   // ボタンスタイル更新
-  const TAB_COLORS = { 0: '#0284c7', 1: '#0ea5e9', 2: '#f97316', 3: '#8b5cf6' };
+  const TAB_COLORS = { 0: '#0284c7', 1: '#0ea5e9', 2: '#f97316', 3: '#0284c7' };
   [0,1,2,3].forEach(i => {
     const btn = document.getElementById('calTab-' + i);
     if (!btn) return;
@@ -6354,7 +6749,7 @@ function eCalGoToday() {
 const CAL_COLORS = {
   1: { main: '#0ea5e9', bg: '#e0f2fe', label: '1回目' },
   2: { main: '#f97316', bg: '#fff7ed', label: '2回目' },
-  3: { main: '#8b5cf6', bg: '#f5f3ff', label: '3回目' },
+  3: { main: '#0284c7', bg: '#f0f9ff', label: '3回目' },
 };
 
 function renderECalendar() {
@@ -6416,7 +6811,7 @@ function renderECalendar() {
   const totalCount = count1 + count2 + count3;
   const displayCount = eCalTab === 0 ? totalCount : eCalTab === 1 ? count1 : eCalTab === 2 ? count2 : count3;
   const badge = document.getElementById('eCalTotalBadge');
-  const TAB_BADGE_COLORS = { 0: {bg:'#dbeafe',col:'#0284c7'}, 1: {bg:'#e0f2fe',col:'#0ea5e9'}, 2: {bg:'#fff7ed',col:'#f97316'}, 3: {bg:'#f5f3ff',col:'#8b5cf6'} };
+  const TAB_BADGE_COLORS = { 0: {bg:'#dbeafe',col:'#0284c7'}, 1: {bg:'#e0f2fe',col:'#0ea5e9'}, 2: {bg:'#fff7ed',col:'#f97316'}, 3: {bg:'#f0f9ff',col:'#0284c7'} };
   const bc = TAB_BADGE_COLORS[eCalTab];
   if (badge) {
     badge.textContent = eCalTab === 0
@@ -6442,7 +6837,7 @@ function renderECalendar() {
     if (s.indexOf('失注') === 0 || s === 'チャーン') {
       return `<span class="rounded px-1 text-[9px] font-bold" style="background:#fee2e2;color:#991b1b" title="${s}">${s.length > 6 ? s.slice(0, 6) + '…' : s}</span>`;
     }
-    const sc = { 'E':{bg:'#e0f2fe',text:'#0369a1'}, 'D':{bg:'#dbeafe',text:'#1d4ed8'}, 'C':{bg:'#d1fae5',text:'#065f46'}, 'C+':{bg:'#a7f3d0',text:'#047857'}, 'B':{bg:'#fef3c7',text:'#92400e'}, 'A':{bg:'#fed7aa',text:'#c2410c'}, 'S':{bg:'#fde68a',text:'#854d0e'} };
+    const sc = { 'E':{bg:'#e0f2fe',text:'#0369a1'}, 'D':{bg:'#dbeafe',text:'#075985'}, 'C':{bg:'#d1fae5',text:'#065f46'}, 'C+':{bg:'#a7f3d0',text:'#047857'}, 'B':{bg:'#fef3c7',text:'#92400e'}, 'A':{bg:'#fed7aa',text:'#c2410c'}, 'S':{bg:'#fde68a',text:'#854d0e'} };
     const col = sc[s] || { bg:'#f1f5f9', text:'#475569' };
     return `<span class="rounded px-1 text-[9px] font-bold" style="background:${col.bg};color:${col.text}">${s}</span>`;
   }
@@ -6574,6 +6969,138 @@ function renderECalendar() {
       sec.classList.add('hidden');
     }
   }
+  // ★ 他ビューも同期して再描画（タブ切替時に最新データを保証）
+  try { renderECalToday(); } catch(e) {}
+  try { renderECalWeekly(); } catch(e) {}
+}
+
+// ============================================================
+// 商談カレンダー: ビュー切替（カレンダー / 本日 / 週次グラフ）
+// ============================================================
+function setECalView(view) {
+  eCalView = view;
+  const ids = ['cal', 'today', 'weekly'];
+  ids.forEach(id => {
+    const btn = document.getElementById('eCalView-' + id);
+    const cnt = document.getElementById('eCalView-content-' + id);
+    if (btn) {
+      if (id === view) {
+        btn.style.background = '#0284c7';
+        btn.style.color = 'white';
+      } else {
+        btn.style.background = 'white';
+        btn.style.color = '#0284c7';
+      }
+    }
+    if (cnt) cnt.classList.toggle('hidden', id !== view);
+  });
+  if (view === 'cal') renderECalendar();
+  else if (view === 'today') renderECalToday();
+  else if (view === 'weekly') renderECalWeekly();
+}
+
+function _ymdTodayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function _thisWeekRange() {
+  // 月曜〜日曜
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun..6=Sat
+  const diffToMon = (day === 0 ? -6 : 1 - day);
+  const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon);
+  const sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + 6);
+  const fmt = (d) => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+  return { mon, sun, monStr: fmt(mon), sunStr: fmt(sun) };
+}
+
+function renderECalToday() {
+  const body  = document.getElementById('eCalTodayBody');
+  const label = document.getElementById('eCalTodayLabel');
+  if (!body) return;
+  const today = _ymdTodayStr();
+  const all = [...pipeline, ...lostDeals];
+  const map = new Map(); // name -> { c1, c2, c3 }
+  const bump = (name, kind) => {
+    if (!name) return;
+    if (!map.has(name)) map.set(name, { c1:0, c2:0, c3:0 });
+    const o = map.get(name);
+    if (kind === 1) o.c1++; else if (kind === 2) o.c2++; else if (kind === 3) o.c3++;
+  };
+  // ★ 0件メンバーも表示するため、FYメンバー全員を初期化
+  try { (getFyMembers() || []).forEach(n => { if (!map.has(n)) map.set(n, { c1:0, c2:0, c3:0 }); }); } catch(e) {}
+  all.forEach(d => {
+    if (d.appointDate === today) bump(d.name, 1);
+    if (d.appt2Date   === today) bump(d.name, 2);
+    if (d.appt3Date   === today) bump(d.name, 3);
+  });
+  const rows = Array.from(map.entries())
+    .map(([n,v]) => ({ name:n, ...v, total: v.c1+v.c2+v.c3 }))
+    .sort((a,b) => b.total - a.total);
+  const total = rows.reduce((s,r)=>s+r.total, 0);
+  if (label) label.textContent = `本日 ${today} / 合計 ${total}件`;
+  if (rows.length === 0) {
+    body.innerHTML = '<div class="md:col-span-2 text-center py-8 text-slate-400 text-sm">本日の商談はありません</div>';
+    return;
+  }
+  body.innerHTML = rows.map(r => {
+    const zero = r.total === 0;
+    return `
+    <div class="flex items-center justify-between p-3 rounded-lg border" style="border-color:#e2e8f0;background:${zero ? '#fafafa' : '#f8fafc'};${zero ? 'opacity:0.55;' : ''}">
+      <div class="flex flex-col">
+        <div class="font-semibold ${zero ? 'text-slate-400' : 'text-slate-700'} text-sm">${r.name}</div>
+        <div class="text-[11px] flex items-center gap-2 mt-1">
+          <span style="color:${zero ? '#94a3b8' : '#0ea5e9'}">1回目 ${r.c1}</span>
+          <span style="color:${zero ? '#94a3b8' : '#f97316'}">2回目 ${r.c2}</span>
+          <span style="color:${zero ? '#94a3b8' : '#0284c7'}">3回目 ${r.c3}</span>
+        </div>
+      </div>
+      <div class="text-xl font-bold" style="color:${zero ? '#cbd5e1' : '#0284c7'}">${r.total}<span class="text-xs ml-1">件</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderECalWeekly() {
+  const body  = document.getElementById('eCalWeeklyBody');
+  const label = document.getElementById('eCalWeeklyLabel');
+  if (!body) return;
+  const { mon, sun, monStr, sunStr } = _thisWeekRange();
+  const all = [...pipeline, ...lostDeals];
+  const inWeek = (s) => !!s && s >= monStr && s <= sunStr;
+  const map = new Map();
+  const bump = (name) => { if (name) map.set(name, (map.get(name)||0) + 1); };
+  all.forEach(d => {
+    if (inWeek(d.appointDate)) bump(d.name);
+    if (inWeek(d.appt2Date))   bump(d.name);
+    if (inWeek(d.appt3Date))   bump(d.name);
+  });
+  // ★ 除外メンバー
+  const EXCLUDE_WEEKLY = new Set(['萌 小島', '小島 萌']);
+  const rows = Array.from(map.entries())
+    .map(([n,c]) => ({ name:n, count:c }))
+    .filter(r => r.count > 0 && !EXCLUDE_WEEKLY.has(String(r.name||'').trim()))
+    .sort((a,b) => b.count - a.count);
+  const total = rows.reduce((s,r)=>s+r.count, 0);
+  const fmtMd = (d) => `${d.getMonth()+1}/${d.getDate()}`;
+  if (label) label.textContent = `今週 ${fmtMd(mon)}〜${fmtMd(sun)} / 合計 ${total}件`;
+  if (rows.length === 0) {
+    body.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">今週の商談はありません</div>';
+    return;
+  }
+  const max = Math.max(...rows.map(r=>r.count));
+  body.innerHTML = `<div class="space-y-2">${rows.map(r => {
+    const pct = max > 0 ? (r.count/max*100) : 0;
+    return `
+    <div class="flex items-center gap-3">
+      <div class="w-24 text-xs font-semibold text-slate-700 text-right truncate" title="${r.name}">${r.name}</div>
+      <div class="flex-1 relative h-7 rounded" style="background:#f1f5f9">
+        <div class="h-full rounded flex items-center justify-end pr-2" style="min-width:24px;width:${pct}%;background:#0284c7">
+          <span class="text-xs font-bold text-white">${r.count}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
 }
 
 // ============================================================
@@ -6852,7 +7379,7 @@ function _closeDateOf(d) {
 }
 
 const IS_KIND_META = {
-  apo:    { title: '取得実績', icon: '📞', color: '#8b5cf6', groupBy: d => d.product || '不明', groupLabel: '検討/対象サービス' },
+  apo:    { title: '取得実績', icon: '📞', color: '#0284c7', groupBy: d => d.product || '不明', groupLabel: '検討/対象サービス' },
   jisshi: { title: '実施実績', icon: '🤝', color: '#f59e0b', groupBy: d => d.stage,             groupLabel: 'ステージ' },
   yomi:   { title: 'ヨミ化実績', icon: '📋', color: '#0284c7', groupBy: d => d.stage === '失注' ? `失注（${d.lostLabel||''}）` : d.stage, groupLabel: 'ステージ' },
   won:    { title: '受注件数', icon: '🏆', color: '#10b981', groupBy: () => 'S', groupLabel: '' },
@@ -7072,7 +7599,7 @@ function _pastWonClassify(d) {
   if (d.reupload) {
     return { sub: 'reup', label: '再アップ', fy: fyKey, bg: '#fef3c7', color: '#92400e' };
   }
-  return { sub: 'nurt', label: 'ナーチャリング', fy: fyKey, bg: '#e0e7ff', color: '#3730a3' };
+  return { sub: 'nurt', label: 'ナーチャリング', fy: fyKey, bg: '#e0e7ff', color: '#0c4a6e' };
 }
 
 function pastWonSetSort(key) {
@@ -7216,7 +7743,7 @@ function _renderPastWonBody() {
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;padding-left:6px;border-left:3px solid #cbd5e1;">
       ${subChip('cur',  '#dcfce7', '#bbf7d0', '#15803d', '当期リード')}
       ${subChip('reup', '#fef3c7', '#fcd34d', '#92400e', '再アップ')}
-      ${subChip('nurt', '#e0e7ff', '#c7d2fe', '#3730a3', 'ナーチャリング')}
+      ${subChip('nurt', '#e0e7ff', '#c7d2fe', '#0c4a6e', 'ナーチャリング')}
       ${_pastWonFilter ? `<span onclick="pastWonSetFilter('${_pastWonFilter}')" style="display:inline-flex;align-items:center;padding:3px 8px;border-radius:9999px;background:#ffffff;border:1px dashed #94a3b8;color:#475569;cursor:pointer;font-size:11px;">✕ サブ解除</span>` : ''}
     </div>` : '';
 
@@ -7479,7 +8006,7 @@ let isCalExpandedDays = new Set();
 function setIsCalTab(t) {
   isCalTab = t;
   isCalExpandedDays.clear();
-  const TAB_COLORS = { 0: '#0284c7', 1: '#0ea5e9', 2: '#f97316', 3: '#8b5cf6' };
+  const TAB_COLORS = { 0: '#0284c7', 1: '#0ea5e9', 2: '#f97316', 3: '#0284c7' };
   [0,1,2,3].forEach(i => {
     const btn = document.getElementById('isCalTab-' + i);
     if (!btn) return;
@@ -7563,7 +8090,7 @@ function renderIsCalendar() {
   const totalCount = count1 + count2 + count3;
   const displayCount = isCalTab === 0 ? totalCount : isCalTab === 1 ? count1 : isCalTab === 2 ? count2 : count3;
   const badge = document.getElementById('isCalTotalBadge');
-  const TAB_BADGE_COLORS = { 0: {bg:'#dbeafe',col:'#0284c7'}, 1: {bg:'#e0f2fe',col:'#0ea5e9'}, 2: {bg:'#fff7ed',col:'#f97316'}, 3: {bg:'#f5f3ff',col:'#8b5cf6'} };
+  const TAB_BADGE_COLORS = { 0: {bg:'#dbeafe',col:'#0284c7'}, 1: {bg:'#e0f2fe',col:'#0ea5e9'}, 2: {bg:'#fff7ed',col:'#f97316'}, 3: {bg:'#f0f9ff',col:'#0284c7'} };
   const bc = TAB_BADGE_COLORS[isCalTab];
   if (badge) {
     badge.textContent = isCalTab === 0
@@ -7588,7 +8115,7 @@ function renderIsCalendar() {
     if (s.indexOf('失注') === 0 || s === 'チャーン') {
       return `<span class="rounded px-1 text-[9px] font-bold" style="background:#fee2e2;color:#991b1b" title="${s}">${s.length > 6 ? s.slice(0, 6) + '…' : s}</span>`;
     }
-    const sc = { 'E':{bg:'#e0f2fe',text:'#0369a1'}, 'D':{bg:'#dbeafe',text:'#1d4ed8'}, 'C':{bg:'#d1fae5',text:'#065f46'}, 'C+':{bg:'#a7f3d0',text:'#047857'}, 'B':{bg:'#fef3c7',text:'#92400e'}, 'A':{bg:'#fed7aa',text:'#c2410c'}, 'S':{bg:'#fde68a',text:'#854d0e'} };
+    const sc = { 'E':{bg:'#e0f2fe',text:'#0369a1'}, 'D':{bg:'#dbeafe',text:'#075985'}, 'C':{bg:'#d1fae5',text:'#065f46'}, 'C+':{bg:'#a7f3d0',text:'#047857'}, 'B':{bg:'#fef3c7',text:'#92400e'}, 'A':{bg:'#fed7aa',text:'#c2410c'}, 'S':{bg:'#fde68a',text:'#854d0e'} };
     const col = sc[s] || { bg:'#f1f5f9', text:'#475569' };
     return `<span class="rounded px-1 text-[9px] font-bold" style="background:${col.bg};color:${col.text}">${s}</span>`;
   }
@@ -7783,6 +8310,40 @@ async function saveSnapshot() {
   // GAS に保存（バックグラウンド）
   await gasPost('saveSnapshot', { snapshot: snap });
 }
+
+// ============================================================
+// 当日自動スナップショット（ダッシュボードを開いた時に1日1回保存）
+// ============================================================
+function _todayDateKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function _hasTodaysSnapshot() {
+  const today = _todayDateKey();
+  return (snapshots || []).some(s => {
+    // id (ISO) または dateStr のいずれかで今日と一致するか判定
+    if (!s) return false;
+    if (s.id) {
+      const d = new Date(s.id);
+      if (!isNaN(d)) {
+        const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        if (k === today) return true;
+      }
+    }
+    if (s.dateStr && s.dateStr.startsWith(today.replace(/-/g, '/'))) return true;
+    return false;
+  });
+}
+async function autoSaveTodaySnapshot() {
+  try {
+    if (pipeline.length === 0) return; // データ未取得
+    if (_hasTodaysSnapshot()) return;   // 今日分は既にあるのでスキップ
+    console.log('[autoSnap] 当日のスナップショットを自動保存');
+    await saveSnapshot();
+  } catch(e) {
+    console.warn('[autoSnap] 失敗:', e);
+  }
+}
 function deleteSnapshot(id) {
   requirePassword(async () => {
     snapshots = snapshots.filter(s => s.id !== id);
@@ -7895,15 +8456,15 @@ function renderSnapshots() {
     const isViewing = snapshotView && snapshotView.id === p.id;
     const isSelected = selectedSnapIds.has(p.id);
     return `
-    <tr class="border-b hover:bg-slate-50 ${isViewing ? 'bg-amber-50' : ''} ${isSelected ? 'bg-violet-50' : ''}">
+    <tr class="border-b hover:bg-slate-50 ${isViewing ? 'bg-amber-50' : ''} ${isSelected ? 'bg-sky-600' : ''}">
       <td class="px-2 py-1.5 text-center">
         <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSnapSelect('${p.id}', event)"
-          class="w-3.5 h-3.5 cursor-pointer accent-violet-600" title="比較対象に追加（Shift+クリックで範囲選択）">
+          class="w-3.5 h-3.5 cursor-pointer accent-sky-600" title="比較対象に追加（Shift+クリックで範囲選択）">
       </td>
       <td class="px-2 py-1.5">
         <button onclick="viewSnapshot('${p.id}')" class="text-blue-600 hover:underline font-medium text-xs text-left" title="クリックでこの時点のデータを表示（保存日時: ${p.dateStr}）">${String(p.dateStr || '').split('T')[0]}</button>
         ${isViewing ? '<span class="ml-1 text-amber-600 text-xs font-bold">👁 閲覧中</span>' : ''}
-        ${isSelected ? '<span class="ml-1 text-violet-600 text-xs font-bold">✓ 比較対象</span>' : ''}
+        ${isSelected ? '<span class="ml-1 text-sky-700 text-xs font-bold">✓ 比較対象</span>' : ''}
       </td>
       <td class="px-2 py-1.5 text-right">${p.stats.count}件</td>
       <td class="px-2 py-1.5 text-right">${fmt(p.stats.target)}</td>
@@ -8020,9 +8581,8 @@ let _cmpData = null;
 function showCompareModal(snaps) {
   const modal = document.getElementById('compareModal');
 
-  // サブタイトル: "4/1 → 4/25 → 4/30"
-  document.getElementById('compareModalSubtitle').textContent =
-    snaps.map(s => s.dateStr).join(' → ');
+  // サブタイトル: 非表示（ISOタイムスタンプの羅列は冗長なため）
+  document.getElementById('compareModalSubtitle').textContent = '';
 
   const STAGE_CLS = { E:'stage-e',D:'stage-d',C:'stage-c','C+':'stage-cp',B:'stage-b',A:'stage-a',S:'stage-s' };
 
@@ -8102,7 +8662,7 @@ function showCompareModal(snaps) {
     { key:'down',        title:'⬇️ 下降',       color:'#dc2626', bg:'#fef2f2' },
     { key:'fluctuate',   title:'🔄 変動',       color:'#d97706', bg:'#fffbeb' },
     { key:'newAdded',    title:'✨ 新規流入',   color:'#0284c7', bg:'#eff6ff' },
-    { key:'gone',        title:'✕ 消滅・失注', color:'#7c3aed', bg:'#faf5ff' },
+    { key:'gone',        title:'✕ 消滅・失注', color:'#0369a1', bg:'#f0f9ff' },
     { key:'dateChanged', title:'📅 日程変更',  color:'#0891b2', bg:'#ecfeff' },
     { key:'stay',        title:'➡️ ステイ',    color:'#6b7280', bg:'#f8fafc' },
   ];
@@ -8266,11 +8826,8 @@ function showCompareModal(snaps) {
     }).join('');
   }
 
-  // 軌跡ヘッダー（日付ラベル行）
-  const snapHeaderHtml = `<div class="flex items-center gap-1 mb-3 px-2 text-[10px] text-slate-400">
-    <span class="text-slate-400 font-semibold mr-1">軌跡:</span>
-    ${snaps.map((s,i) => `<span>${s.dateStr}</span>${i<snaps.length-1?'<span class="text-slate-300">→</span>':''}`).join('')}
-  </div>`;
+  // 軌跡ヘッダー（日付ラベル行）: 非表示（情報密度の都合）
+  const snapHeaderHtml = '';
 
   let overallHtml = snapHeaderHtml +
     `<div class="mb-4 p-3 rounded-xl border" style="border-color:#e2e8f0;background:#fafafa">
