@@ -383,17 +383,17 @@
       </div>
     </div>
     <div id="snapshotSection">
+      <!-- 日付範囲選択（常時表示・件数に関わらず表示） -->
+      <div class="flex items-center gap-2 mb-3 p-2 bg-slate-50 rounded-lg flex-wrap">
+        <span class="text-xs text-slate-500 font-semibold whitespace-nowrap">期間で選択:</span>
+        <input type="date" id="rangeFrom" class="px-2 py-1 text-xs border rounded bg-white">
+        <span class="text-xs text-slate-400">〜</span>
+        <input type="date" id="rangeTo" class="px-2 py-1 text-xs border rounded bg-white">
+        <button onclick="applyDateRange()" class="px-3 py-1 text-xs text-white rounded-lg font-semibold hover:opacity-90 whitespace-nowrap" style="background:#475569">適用する</button>
+        <button onclick="clearDateRange()" class="px-3 py-1 text-xs bg-white border text-slate-500 rounded-lg hover:bg-slate-100 whitespace-nowrap">クリア</button>
+      </div>
       <div id="snapshotEmpty" class="text-xs text-slate-400 text-center py-4">スナップショットがまだありません（ダッシュボードを開くと当日分が自動保存されます）。</div>
       <div id="snapshotContent" class="hidden">
-        <!-- 日付範囲選択 -->
-        <div class="flex items-center gap-2 mb-3 p-2 bg-slate-50 rounded-lg">
-          <span class="text-xs text-slate-500 font-semibold whitespace-nowrap">期間で選択:</span>
-          <input type="date" id="rangeFrom" class="px-2 py-1 text-xs border rounded bg-white">
-          <span class="text-xs text-slate-400">〜</span>
-          <input type="date" id="rangeTo" class="px-2 py-1 text-xs border rounded bg-white">
-          <button onclick="applyDateRange()" class="px-3 py-1 text-xs text-white rounded-lg font-semibold hover:opacity-90 whitespace-nowrap" style="background:#475569">適用する</button>
-          <button onclick="clearDateRange()" class="px-3 py-1 text-xs bg-white border text-slate-500 rounded-lg hover:bg-slate-100 whitespace-nowrap">クリア</button>
-        </div>
         <!-- スナップショット一覧テーブル: UIには非表示。データ取得・選択機能のために要素は残しておく -->
         <div class="overflow-x-auto" style="display:none;">
           <table class="min-w-full text-xs">
@@ -512,33 +512,28 @@
   </div>
 
   <!-- Charts -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
 
-    <!-- 実施積載率 -->
+    <!-- 受注金額ランキング -->
     <div class="bg-white rounded-xl shadow-sm p-5">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="font-semibold text-slate-700 text-sm">FSメンバー別 実施積載率（目標×5）</h3>
-        <button onclick="openChartDetailModal('jisshi')" class="text-[11px] font-semibold px-2 py-0.5 rounded border border-sky-300 text-sky-600 hover:bg-sky-50 transition-colors">詳細</button>
+        <h3 class="font-semibold text-slate-700 text-sm">🏆 FSメンバー別 受注金額ランキング</h3>
+        <button onclick="openChartDetailModal('jisshi')" class="text-[11px] font-semibold px-2 py-0.5 rounded border border-sky-300 text-sky-600 hover:bg-sky-50 transition-colors">📈 実施積載 詳細</button>
       </div>
-      <canvas id="jisshiChart" height="320"></canvas>
+      <div style="position:relative;width:100%;height:360px;">
+        <canvas id="rankAmountChart"></canvas>
+      </div>
     </div>
 
-    <!-- ヨミ積載率 -->
+    <!-- 受注件数ランキング -->
     <div class="bg-white rounded-xl shadow-sm p-5">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="font-semibold text-slate-700 text-sm">FSメンバー別 ヨミ積載率（目標×3）</h3>
-        <button onclick="openChartDetailModal('yomi')" class="text-[11px] font-semibold px-2 py-0.5 rounded border border-amber-300 text-amber-600 hover:bg-amber-50 transition-colors">詳細</button>
+        <h3 class="font-semibold text-slate-700 text-sm">🎖️ FSメンバー別 受注件数ランキング</h3>
+        <button onclick="openChartDetailModal('landing')" class="text-[11px] font-semibold px-2 py-0.5 rounded border border-sky-400 text-sky-700 hover:bg-sky-50 transition-colors">🎯 着地予想 詳細</button>
       </div>
-      <canvas id="yomiChart" height="320"></canvas>
-    </div>
-
-    <!-- 着地予想 -->
-    <div class="bg-white rounded-xl shadow-sm p-5">
-      <div class="flex items-center justify-between mb-3">
-        <h3 class="font-semibold text-slate-700 text-sm">FSメンバー別 売上着地予想（達成予想%）</h3>
-        <button onclick="openChartDetailModal('landing')" class="text-[11px] font-semibold px-2 py-0.5 rounded border border-sky-400 text-sky-700 hover:bg-sky-600 transition-colors">詳細</button>
+      <div style="position:relative;width:100%;height:360px;">
+        <canvas id="rankCountChart"></canvas>
       </div>
-      <canvas id="landingChart" height="320"></canvas>
     </div>
 
   </div>
@@ -1686,6 +1681,7 @@ let _chartDetailRows = [];   // グラフ詳細アコーディオン用データ
 let _chartDetailTotals = {}; // 同上（合計行）
 let currentPeriod = '2026/05';
 let jisshiChart = null, yomiChart = null, landingChart = null, trendChart = null;
+let rankAmountChart = null, rankCountChart = null;
 // ============================================================
 // 🔴 安定性向上ユーティリティ（console抑制 + localStorage容量監視）
 // ============================================================
@@ -2812,9 +2808,9 @@ function render() {
     renderChartDetailTable(type, 'chartDetailModal-body');
   }
 
-  drawChart('jisshiChart', jisshiChart, rows.map(r=>r.name), rows.map(r=>r.jRate*100), '#3b82f6', ref => jisshiChart = ref);
-  drawChart('yomiChart', yomiChart, rows.map(r=>r.name), rows.map(r=>r.yRate*100), '#f59e0b', ref => yomiChart = ref);
-  drawChart('landingChart', landingChart, rows.map(r=>r.name), rows.map(r=>r.lRate*100), '#0284c7', ref => landingChart = ref, '達成予想');
+  // ★ 受注金額ランキング & 受注件数ランキング（旧 jisshi/yomi/landing 3グラフを置き換え）
+  drawRankChart('rankAmountChart', rankAmountChart, rows, 'amount', ref => rankAmountChart = ref);
+  drawRankChart('rankCountChart',  rankCountChart,  rows, 'count',  ref => rankCountChart  = ref);
 
   const memberSel = document.getElementById('dealFilterMember');
   if (memberSel) {
@@ -5595,6 +5591,65 @@ function drawChart(id, oldChart, labels, data, color, setter, tooltipLabel) {
     }}]
   });
   setter(chart);
+}
+
+// ===== 受注ランキング横棒グラフ =====
+// mode: 'amount' = 受注金額, 'count' = 受注件数
+function drawRankChart(id, oldChart, rows, mode, setter) {
+  if (oldChart) oldChart.destroy();
+  const el = document.getElementById(id);
+  if (!el) return;
+  const ctx = el.getContext('2d');
+  // 件数 or 金額の降順でソート
+  const valFn = (r) => mode === 'amount' ? (r.won?.amount || 0) : (r.won?.count || 0);
+  const sorted = [...rows].sort((a, b) => valFn(b) - valFn(a));
+  const labels = sorted.map(r => r.name);
+  const data   = sorted.map(r => valFn(r));
+  const rankColors = ['#fbbf24', '#cbd5e1', '#d97706']; // 1位=金 2位=銀 3位=銅
+  const baseColor  = mode === 'amount' ? '#0284c7' : '#0ea5e9';
+  const backgroundColor = data.map((v, i) => (v > 0 && i < 3) ? rankColors[i] : (v > 0 ? baseColor : '#e2e8f0'));
+  const fmtVal = (v) => mode === 'amount'
+    ? '¥' + Math.round(v / 10000).toLocaleString() + '万'
+    : v + '件';
+  const chart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ label: mode === 'amount' ? '受注金額' : '受注件数', data, backgroundColor, borderRadius: 4 }] },
+    options: {
+      responsive: true, indexAxis: 'y', maintainAspectRatio: false,
+      layout: { padding: { right: 90 } },
+      scales: {
+        x: { beginAtZero: true,
+             ticks: { font: { size: 10 }, color: '#94a3b8',
+                      callback: (v) => mode === 'amount' ? '¥' + Math.round(v/10000).toLocaleString() + '万' : v + '件' },
+             grid: { color: 'rgba(148,163,184,0.12)' } },
+        y: { ticks: { font: { size: 11 }, color: '#475569' }, grid: { display: false } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (c) => `${c.label}: ${fmtVal(c.parsed.x)}` } }
+      }
+    },
+    plugins: [{
+      id: 'rankBadge',
+      afterDatasetsDraw: (c) => {
+        const cx = c.ctx;
+        const meta = c.getDatasetMeta(0);
+        meta.data.forEach((bar, i) => {
+          if (data[i] <= 0) return;
+          const x = bar.x + 6;
+          const y = bar.y;
+          cx.save();
+          cx.fillStyle = '#0f172a';
+          cx.font = 'bold 11px sans-serif';
+          cx.textBaseline = 'middle';
+          const medal = i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '';
+          cx.fillText(medal + fmtVal(data[i]), x, y);
+          cx.restore();
+        });
+      }
+    }]
+  });
+  if (setter) setter(chart);
 }
 
 // ===== 勝率設定UI =====
