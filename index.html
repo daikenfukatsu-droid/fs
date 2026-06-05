@@ -2744,6 +2744,42 @@ function render() {
     };
   });
 
+  // ★ FYメンバーリスト外の担当者（例: 秋山 恵 など）の案件もKPI合計に加算
+  //   - 上部KPIカード（受注実績・ヨミ積載・実施積載・ステージ別・売上着地予想）に反映
+  //   - メンバー別ランキング/テーブルは getFyMembers() のままで影響なし
+  if (!currentSnapMember) {
+    const memberSet = new Set(activeMembers);
+    const extraDeals = activePipeline.filter(d => !memberSet.has(d.name) && months.includes(d.month));
+    const sumExtra = (stages) => {
+      const f = extraDeals.filter(d => stages.includes(d.stage));
+      return { amount: f.reduce((s, d) => s + (d.amount || 0), 0), count: f.length };
+    };
+    const xE  = sumExtra(['E']);
+    const xD  = sumExtra(['D']);
+    const xC  = sumExtra(['C']);
+    const xCP = sumExtra(['C+']);
+    const xB  = sumExtra(['B']);
+    const xA  = sumExtra(['A']);
+    const xS  = sumExtra(['S']);
+    const xJ  = sumExtra(['D','C','C+','B','A','S']);   // 実施積載
+    const xY  = sumExtra(['C','C+','B','A','S']);       // ヨミ積載
+    totals.e  += xE.amount;  totals.ec  += xE.count;
+    totals.d  += xD.amount;  totals.dc  += xD.count;
+    totals.c  += xC.amount;  totals.cc  += xC.count;
+    totals.cp += xCP.amount; totals.cpc += xCP.count;
+    totals.b  += xB.amount;  totals.bc  += xB.count;
+    totals.a  += xA.amount;  totals.ac  += xA.count;
+    totals.s  += xS.amount;  totals.sc  += xS.count;
+    totals.j  += xJ.amount;  totals.jc  += xJ.count;
+    totals.y  += xY.amount;  totals.yc  += xY.count;
+    // 売上着地予想（D以上の確定パイプ + Eの期待値）も追加
+    const extraNames = Array.from(new Set(extraDeals.map(d => d.name).filter(Boolean)));
+    extraNames.forEach(nm => {
+      totals.land  += calcLanding(nm, activePipeline, months);
+      totals.landE += calcLandingE(nm, activePipeline, months);
+    });
+  }
+
   // FY2025 年間表示のみ目標を3億に上書き
   if (currentFY === 'FY2025' && currentMode === 'year') totals.target = 300000000;
 
