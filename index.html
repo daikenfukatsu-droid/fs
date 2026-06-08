@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -2161,7 +2162,13 @@ async function fetchFromSheets(silent = false) {
     }
 
     // ★ FSのrender()を先に実行（IS fetchを待たない）
-    render();
+    // ★ パイプライン描画でエラーが出ても IS リスト取得は続行（描画を try で保護）
+    try {
+      render();
+    } catch (renderErr) {
+      console.error('[FS render] パイプライン描画エラー（IS取得は継続）:', renderErr);
+      if (!silent) setStatus(`⚠️ パイプライン描画でエラー: ${renderErr.message}（ISリスト取得は継続します）`, '#d97706');
+    }
 
     // IS専用GAS（非同期 + 20秒タイムアウト付き、ハング対策）
     if (IS_GAS_URL) {
@@ -2900,6 +2907,8 @@ function _normalizeListRow(r) {
     lastMet:        String(r.lastMet        || '').trim(),
     nextCall:       String(r.nextCall       || '').trim(),
     recycle:        String(r.recycle        || '').trim(),
+    companyHearText: String(r.companyHearText || '').trim(),  // ★Q列：会社_テキストヒアリング
+    contactHearText: String(r.contactHearText || '').trim(),  // ★R列：コンタクト_テキストヒアリング
   };
 }
 
@@ -3016,7 +3025,8 @@ function _mergeLatestCompanyRow(list) {
     lastMet:        pickLatestDateStr('lastMet'),
     nextCall:       pickLatestDateStr('nextCall'),
     recycle:        firstNonEmpty('recycle'),
-    contacts:       list.slice(), // 同一企業の各コンタクト（トグル表示用）
+    companyHearText: firstNonEmpty('companyHearText'), // ★会社_ヒアリング（会社単位：非空優先）
+    contacts:       list.slice(), // 同一企業の各コンタクト（トグル表示用。contactHearTextは各contactが保持）
     _mergedCount:   list.length, // デバッグ用
   };
 }
@@ -3109,6 +3119,42 @@ let _isListL3Selected = new Set();
 let _isListL3RowsByKey = {};
 // Level3 現在フィルタ後に表示中の行（一括選択トグル用）
 let _isListL3CurrentRows = [];
+// ★ Level3 ヒアリング検索文字列（会社_/コンタクト_テキストヒアリングを横断して部分一致）
+let _isListL3SearchText = '';
+let _isListL3SearchTimer = null;
+// 検索入力ハンドラ：デバウンス再描画＋フォーカス/カーソル位置を復元（大量データ時の負荷軽減）
+function isListL3Search(val) {
+  _isListL3SearchText = String(val == null ? '' : val);
+  if (_isListL3SearchTimer) clearTimeout(_isListL3SearchTimer);
+  _isListL3SearchTimer = setTimeout(() => {
+    const _prev = document.getElementById('isListL3SearchInput');
+    const _caret = _prev ? _prev.selectionStart : null;
+    if (_isListLevel === 3 && _isListOwner) _renderIsListLevel3(_isListKind, _isListOwner);
+    const _now = document.getElementById('isListL3SearchInput');
+    if (_now) {
+      _now.focus();
+      try { if (_caret != null) _now.setSelectionRange(_caret, _caret); } catch(e) {}
+    }
+  }, 200);
+}
+// 検索クリア（✕ボタン）
+function isListL3SearchClear() {
+  _isListL3SearchText = '';
+  if (_isListL3SearchTimer) { clearTimeout(_isListL3SearchTimer); _isListL3SearchTimer = null; }
+  if (_isListLevel === 3 && _isListOwner) _renderIsListLevel3(_isListKind, _isListOwner);
+  const el = document.getElementById('isListL3SearchInput');
+  if (el) el.focus();
+}
+// ヒアリング文の検索ハイライト（HTMLエスケープ後に一致部分を<mark>で強調）
+function _isListHearHighlight(text, q) {
+  const safe = _escapeHtml(String(text == null ? '' : text));
+  const query = String(q || '').trim();
+  if (!query) return safe;
+  try {
+    const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    return safe.replace(re, '<mark style="background:#fde68a;padding:0 1px;border-radius:2px;">$1</mark>');
+  } catch(e) { return safe; }
+}
 // カテゴリ → 出力ラベル
 const IS_CAT_EXPORT_LABEL = { 1: '未来', 2: '直近3か月', 3: '3か月以上前', 4: '未分類' };
 
@@ -3228,7 +3274,7 @@ function _isListL3UpdateSelCount() {
 
 // ===== 一括出力（Excel / CSV） =====
 function _isListL3CollectRows() {
-  const header = ['企業名', '企業ID', '姓', '名', 'コンタクトID', 'コンタクト担当者', 'カテゴリ'];
+  const header = ['企業名', '企業ID', '姓', '名', 'コンタクトID', 'コンタクト担当者', 'カテゴリ', '会社_テキストヒアリング', 'コンタクト_テキストヒアリング'];
   const out = [header];
   // 選択キーを、表示順（_isListL3CurrentRows優先→残り）で並べる
   const orderedKeys = [];
@@ -3258,7 +3304,9 @@ function _isListL3CollectRows() {
         c.firstname || '',
         c.contactId || '',
         c.owner     || '',
-        catLabel
+        catLabel,
+        r.companyHearText || '',  // ★会社_テキストヒアリング（会社単位）
+        c.contactHearText || ''   // ★コンタクト_テキストヒアリング（コンタクト単位）
       ]);
     });
   });
@@ -3276,7 +3324,7 @@ function isListL3ExportExcel() {
   if (data.length <= 1) { alert('企業を選択してください。'); return; }
   if (typeof XLSX === 'undefined') { alert('Excelライブラリが読み込まれていません。CSVをご利用ください。'); return; }
   const ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols'] = [{wch:28},{wch:12},{wch:10},{wch:10},{wch:14},{wch:16},{wch:12}];
+  ws['!cols'] = [{wch:28},{wch:12},{wch:10},{wch:10},{wch:14},{wch:16},{wch:12},{wch:48},{wch:48}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'IS保有リスト');
   XLSX.writeFile(wb, _isListL3ExportFileBase() + '.xlsx');
@@ -3379,6 +3427,7 @@ function isListDrillToOwner(owner) {
   _isListL3FilterPercSet.clear();
   _isListL3Expanded = new Set(); // トグル展開状態もリセット
   _isListL3Selected = new Set(); // 選択状態もリセット
+  _isListL3SearchText = ''; // ★ヒアリング検索もリセット
   document.getElementById('isListBack').classList.remove('hidden');
   const label = _isListKind === 'yes' ? 'リサイクルYes' : 'リサイクルNo';
   document.getElementById('isListModalTitle').textContent = `📋 ${label} / ${owner}`;
@@ -3607,6 +3656,7 @@ function _drillFromL1Legend(kind, mode, key) {
   _isListExpanded = new Set();
   _isListL3Expanded = new Set();
   _isListL3Selected = new Set();
+  _isListL3SearchText = ''; // ★ヒアリング検索もリセット
   if (mode === 'perception') {
     _isListViewSel = new Set(['perception']);
     _isListL3FilterPercSet = new Set([key]);
@@ -3904,6 +3954,23 @@ function _renderIsListLevel3(kind, owner) {
   if (showTodo && _isListL3FilterCatSet.size > 0)  filteredRows = filteredRows.filter(r => _isListL3FilterCatSet.has(_category(r)));
   if (showPerc && _isListL3FilterPercSet.size > 0) filteredRows = filteredRows.filter(r => _isListL3FilterPercSet.has(_percKey(r)));
 
+  // ★ ヒアリング検索: 会社_テキストヒアリング／コンタクト_テキストヒアリングを横断して部分一致
+  const _searchQuery = String(_isListL3SearchText || '').trim();
+  const _searchActive = _searchQuery.length > 0;
+  // 行が検索ヒットするか判定（会社単位 + 配下の全コンタクト単位を横断）
+  const _rowMatchesSearch = (r) => {
+    if (!_searchActive) return true;
+    const q = _searchQuery.toLowerCase();
+    const compH = String(r.companyHearText || '').toLowerCase();
+    if (compH.includes(q)) return true;
+    const contacts = Array.isArray(r.contacts) && r.contacts.length ? r.contacts : [r];
+    for (const c of contacts) {
+      if (String(c.contactHearText || '').toLowerCase().includes(q)) return true;
+    }
+    return false;
+  };
+  if (_searchActive) filteredRows = filteredRows.filter(_rowMatchesSearch);
+
   // ★ 一括出力用: 全行(ownerRows)を ckey→{row, catLabel} で保持。表示中行も保持
   _isListL3RowsByKey = {};
   ownerRows.forEach(r => {
@@ -3942,7 +4009,7 @@ function _renderIsListLevel3(kind, owner) {
     const perceptionCell = perception
       ? `<span style="background:${accentBg};color:${accent};font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;">${perception}</span>`
       : '-';
-    return `<tr style="background:${bg};border-bottom:1px solid #e2e8f0;">
+    let _sub = `<tr style="background:${bg};border-bottom:1px solid #e2e8f0;">
       <td style="padding:4px 8px 4px 28px;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${lastNameCell}</td>
       <td style="padding:4px 8px;font-size:11px;color:#334155;text-align:center;white-space:nowrap;">${firstNm || '-'}</td>
       <td style="padding:4px 8px;font-size:11px;text-align:center;white-space:nowrap;">${perceptionCell}</td>
@@ -3950,6 +4017,16 @@ function _renderIsListLevel3(kind, owner) {
       <td style="padding:4px 8px;font-size:11px;color:#475569;text-align:center;white-space:nowrap;">${lm || '-'}</td>
       <td style="padding:4px 8px;font-size:11px;text-align:center;white-space:nowrap;">${ncCell}</td>
     </tr>`;
+    // ★ コンタクト_テキストヒアリング（あれば担当者行の直下にフル幅で表示／検索語をハイライト）
+    const _cHear = String(c.contactHearText || '').trim();
+    if (_cHear) {
+      _sub += `<tr style="background:${bg};border-bottom:1px solid #e2e8f0;">
+        <td colspan="6" style="padding:2px 8px 6px 40px;font-size:10px;color:#475569;line-height:1.5;white-space:normal;word-break:break-word;">
+          <span style="color:#0369a1;font-weight:600;">💬 コンタクト_ヒアリング：</span>${_isListHearHighlight(_cHear, _searchQuery)}
+        </td>
+      </tr>`;
+    }
+    return _sub;
   };
 
   const companyRows = filteredRows.map((r) => {
@@ -3979,12 +4056,16 @@ function _renderIsListLevel3(kind, owner) {
     // 担当者の一覧（トグル展開行）
     const contacts = Array.isArray(r.contacts) && r.contacts.length ? r.contacts : [r];
     const ckey = String(r.companyId || r.company || (r.contactId ? 'c:' + r.contactId : ''));
-    const expanded = _isListL3Expanded.has(ckey);
+    // ★ 検索中は該当行を自動展開してヒアリング文を表示（個別トグル状態は維持）
+    const expanded = _isListL3Expanded.has(ckey) || _searchActive;
     const arrow = expanded ? '▼' : '▶';
     const toggleBtn = `<span onclick="event.stopPropagation();isListToggleCompany('${ckey.replace(/'/g, "\\'")}')"
       style="display:inline-block;width:14px;text-align:center;cursor:pointer;color:#64748b;font-size:9px;margin-right:4px;user-select:none;"
       title="担当者一覧を${expanded ? '閉じる' : '開く'}（${contacts.length}件）">${arrow}</span>`;
     const countBadge = `<span style="font-size:9px;color:#64748b;margin-left:4px;">(${contacts.length})</span>`;
+    // ★ ヒアリングメモがある会社には 💬 を表示（展開すると本文が読める）
+    const _hasHear = !!String(r.companyHearText || '').trim() || contacts.some(c => String(c.contactHearText || '').trim());
+    const hearBadge = _hasHear ? `<span title="ヒアリングメモあり（▶展開で表示）" style="font-size:10px;margin-left:3px;">💬</span>` : '';
 
     // ★ 選択チェックボックス
     const isSel = _isListL3Selected.has(ckey);
@@ -3995,7 +4076,7 @@ function _renderIsListLevel3(kind, owner) {
 
     let html = `<tr style="background:${bg};border-bottom:1px solid #f1f5f9;border-left:3px solid ${leftBar};">
       ${checkCell}
-      <td style="padding:4px 8px;font-size:11px;font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${toggleBtn}${companyCell}${countBadge}</td>
+      <td style="padding:4px 8px;font-size:11px;font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${toggleBtn}${companyCell}${countBadge}${hearBadge}</td>
       <td style="padding:4px 8px;font-size:11px;text-align:center;white-space:nowrap;">
         ${r.perceptionFlow ? `<span style="background:${accentBg};color:${accent};font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600;">${r.perceptionFlow}</span>` : '—'}
       </td>
@@ -4007,8 +4088,14 @@ function _renderIsListLevel3(kind, owner) {
     if (expanded) {
       // サブテーブル: 姓 | 名 | 前回の連絡 | 次回架電日 | コンタクト担当者
       const subRows = contacts.map(c => _renderContactSubRow(c, '#ffffff')).join('');
+      // ★ 会社_テキストヒアリング（あれば担当者一覧の上にバナー表示／検索語をハイライト）
+      const _coHear = String(r.companyHearText || '').trim();
+      const companyHearBanner = _coHear
+        ? `<div style="margin:2px 0 6px 0;padding:6px 10px;background:#e0f2fe;border-left:3px solid #0284c7;font-size:10px;color:#0c4a6e;line-height:1.5;white-space:normal;word-break:break-word;"><span style="color:#0369a1;font-weight:600;">💬 会社_ヒアリング：</span>${_isListHearHighlight(_coHear, _searchQuery)}</div>`
+        : '';
       html += `<tr style="background:${bg};border-left:3px solid ${leftBar};">
         <td colspan="6" style="padding:0 8px 8px 28px;">
+          ${companyHearBanner}
           <table style="width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #e2e8f0;border-radius:4px;table-layout:fixed;">
             <colgroup>
               <col style="width:18%"><col style="width:12%"><col style="width:18%"><col style="width:16%"><col style="width:16%"><col style="width:20%">
@@ -4119,14 +4206,21 @@ function _renderIsListLevel3(kind, owner) {
       <div style="padding:12px 24px 6px 24px;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:0 0 6px 0;">
           <p style="font-size:12px;color:#64748b;margin:0;">
-            <b style="color:${accent}">${filteredRows.length}</b> 社${_filterInfo}
+            <b style="color:${accent}">${filteredRows.length}</b> 社${_filterInfo}${_searchActive ? ` <span style="font-size:10px;color:${accent};">/ 検索:「${_escapeHtml(_searchQuery)}」 (${filteredRows.length}/${ownerRows.length}社)</span>` : ''}
             <span style="font-size:10px;color:#94a3b8;margin-left:6px;">${_sortInfo}</span>
             <span style="font-size:10px;color:${accent};margin-left:8px;">選択 <b id="isListL3SelCount">${_isListL3Selected.size}</b> 社</span>
           </p>
           <div style="display:flex;gap:6px;align-items:center;">
-            <button onclick="isListL3ExportExcel()" title="選択した企業を Excel(.xlsx) で出力"
+            <div style="display:flex;align-items:center;gap:6px;border:1px solid ${accent};border-radius:8px;padding:3px 8px;background:#ffffff;" title="会社_/コンタクト_テキストヒアリングを横断して部分一致で絞り込み">
+              <span style="font-size:13px;color:${accent};">🔍</span>
+              <input type="text" id="isListL3SearchInput" value="${_escapeHtml(_isListL3SearchText)}"
+                oninput="isListL3Search(this.value)" placeholder="ヒアリング検索"
+                style="border:none;outline:none;font-size:12px;width:130px;padding:0;background:transparent;color:#0f172a;" />
+              ${_searchActive ? `<span onclick="isListL3SearchClear()" title="検索クリア" style="cursor:pointer;font-size:13px;color:#94a3b8;user-select:none;">✕</span>` : ''}
+            </div>
+            <button onclick="isListL3ExportExcel()" title="選択した企業を Excel(.xlsx) で出力（ヒアリング2列含む）"
               style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px;border:1px solid ${accent};background:${accent};color:#ffffff;cursor:pointer;white-space:nowrap;">⬇ Excel</button>
-            <button onclick="isListL3ExportCsv()" title="選択した企業を CSV で出力"
+            <button onclick="isListL3ExportCsv()" title="選択した企業を CSV で出力（ヒアリング2列含む）"
               style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px;border:1px solid ${accent};background:#ffffff;color:${accent};cursor:pointer;white-space:nowrap;">⬇ CSV</button>
           </div>
         </div>
@@ -4149,10 +4243,10 @@ function _renderIsListLevel3(kind, owner) {
       <colgroup>
         <col style="width:${COL_W[0]}"><col style="width:${COL_W[1]}"><col style="width:${COL_W[2]}"><col style="width:${COL_W[3]}"><col style="width:${COL_W[4]}"><col style="width:${COL_W[5]}">
       </colgroup>
-      <tbody>${companyRows}</tbody>
+      <tbody>${companyRows || `<tr><td colspan="6" style="padding:28px 8px;text-align:center;color:#94a3b8;font-size:13px;">${_searchActive ? `🔍 「${_escapeHtml(_searchQuery)}」に該当なし` : '該当なし'}</td></tr>`}</tbody>
     </table>
     <p style="font-size:10px;color:#94a3b8;margin-top:6px;">
-      会社名横の <span style="color:#64748b;">▶</span> で担当者一覧を開閉（姓クリックで HubSpot コンタクトへ）　|　ヘッダーの ▲▼ で昇順/降順を切替　|　次回架電日: <span style="color:#ef4444;">赤=超過</span> / <span style="color:#f97316;">橙=今日</span> / <span style="color:#16a34a;">緑=未来</span>
+      会社名横の <span style="color:#64748b;">▶</span> で担当者一覧を開閉（姓クリックで HubSpot コンタクトへ）　|　<span style="color:#0369a1;">💬</span> はヒアリングメモあり（▶展開で表示・<span style="color:#0369a1;">🔍検索対象</span>）　|　ヘッダーの ▲▼ で昇順/降順を切替　|　次回架電日: <span style="color:#ef4444;">赤=超過</span> / <span style="color:#f97316;">橙=今日</span> / <span style="color:#16a34a;">緑=未来</span>
     </p>
     </div>
   `;
@@ -6872,7 +6966,14 @@ function renderECalendar() {
   const calPipeline = getActivePipeline();
   const calLostDeals = snapshotView ? (snapshotView.lostDeals || []) : lostDeals;
   const allDeals = [...calPipeline, ...calLostDeals]
-    .filter(d => !eCalMember || d.name === eCalMember);
+    .filter(d => !eCalMember || d.name === eCalMember)
+    // ★ ステージEで未商談化理由が「商談してない（リスケ等）」の案件はカレンダー非表示・カウント対象外
+    .filter(d => {
+      if (d.stage !== 'E') return true;
+      const reason = String(d.mishoshoReason || '').trim();
+      if (reason.includes('商談してない') || reason.includes('リスケ')) return false;
+      return true;
+    });
 
   // スナップショットバナー
   const snapBanner = document.getElementById('eCalSnapBanner');
