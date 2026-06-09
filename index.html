@@ -247,7 +247,7 @@
           <div>
             <p class="font-bold text-slate-700 mb-1">10. スナップショット（保存・管理）</p>
             <ul class="space-y-0.5 text-slate-500 list-disc list-inside">
-              <li>現在のパイプライン状態を手動保存して経過追跡</li>
+              <li>現在のパイプライン状態を保存して経過追跡（<b>毎日23時にサーバーが自動保存</b>＋開いた時も保険保存。同日は最新1件に集約）</li>
               <li>データは <b>GAS（Googleスプレッドシート）</b> に保存 → チーム全員が同じデータを参照</li>
               <li>HubSpotの最新データは <b>5分ごとに自動同期</b>（手動更新は「データ更新」ボタン）</li>
               <li>ブラウザのlocalStorageにも自動バックアップ → コード更新後も消えない</li>
@@ -373,12 +373,12 @@
     <div class="flex gap-1 flex-wrap" id="periodTabs"></div>
   </div>
 
-  <!-- Snapshot Zone: 自動保存（毎日23時）。閲覧用UIのみ復元（保存/全削除/担当者フィルタなどは削除済み） -->
+  <!-- Snapshot Zone: 自動保存（サーバーが毎日23時 + ダッシュボードを開いた時も保険保存）。同日は最新1件にdedup。閲覧用UIのみ復元（保存/全削除/担当者フィルタなどは削除済み） -->
   <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
     <div class="flex items-center justify-between mb-3">
       <div>
         <h3 class="font-semibold text-slate-700 text-sm">📸 スナップショット（経過追跡）</h3>
-        <p class="text-xs text-slate-500 mt-0.5">ダッシュボードを開くと当日分を自動保存。期間で絞って積載率の推移を確認できます</p>
+        <p class="text-xs text-slate-500 mt-0.5">毎日23時にサーバーが自動保存（開いた時も保険で保存）。期間で絞って積載率の推移を確認できます</p>
       </div>
       <div class="flex gap-2 items-center">
         <button id="compareBtn" onclick="doCompare()" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold hidden" style="background:#0369a1">📊 比較する</button>
@@ -394,7 +394,7 @@
         <button onclick="applyDateRange()" class="px-3 py-1 text-xs text-white rounded-lg font-semibold hover:opacity-90 whitespace-nowrap" style="background:#475569">適用する</button>
         <button onclick="clearDateRange()" class="px-3 py-1 text-xs bg-white border text-slate-500 rounded-lg hover:bg-slate-100 whitespace-nowrap">クリア</button>
       </div>
-      <div id="snapshotEmpty" class="text-xs text-slate-400 text-center py-4">スナップショットがまだありません（ダッシュボードを開くと当日分が自動保存されます）。</div>
+      <div id="snapshotEmpty" class="text-xs text-slate-400 text-center py-4">スナップショットがまだありません（毎日23時にサーバーが自動保存。開いた時も保険で保存されます）。</div>
       <div id="snapshotContent" class="hidden">
         <!-- スナップショット一覧テーブル: UIには非表示。データ取得・選択機能のために要素は残しておく -->
         <div class="overflow-x-auto" style="display:none;">
@@ -809,6 +809,38 @@
 
     <p class="text-[11px] text-slate-400 mb-2">※ 目標値は埋め込み済（FY2025/FY2026）。実績は HubSpot同期データから「アポ作成日」「FS初回アポ実施日」「ヨミ/未ヨミ決着日」「クローズ日」を基準に集計しています。</p>
 
+    <!-- IS メンバー別 ランキング（FS同様の横棒ランキング形式 / 3グループ×2軸 切替） -->
+    <div class="bg-white rounded-xl shadow-sm p-5 mt-4 mb-4">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <h3 class="font-semibold text-slate-700 text-sm">🏆 ISメンバー別 ランキング</h3>
+        <p class="text-[10px] text-slate-400">バーにカーソルで詳細／上位3名にメダル</p>
+      </div>
+      <!-- グループ切替タブ -->
+      <div id="isRankTabs" class="flex flex-wrap gap-1.5 mb-4">
+        <button data-isrank="apo"  onclick="switchIsRankGroup('apo')"
+          class="is-rank-tab text-[11px] font-semibold px-3 py-1 rounded-full border transition-colors">① アポ取得・実施</button>
+        <button data-isrank="yomi" onclick="switchIsRankGroup('yomi')"
+          class="is-rank-tab text-[11px] font-semibold px-3 py-1 rounded-full border transition-colors">② ヨミ化数・ヨミ化率</button>
+        <button data-isrank="won"  onclick="switchIsRankGroup('won')"
+          class="is-rank-tab text-[11px] font-semibold px-3 py-1 rounded-full border transition-colors">③ 受注貢献 件数・金額</button>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-slate-50 rounded-lg p-3">
+          <h4 id="isRankTitleLeft"  class="font-semibold text-slate-600 text-[12px] mb-2">アポ取得数ランキング（実績数順）</h4>
+          <div style="position:relative;width:100%;height:360px;">
+            <canvas id="isRankChartLeft"></canvas>
+          </div>
+        </div>
+        <div class="bg-slate-50 rounded-lg p-3">
+          <h4 id="isRankTitleRight" class="font-semibold text-slate-600 text-[12px] mb-2">アポ実施数ランキング（実績数順）</h4>
+          <div style="position:relative;width:100%;height:360px;">
+            <canvas id="isRankChartRight"></canvas>
+          </div>
+        </div>
+      </div>
+      <p id="isRankNote" class="text-[10px] text-slate-400 mt-2"></p>
+    </div>
+
     <!-- IS 個人状況テーブル -->
     <div class="bg-white rounded-xl shadow-sm p-5 mt-4 mb-6">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -1151,12 +1183,11 @@ const IS_TARGETS = {
   '宮原 亘輝': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[17,17,7], '2026/11':[17,17,7], '2026/12':[17,17,7], '2027/01':[20,20,8], '2027/02':[20,20,8], '2027/03':[20,20,8] },
   '川上 陸斗': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[17,17,7], '2026/11':[17,17,7], '2026/12':[17,17,7], '2027/01':[20,20,8], '2027/02':[20,20,8], '2027/03':[20,20,8] },
   '久保 智花': { '2026/04':[10,10,4], '2026/05':[10,10,4], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[17,17,7], '2026/11':[17,17,7], '2026/12':[17,17,7], '2027/01':[20,20,8], '2027/02':[20,20,8], '2027/03':[20,20,8] },
-  '降籏 唯斗': { '2026/04':[10,5,2], '2026/05':[10,10,4], '2026/06':[0,0,0], '2026/07':[0,0,0], '2026/08':[0,0,0], '2026/09':[0,0,0], '2026/10':[0,0,0], '2026/11':[0,0,0], '2026/12':[0,0,0], '2027/01':[0,0,0], '2027/02':[0,0,0], '2027/03':[0,0,0] },
   '一色 柚穂': { '2026/04':[0,0,0], '2026/05':[6,6,2], '2026/06':[10,10,4], '2026/07':[15,15,6], '2026/08':[15,15,6], '2026/09':[15,15,6], '2026/10':[20,20,8], '2026/11':[20,20,8], '2026/12':[20,20,8], '2027/01':[20,20,8], '2027/02':[20,20,8], '2027/03':[20,20,8] },
 };
 
 const IS_MEMBERS_FY2025 = ["駒田 智士", "吉住 碧斗", "田中 俊也", "大井 駿空", "福永 将也", "大山 耕太郎", "谷原 葵衣", "中村 雅", "宮原 亘輝", "テレアポ代行", "池田 美亜", "本島 翼", "西 倖平", "田代 大和", "深澤 陸", "長谷部 琴音", "宇野澤 彰子", "廣澤 未来", "大野 杏海", "柴原 かやね", "小島 萌"];
-const IS_MEMBERS_FY2026 = ["駒田 智士", "吉住 碧斗", "田中 俊也", "大井 駿空", "福永 将也", "大山 耕太郎", "谷原 葵衣", "中村 雅", "高橋 玲衣", "近藤 璃空", "宇佐美 朱莉", "開発 茉子", "前田 朱梨", "吉井 琉杏", "宮原 亘輝", "降籏 唯斗", "川上 陸斗", "久保 智花", "一色 柚穂", "テレアポ代行", "池田 美亜", "本島 翼", "西 倖平", "田代 大和"];
+const IS_MEMBERS_FY2026 = ["駒田 智士", "吉住 碧斗", "田中 俊也", "大井 駿空", "福永 将也", "大山 耕太郎", "谷原 葵衣", "中村 雅", "高橋 玲衣", "近藤 璃空", "宇佐美 朱莉", "開発 茉子", "前田 朱梨", "吉井 琉杏", "宮原 亘輝", "川上 陸斗", "久保 智花", "一色 柚穂", "テレアポ代行", "池田 美亜", "本島 翼", "西 倖平", "田代 大和"];
 
 function getIsTargetFor(member, monthStr) {
   const t = (IS_TARGETS[member] || {})[monthStr];
@@ -2105,6 +2136,7 @@ async function fetchFromSheets(silent = false) {
       const localOnly = snapshots.filter(s => !gasIds.has(s.id));
       snapshots = [...gasSnaps, ...localOnly]
         .sort((a, b) => new Date(a.id) - new Date(b.id));
+      snapshots = dedupeSnapshotsByDay(snapshots); // 同日重複（過去行・サーバー/フロント混在）を1件に集約
       migrateSnapshotNames();
       persistSnapshots();
       // ★ 当日分のスナップショットが未保存なら自動保存（毎日23時運用の代替）
@@ -2880,6 +2912,7 @@ function render() {
 
   // === IS 関連の再描画（FSセクションでエラーが起きてもISは確実に走るよう独立try/catch） ===
   try { renderIsKpis(); }       catch (e) { console.error('renderIsKpis error:', e); }
+  try { renderIsRanking(); }    catch (e) { console.error('renderIsRanking error:', e); }
   try { renderIsMemberTable(); } catch (e) { console.error('renderIsMemberTable error:', e); }
   try { renderIsCalendar(); }    catch (e) { console.error('renderIsCalendar error:', e); }
 }
@@ -3122,20 +3155,28 @@ let _isListL3CurrentRows = [];
 // ★ Level3 ヒアリング検索文字列（会社_/コンタクト_テキストヒアリングを横断して部分一致）
 let _isListL3SearchText = '';
 let _isListL3SearchTimer = null;
+// ★ 日本語IME変換中フラグ。変換途中で再描画すると入力欄が作り直されて変換が壊れるため抑止する
+let _isListL3Composing = false;
 // 検索入力ハンドラ：デバウンス再描画＋フォーカス/カーソル位置を復元（大量データ時の負荷軽減）
 function isListL3Search(val) {
   _isListL3SearchText = String(val == null ? '' : val);
   if (_isListL3SearchTimer) clearTimeout(_isListL3SearchTimer);
+  // IME変換中（日本語入力の確定前）は再描画しない＝入力欄を壊さない。確定時に改めて検索する。
+  if (_isListL3Composing) return;
+  // ★ rowsOnlyでリスト部分だけ差し替え → 入力欄を作り直さないのでフォーカス/IME/予測変換を保持
   _isListL3SearchTimer = setTimeout(() => {
-    const _prev = document.getElementById('isListL3SearchInput');
-    const _caret = _prev ? _prev.selectionStart : null;
-    if (_isListLevel === 3 && _isListOwner) _renderIsListLevel3(_isListKind, _isListOwner);
-    const _now = document.getElementById('isListL3SearchInput');
-    if (_now) {
-      _now.focus();
-      try { if (_caret != null) _now.setSelectionRange(_caret, _caret); } catch(e) {}
-    }
+    if (_isListLevel === 3 && _isListOwner) _renderIsListLevel3(_isListKind, _isListOwner, { rowsOnly: true });
   }, 200);
+}
+// IME変換開始：再描画を止めて変換を保護
+function isListL3CompStart() {
+  _isListL3Composing = true;
+  if (_isListL3SearchTimer) { clearTimeout(_isListL3SearchTimer); _isListL3SearchTimer = null; }
+}
+// IME変換確定：確定後の文字列で検索を実行
+function isListL3CompEnd(val) {
+  _isListL3Composing = false;
+  isListL3Search(val);
 }
 // 検索クリア（✕ボタン）
 function isListL3SearchClear() {
@@ -3886,7 +3927,10 @@ function _renderIsListLevel2(kind) {
   `;
 }
 
-function _renderIsListLevel3(kind, owner) {
+function _renderIsListLevel3(kind, owner, opts) {
+  // ★ rowsOnly: 検索入力中などにリスト部分のみ差し替え、ヘッダー/検索ボックスは再生成しない
+  //   （入力欄を作り直さないため、日本語IMEの変換・予測変換状態が保持される）
+  const _rowsOnly = !!(opts && opts.rowsOnly);
   const rows   = kind === 'yes' ? isListYes : isListNo;
   const accent = kind === 'yes' ? '#0284c7' : '#10b981';
   const accentBg = kind === 'yes' ? '#e0f2fe' : '#d1fae5';
@@ -4201,20 +4245,50 @@ function _renderIsListLevel3(kind, owner) {
   _filterInfo = _filterParts.length
     ? ` <span style="font-size:10px;color:${accent};">/ フィルタ: ${_filterParts.join(' × ')} (${filteredRows.length}/${ownerRows.length}社)</span>`
     : '';
+  // ★ 再利用パーツ: 件数行の中身（フィルタ/検索で変わる）
+  const _countLineInner = `
+            <b style="color:${accent}">${filteredRows.length}</b> 社${_filterInfo}${_searchActive ? ` <span style="font-size:10px;color:${accent};">/ 検索:「${_escapeHtml(_searchQuery)}」 (${filteredRows.length}/${ownerRows.length}社)</span>` : ''}
+            <span style="font-size:10px;color:#94a3b8;margin-left:6px;">${_sortInfo}</span>
+            <span style="font-size:10px;color:${accent};margin-left:8px;">選択 <b id="isListL3SelCount">${_isListL3Selected.size}</b> 社</span>`;
+  // ★ 再利用パーツ: リスト本体（検索で変わる）
+  const _rowsBlockInner = `
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+      <colgroup>
+        <col style="width:${COL_W[0]}"><col style="width:${COL_W[1]}"><col style="width:${COL_W[2]}"><col style="width:${COL_W[3]}"><col style="width:${COL_W[4]}"><col style="width:${COL_W[5]}">
+      </colgroup>
+      <tbody>${companyRows || `<tr><td colspan="6" style="padding:28px 8px;text-align:center;color:#94a3b8;font-size:13px;">${_searchActive ? `🔍 「${_escapeHtml(_searchQuery)}」に該当なし` : '該当なし'}</td></tr>`}</tbody>
+    </table>
+    <p style="font-size:10px;color:#94a3b8;margin-top:6px;">
+      会社名横の <span style="color:#64748b;">▶</span> で担当者一覧を開閉（姓クリックで HubSpot コンタクトへ）　|　<span style="color:#0369a1;">💬</span> はヒアリングメモあり（▶展開で表示・<span style="color:#0369a1;">🔍検索対象</span>）　|　ヘッダーの ▲▼ で昇順/降順を切替　|　次回架電日: <span style="color:#ef4444;">赤=超過</span> / <span style="color:#f97316;">橙=今日</span> / <span style="color:#16a34a;">緑=未来</span>
+    </p>`;
+
+  // ★ rowsOnly: 既存DOMが在ればリストと件数だけ差し替えて return（入力欄＝IME状態を保持）
+  if (_rowsOnly) {
+    const _clEl = document.getElementById('isListL3CountLine');
+    const _rcEl = document.getElementById('isListL3RowsContainer');
+    if (_clEl && _rcEl) {
+      _clEl.innerHTML = _countLineInner;
+      _rcEl.innerHTML = _rowsBlockInner;
+      const _saEl = document.getElementById('isListL3SelectAll');
+      if (_saEl) _saEl.checked = _allSelected;
+      return;
+    }
+    // 想定要素が無ければ通常のフル描画にフォールバック
+  }
+
   document.getElementById('isListModalBody').innerHTML = `
     <div style="position:sticky;top:0;background:#ffffff;z-index:30;box-shadow:0 1px 0 #e2e8f0;">
       <div style="padding:12px 24px 6px 24px;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:0 0 6px 0;">
-          <p style="font-size:12px;color:#64748b;margin:0;">
-            <b style="color:${accent}">${filteredRows.length}</b> 社${_filterInfo}${_searchActive ? ` <span style="font-size:10px;color:${accent};">/ 検索:「${_escapeHtml(_searchQuery)}」 (${filteredRows.length}/${ownerRows.length}社)</span>` : ''}
-            <span style="font-size:10px;color:#94a3b8;margin-left:6px;">${_sortInfo}</span>
-            <span style="font-size:10px;color:${accent};margin-left:8px;">選択 <b id="isListL3SelCount">${_isListL3Selected.size}</b> 社</span>
-          </p>
+          <p id="isListL3CountLine" style="font-size:12px;color:#64748b;margin:0;">${_countLineInner}</p>
           <div style="display:flex;gap:6px;align-items:center;">
             <div style="display:flex;align-items:center;gap:6px;border:1px solid ${accent};border-radius:8px;padding:3px 8px;background:#ffffff;" title="会社_/コンタクト_テキストヒアリングを横断して部分一致で絞り込み">
               <span style="font-size:13px;color:${accent};">🔍</span>
               <input type="text" id="isListL3SearchInput" value="${_escapeHtml(_isListL3SearchText)}"
-                oninput="isListL3Search(this.value)" placeholder="ヒアリング検索"
+                oninput="isListL3Search(this.value)"
+                oncompositionstart="isListL3CompStart()"
+                oncompositionend="isListL3CompEnd(this.value)"
+                placeholder="ヒアリング検索"
                 style="border:none;outline:none;font-size:12px;width:130px;padding:0;background:transparent;color:#0f172a;" />
               ${_searchActive ? `<span onclick="isListL3SearchClear()" title="検索クリア" style="cursor:pointer;font-size:13px;color:#94a3b8;user-select:none;">✕</span>` : ''}
             </div>
@@ -4238,17 +4312,7 @@ function _renderIsListLevel3(kind, owner) {
         <div style="${hClickable}text-align:center;" onclick="isListSortL3('nextCall')" title="昇順/降順切替">次回架電日 ${sortArrow('nextCall')}</div>
       </div>
     </div>
-    <div style="padding:0 24px 16px 24px;">
-    <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
-      <colgroup>
-        <col style="width:${COL_W[0]}"><col style="width:${COL_W[1]}"><col style="width:${COL_W[2]}"><col style="width:${COL_W[3]}"><col style="width:${COL_W[4]}"><col style="width:${COL_W[5]}">
-      </colgroup>
-      <tbody>${companyRows || `<tr><td colspan="6" style="padding:28px 8px;text-align:center;color:#94a3b8;font-size:13px;">${_searchActive ? `🔍 「${_escapeHtml(_searchQuery)}」に該当なし` : '該当なし'}</td></tr>`}</tbody>
-    </table>
-    <p style="font-size:10px;color:#94a3b8;margin-top:6px;">
-      会社名横の <span style="color:#64748b;">▶</span> で担当者一覧を開閉（姓クリックで HubSpot コンタクトへ）　|　<span style="color:#0369a1;">💬</span> はヒアリングメモあり（▶展開で表示・<span style="color:#0369a1;">🔍検索対象</span>）　|　ヘッダーの ▲▼ で昇順/降順を切替　|　次回架電日: <span style="color:#ef4444;">赤=超過</span> / <span style="color:#f97316;">橙=今日</span> / <span style="color:#16a34a;">緑=未来</span>
-    </p>
-    </div>
+    <div id="isListL3RowsContainer" style="padding:0 24px 16px 24px;">${_rowsBlockInner}</div>
   `;
 }
 
@@ -7321,7 +7385,6 @@ const IS_TABLE_ROWS_FY2026 = [
   { name:'宇佐美 朱莉', color:'emerald' },
   { name:'開発 茉子', color:'emerald' },
   { name:'久保 智花', color:'emerald' },
-  { name:'降籏 唯斗', color:'emerald' },
   // MKグループ（ピンク）
   { name:'池田 美亜', color:'rose' },
   { name:'本島 翼', color:'rose' },
@@ -7408,6 +7471,173 @@ function _getMemberDealsForKind(member, kind, months) {
     return memDeals.filter(d => d.stage === 'S' && months.includes(d.month));
   }
   return [];
+}
+
+// ============================================================
+// IS メンバー別 ランキング（FS同様の横棒ランキング / 3グループ×2軸切替）
+// ============================================================
+// 1メンバーの期間集計（renderIsMemberTable の statsFor と同一ロジック・再利用用）
+function _isMemberStats(member, months) {
+  let tApo=0, tJisshi=0, tYomi=0;
+  months.forEach(mo => {
+    const t = getIsTargetFor(member, mo);
+    tApo += t.apo; tJisshi += t.jisshi; tYomi += t.yomi;
+  });
+  const apoDeals    = _getMemberDealsForKind(member, 'apo',    months);
+  const jisshiDeals = _getMemberDealsForKind(member, 'jisshi', months);
+  const yomiDeals   = _getMemberDealsForKind(member, 'yomi',   months);
+  const wonDeals    = _getMemberDealsForKind(member, 'won',    months);
+  return {
+    tApo, tJisshi, tYomi,
+    apoCount: apoDeals.length,
+    jisshiCount: jisshiDeals.length,
+    yomiCount: yomiDeals.length,
+    wonCount: wonDeals.length,
+    wonAmount: wonDeals.reduce((s,d)=> s + (d.amount||0), 0),
+  };
+}
+
+// 現在選択中のグループ: 'apo' | 'yomi' | 'won'
+let currentIsRankGroup = 'apo';
+let isRankChartLeft  = null;
+let isRankChartRight = null;
+
+// グループ定義（各2軸）。sortKey 'rate'=達成率/率%で降順、'value'=実績値で降順
+const IS_RANK_GROUPS = {
+  apo: {
+    note: '※ アポ取得数・アポ実施数は「実績件数」で降順。バー長＝実績件数。ホバーで目標・達成率を表示。',
+    left:  { title:'アポ取得数ランキング（実績数順）',  base:'#0284c7', kind:'apoRate' },
+    right: { title:'アポ実施数ランキング（実績数順）',  base:'#f59e0b', kind:'jisshiRate' },
+  },
+  yomi: {
+    note: '※ ヨミ化数は「実績件数」で降順。ヨミ化率(=ヨミ化数÷アポ取得数)は%指標のため「実績値(%)」で降順。',
+    left:  { title:'ヨミ化数ランキング（実績数順）',     base:'#0284c7', kind:'yomiRate' },
+    right: { title:'ヨミ化率ランキング（実績値順）',     base:'#0ea5e9', kind:'yomiKaRate' },
+  },
+  won: {
+    note: '※ 受注貢献は目標を持たないため「実績値」で降順。件数＝件、金額＝円。',
+    left:  { title:'受注貢献 件数ランキング（実績値順）', base:'#10b981', kind:'wonCount' },
+    right: { title:'受注貢献 金額ランキング（実績値順）', base:'#059669', kind:'wonAmount' },
+  },
+};
+
+// kind から {sortVal(降順キー), bar(バー長), label(表示/ツールチップ)} を算出
+function _isRankMetric(kind, s) {
+  const pct = (num, den) => den > 0 ? Math.round(num/den*100) : (num > 0 ? 100 : 0);
+  switch (kind) {
+    case 'apoRate': {
+      const r = pct(s.apoCount, s.tApo);
+      return { sortVal:s.apoCount, bar:s.apoCount, label:`${s.apoCount}件`, tip:`実績 ${s.apoCount}件 / 目標 ${Math.round(s.tApo)}（達成率 ${r}%）` };
+    }
+    case 'jisshiRate': {
+      const r = pct(s.jisshiCount, s.tJisshi);
+      return { sortVal:s.jisshiCount, bar:s.jisshiCount, label:`${s.jisshiCount}件`, tip:`実績 ${s.jisshiCount}件 / 目標 ${Math.round(s.tJisshi)}（達成率 ${r}%）` };
+    }
+    case 'yomiRate': {
+      const r = pct(s.yomiCount, s.tYomi);
+      return { sortVal:s.yomiCount, bar:s.yomiCount, label:`${s.yomiCount}件`, tip:`実績 ${s.yomiCount}件 / 目標 ${Math.round(s.tYomi)}（達成率 ${r}%）` };
+    }
+    case 'yomiKaRate': {
+      const r = s.apoCount > 0 ? Math.round(s.yomiCount/s.apoCount*100) : 0;
+      return { sortVal:r, bar:r, label:`${r}%`, tip:`ヨミ化 ${s.yomiCount} / アポ ${s.apoCount}（${r}%）` };
+    }
+    case 'wonCount': {
+      return { sortVal:s.wonCount, bar:s.wonCount, label:`${s.wonCount}件`, tip:`受注貢献 ${s.wonCount}件` };
+    }
+    case 'wonAmount': {
+      const man = Math.round(s.wonAmount/10000);
+      return { sortVal:s.wonAmount, bar:s.wonAmount, label:'¥'+man.toLocaleString()+'万', tip:`受注貢献 ¥${s.wonAmount.toLocaleString()}` };
+    }
+  }
+  return { sortVal:0, bar:0, label:'0', tip:'0' };
+}
+
+// 1つの横棒ランキングを描画（FSの drawRankChart と同じ見た目）
+function _drawIsRankChart(canvasId, oldChart, items, baseColor, setter) {
+  if (oldChart) oldChart.destroy();
+  const el = document.getElementById(canvasId);
+  if (!el) { if (setter) setter(null); return; }
+  // 全メンバーが潰れず表示されるよう、人数に応じて描画領域の高さを可変化
+  const rowH = 22;
+  const dynH = Math.max(320, items.length * rowH + 30);
+  if (el.parentElement) el.parentElement.style.height = dynH + 'px';
+  const ctx = el.getContext('2d');
+  const sorted = [...items].sort((a,b) => b.sortVal - a.sortVal);
+  const labels = sorted.map(r => r.name);
+  const data   = sorted.map(r => r.bar);
+  const texts  = sorted.map(r => r.label);
+  const tips   = sorted.map(r => r.tip);
+  const rankColors = ['#fbbf24', '#cbd5e1', '#d97706']; // 1位金 2位銀 3位銅
+  const bg = data.map((v,i) => (v > 0 && i < 3) ? rankColors[i] : (v > 0 ? baseColor : '#e2e8f0'));
+  const chart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: bg, borderRadius: 4 }] },
+    options: {
+      responsive: true, indexAxis: 'y', maintainAspectRatio: false,
+      layout: { padding: { right: 96 } },
+      scales: {
+        x: { beginAtZero: true, ticks: { font:{size:10}, color:'#94a3b8' }, grid: { color:'rgba(148,163,184,0.12)' } },
+        y: { ticks: { font:{size:11}, color:'#475569' }, grid: { display:false } }
+      },
+      plugins: {
+        legend: { display:false },
+        tooltip: { callbacks: { label: (c) => `${c.label}: ${tips[c.dataIndex]}` } }
+      }
+    },
+    plugins: [{
+      id: 'isRankBadge',
+      afterDatasetsDraw: (c) => {
+        const cx = c.ctx;
+        const meta = c.getDatasetMeta(0);
+        meta.data.forEach((bar, i) => {
+          if (data[i] <= 0) return;
+          cx.save();
+          cx.fillStyle = '#0f172a';
+          cx.font = 'bold 11px sans-serif';
+          cx.textBaseline = 'middle';
+          const medal = i === 0 ? '🥇 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '';
+          cx.fillText(medal + texts[i], bar.x + 6, bar.y);
+          cx.restore();
+        });
+      }
+    }]
+  });
+  if (setter) setter(chart);
+}
+
+// グループ切替
+function switchIsRankGroup(group) {
+  if (IS_RANK_GROUPS[group]) currentIsRankGroup = group;
+  renderIsRanking();
+}
+
+// IS ランキング本体
+function renderIsRanking() {
+  const cfg = IS_RANK_GROUPS[currentIsRankGroup] || IS_RANK_GROUPS.apo;
+  // タブの選択状態
+  document.querySelectorAll('#isRankTabs .is-rank-tab').forEach(btn => {
+    const on = btn.getAttribute('data-isrank') === currentIsRankGroup;
+    btn.style.background  = on ? '#0284c7' : '#ffffff';
+    btn.style.color       = on ? '#ffffff' : '#64748b';
+    btn.style.borderColor = on ? '#0284c7' : '#cbd5e1';
+  });
+  // タイトル・注記
+  const tL = document.getElementById('isRankTitleLeft');
+  const tR = document.getElementById('isRankTitleRight');
+  const nt = document.getElementById('isRankNote');
+  if (tL) tL.textContent = cfg.left.title;
+  if (tR) tR.textContent = cfg.right.title;
+  if (nt) nt.textContent = cfg.note;
+
+  const months = getMonthsForPeriod();
+  const rows = (currentFY === 'FY2026') ? IS_TABLE_ROWS_FY2026 : IS_TABLE_ROWS_FY2025;
+  const stats = rows.map(r => ({ name: r.name, s: _isMemberStats(r.name, months) }));
+
+  const itemsLeft  = stats.map(x => Object.assign({ name:x.name }, _isRankMetric(cfg.left.kind,  x.s)));
+  const itemsRight = stats.map(x => Object.assign({ name:x.name }, _isRankMetric(cfg.right.kind, x.s)));
+
+  _drawIsRankChart('isRankChartLeft',  isRankChartLeft,  itemsLeft,  cfg.left.base,  ref => isRankChartLeft  = ref);
+  _drawIsRankChart('isRankChartRight', isRankChartRight, itemsRight, cfg.right.base, ref => isRankChartRight = ref);
 }
 
 function renderIsMemberTable() {
@@ -8464,12 +8694,47 @@ function migrateSnapshotNames() {
   }
 }
 
+// ============================================================
+// 読み取り時 dedup（同日は1件＝最新の保存のみを表示・集計に使用）
+//   - GAS/シート側の行は一切削除しない。表示・計算に使う in-memory 配列のみ重複排除
+//   - 同日に複数（フロントISO id + サーバー日付id、同時オープンの重複 等）あれば
+//     実際の保存時刻が最も新しいものを採用（サーバー23時保存を優先しやすい）
+// ============================================================
+function _snapDayKey(s) {
+  if (!s) return '';
+  if (s.id) {
+    const d = new Date(String(s.id).replace(/\//g, '-'));
+    if (!isNaN(d)) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  if (s.dateStr) return String(s.dateStr).slice(0, 10).replace(/\//g, '-');
+  return String(s.id || '');
+}
+function _snapTime(s) {
+  if (!s) return 0;
+  // dateStr は「実際の保存時刻」を含むことが多いので優先（yyyy/MM/dd HH:mm or ISO）
+  let t = Date.parse(String(s.dateStr || ''));
+  if (!isNaN(t)) return t;
+  t = Date.parse(String(s.id || ''));
+  return isNaN(t) ? 0 : t;
+}
+function dedupeSnapshotsByDay(arr) {
+  if (!Array.isArray(arr)) return [];
+  const byDay = {};
+  for (const s of arr) {
+    if (!s) continue;
+    const k = _snapDayKey(s);
+    if (!byDay[k] || _snapTime(s) >= _snapTime(byDay[k])) byDay[k] = s;
+  }
+  return Object.values(byDay).sort((a, b) => _snapTime(a) - _snapTime(b));
+}
+
 function loadSnapshots() {
   // localStorage に残っている旧データを読み込む（GAS移行前の復元用）
   try {
     const raw = localStorage.getItem(SNAP_KEY);
     snapshots = raw ? JSON.parse(raw) : [];
   } catch (e) { snapshots = []; }
+  snapshots = dedupeSnapshotsByDay(snapshots); // 同日は最新1件に集約
   migrateSnapshotNames();
 }
 
