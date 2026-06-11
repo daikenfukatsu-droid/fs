@@ -594,6 +594,7 @@
         <button id="eCalView-cal"    onclick="setECalView('cal')"    class="px-3 py-1.5 text-xs font-semibold" style="background:#0284c7;color:white">📅 カレンダー</button>
         <button id="eCalView-today"  onclick="setECalView('today')"  class="px-3 py-1.5 text-xs font-semibold border-l" style="background:white;color:#0284c7;border-color:#0284c7">✓ 本日</button>
         <button id="eCalView-weekly" onclick="setECalView('weekly')" class="px-3 py-1.5 text-xs font-semibold border-l" style="background:white;color:#0284c7;border-color:#0284c7">📊 週次</button>
+        <button id="eCalView-reup"   onclick="setECalView('reup')"   class="px-3 py-1.5 text-xs font-semibold border-l" style="background:white;color:#0284c7;border-color:#0284c7">🔁 再アップ時期</button>
       </div>
     </div>
 
@@ -652,6 +653,29 @@
         <span class="text-[10px] text-slate-400">1〜3回目すべて含む・メンバー別合計</span>
       </div>
       <div id="eCalWeeklyBody"></div>
+    </div>
+
+    <!-- ④ 再アップ時期ビュー -->
+    <div id="eCalView-content-reup" class="hidden">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <p class="text-xs text-slate-500" id="eCalReupLabel">再アップ対象 0件</p>
+        <div class="flex items-center gap-2 flex-wrap">
+          <select id="eCalReupPeriod" onchange="eReupPeriod=this.value;renderECalReup()" class="px-2 py-1 text-xs border rounded">
+            <option value="">時期: 全て</option>
+          </select>
+          <label class="flex items-center gap-1 text-xs font-semibold cursor-pointer select-none" style="color:#b91c1c">
+            <input type="checkbox" id="eCalReupWarnOnly" onchange="eReupOnlyWarn=this.checked;renderECalReup()" style="accent-color:#dc2626">
+            ⚠ 戻し忘れのみ
+          </label>
+          <button id="eCalReupClearBtn" onclick="eReupMembers.clear();renderECalReup()" class="hidden px-2 py-1 text-xs border rounded text-slate-500 hover:bg-slate-50">担当の選択解除</button>
+        </div>
+      </div>
+      <!-- メンバー別件数サマリ（カードクリックで複数選択フィルタ） -->
+      <p class="text-[10px] text-slate-400 mb-1">担当者カードをクリックで一覧を絞り込み（複数選択可・再クリックで解除）</p>
+      <div id="eCalReupSummary" class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4"></div>
+      <!-- 時期別 案件一覧 -->
+      <div id="eCalReupBody"></div>
+      <p class="text-[10px] text-slate-400 mt-2">※ 再アップ時期（HubSpot同期）が入力されている案件のみ表示・時期昇順 / 空白は対象外<br>※ 会社所有者・前回の連絡・次回架電日 = IS保有リスト(Yes)と企業名の正規化照合（末尾の"-"等の記号・タグを吸収、外れた場合は前方一致で一意なら補完。複数コンタクトは最新日付を採用）/ 未マッチは「－」<br>※ 再アップ判定: 同一企業の別取引の作成日 ＞ 前回取引のクローズ日 → ✅再アップ成功 / 新取引なし＆IS保有リスト未登録 → ⚠戻し忘れ（所有者がFSのままの可能性）/ IS保有リスト登録済 → IS保有中</p>
     </div>
   </div>
 
@@ -1487,6 +1511,11 @@ function confirmDelete() {
 
 let pipeline = [];
 let lostDeals = [];
+// ★ 再アップ時期ビュー用: FY期間外クローズ等で pipeline/lostDeals に乗らないが再アップ時期が入力されている案件
+let reupDeals = [];
+let eReupPeriod = '';  // 再アップビュー 時期フィルタ
+let eReupMembers = new Set();  // 再アップビュー 担当フィルタ（カードクリック・複数選択）
+let eReupOnlyWarn = false;     // 再アップビュー ⚠戻し忘れのみ表示
 // 類似企業マスタ（FS GASから取得した受注済み企業データ）
 let similarCompanies = [];
 
@@ -2124,6 +2153,7 @@ async function fetchFromSheets(silent = false) {
     if (!json.ok) throw new Error(json.error || '取得失敗');
 
     // パイプライン
+    reupDeals = [];  // ★ normalizeRow が FY期間外の再アップ案件を push するため先にリセット
     const allRows = (json.data || []).map(row => normalizeRow(row)).filter(r => r);
     pipeline  = allRows.filter(r => r.stage !== '失注');
     lostDeals = allRows.filter(r => r.stage === '失注');
@@ -2392,6 +2422,15 @@ function normalizeRow(row, hubspotId = null) {
   const industryRaw   = String(find('業種_baseconnect','業種','industry_baseconnect') || '').trim();
   const reuploadRaw   = find('再アップ案件','field72__c');
   const reuploadFlag  = (reuploadRaw === true || String(reuploadRaw).toUpperCase() === 'TRUE');
+  // ★ 再アップ時期（HubSpot同期・年月形式）→ 'YYYY/MM' に正規化。パース不能はraw文字列を保持
+  const reupTimingRaw = find('再アップ時期');
+  let reupTiming = null;
+  if (reupTimingRaw instanceof Date && !isNaN(reupTimingRaw)) {
+    reupTiming = `${reupTimingRaw.getFullYear()}/${String(reupTimingRaw.getMonth()+1).padStart(2,'0')}`;
+  } else if (reupTimingRaw !== null && reupTimingRaw !== undefined && String(reupTimingRaw).trim() !== '') {
+    const tm = String(reupTimingRaw).match(/(\d{4})[\/\-年]\s*(\d{1,2})/);
+    reupTiming = tm ? `${tm[1]}/${String(tm[2]).padStart(2,'0')}` : String(reupTimingRaw).trim();
+  }
   const leadCreatedRaw = find('リードの作成日_Hubspot','リード作成日','created_day_hubspot');
   let leadCreatedDate = null;
   if (leadCreatedRaw instanceof Date && !isNaN(leadCreatedRaw)) {
@@ -2424,6 +2463,16 @@ function normalizeRow(row, hubspotId = null) {
   else if (rawMember) name = rawMember;  // 未マップでも raw 値を保持
   if (!name && !recordCreator) return null;  // 取引担当者もレコード作成者も無ければ除外
 
+  // ★ 再アップ時期入力済みなのに通常データから除外される案件（FY期間外クローズ等）を
+  //    reupDeals に退避する（既存の pipeline/lostDeals 集計には一切影響させない）
+  const _pushReup = () => {
+    if (reupTiming && company) {
+      reupDeals.push({ company, name: name || recordCreator || '不明', reupTiming,
+                       prevStage: stageRaw || '不明', lostReason, nyusaki, hubspotId: hubspotId || null,
+                       closeMonth: month, closeDay, apoCreatedDate });
+    }
+  };
+
   let month = null;
   let closeDay = null;
   if (dateRaw instanceof Date && !isNaN(dateRaw)) {
@@ -2431,11 +2480,11 @@ function normalizeRow(row, hubspotId = null) {
     closeDay = dateRaw.getDate();
   } else {
     const match = String(dateRaw).match(/(\d{4})[\/\-年]?\s*(\d{1,2})(?:[\/\-月]\s*(\d{1,2}))?/);
-    if (!match) return null;
+    if (!match) { _pushReup(); return null; }
     month = `${match[1]}/${String(match[2]).padStart(2,'0')}`;
     closeDay = match[3] ? parseInt(match[3], 10) : null;
   }
-  if (!FY_MONTHS.includes(month) && !FY2025_MONTHS.includes(month)) return null;
+  if (!FY_MONTHS.includes(month) && !FY2025_MONTHS.includes(month)) { _pushReup(); return null; }
 
   const su = stageRaw.toUpperCase().replace(/\s/g,'');
   // 失注系（失注（〜）/ チャーン / 代理店失注）を一括で「失注扱い」に
@@ -2460,7 +2509,7 @@ function normalizeRow(row, hubspotId = null) {
              lostLabel, lostReason, mishoshoReason, hubspotId: hubspotId||null,
              product: lostProduct, shinStatus, chuStatus, replaceNew, replaceChu, nyusaki,
              leadSource: leadSourceRaw, industry: industryRaw,
-             reupload: reuploadFlag, leadCreatedDate,
+             reupload: reuploadFlag, reupTiming, stageRaw, leadCreatedDate,
              recordCreator, yomiDecidedDate, apoCreatedDate,
              appointDate:  lostAppt1.date,
              appointMonth: lostAppt1.month,  // ★追加: 実施数フィルタ用
@@ -2474,7 +2523,7 @@ function normalizeRow(row, hubspotId = null) {
   else if (su.startsWith('C')) stage = 'C';
   else if (su.startsWith('D')) stage = 'D';
   else if (su.startsWith('E')) stage = 'E';
-  if (!stage) return null;
+  if (!stage) { _pushReup(); return null; }
 
   let product = null;
   const combinedJp = productRaw + ' ' + targetSvc;
@@ -2509,11 +2558,11 @@ function normalizeRow(row, hubspotId = null) {
            mishoshoReason,  // ★追加: 未商談化理由（実施数フィルタ用）
            shinStatus, chuStatus, replaceNew, replaceChu, nyusaki,
            leadSource: leadSourceRaw, industry: industryRaw,
-           reupload: reuploadFlag, leadCreatedDate,
+           reupload: reuploadFlag, reupTiming, stageRaw, leadCreatedDate,
            recordCreator, yomiDecidedDate, apoCreatedDate };
 }
 
-function clearData() { pipeline = []; lostDeals = []; document.getElementById('fileStatus').textContent = ''; render(); }
+function clearData() { pipeline = []; lostDeals = []; reupDeals = []; document.getElementById('fileStatus').textContent = ''; render(); }
 
 // ===== ビュー切替 =====
 function getFyData() {
@@ -7236,7 +7285,7 @@ function renderECalendar() {
 // ============================================================
 function setECalView(view) {
   eCalView = view;
-  const ids = ['cal', 'today', 'weekly'];
+  const ids = ['cal', 'today', 'weekly', 'reup'];
   ids.forEach(id => {
     const btn = document.getElementById('eCalView-' + id);
     const cnt = document.getElementById('eCalView-content-' + id);
@@ -7254,6 +7303,7 @@ function setECalView(view) {
   if (view === 'cal') renderECalendar();
   else if (view === 'today') renderECalToday();
   else if (view === 'weekly') renderECalWeekly();
+  else if (view === 'reup') renderECalReup();
 }
 
 function _ymdTodayStr() {
@@ -7357,6 +7407,275 @@ function renderECalWeekly() {
         </div>
       </div>
     </div>`;
+  }).join('')}</div>`;
+}
+
+// ============================================================
+// 商談カレンダー: 再アップ時期ビュー
+//   対象: 再アップ時期（HubSpot同期）が入力されている全案件
+//   pipeline/lostDeals に加え、FY期間外で除外された reupDeals も含む
+// ============================================================
+// 企業名の正規化（IS保有リストとの照合キー。法人格・空白・全角英数の揺れを吸収）
+// ★ 2026-06-10 強化: 取引名末尾のサフィックス記号（"-" "_" "/" "・" 等）を除去
+//   例: 「株式会社エアークローゼット -」→「えあーくろーぜっと」相当キーに揃う
+//   ※ 長音「ー」(U+30FC) は社名の一部（ソニー等）のため除去対象に含めない
+function _reupNormCompanyKey(s) {
+  return String(s || '')
+    .replace(/[\s　]/g, '')
+    .replace(/株式会社|（株）|\(株\)|㈱|有限会社|（有）|\(有\)|㈲|合同会社|（同）|\(同\)/g, '')
+    .replace(/[Ａ-Ｚａ-ｚ０-９]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0))
+    .toLowerCase().trim()
+    .replace(/[-‐‑–—－_＿\/／・.,、。･]+$/, '');
+}
+
+// ★ 2026-06-10 追加: 照合の2段階フォールバック
+//   ①完全一致 → ②前方一致（どちらかがもう一方の先頭に一致）
+//   誤マッチ防止: 5文字未満のキーは対象外・候補が複数あればマッチさせない
+//   例: 「ソーシャルインテリア_自力獲得」→「ソーシャルインテリア」に一意マッチ
+function _reupFuzzyGet(map, key) {
+  if (!key) return undefined;
+  if (map.has(key)) return map.get(key);
+  if (key.length < 5) return undefined;
+  let found = null, count = 0;
+  for (const k of map.keys()) {
+    if (k.length >= 5 && (k.startsWith(key) || key.startsWith(k))) {
+      count++;
+      found = k;
+      if (count > 1) return undefined; // 複数候補は誤マッチ防止でスキップ
+    }
+  }
+  return count === 1 ? map.get(found) : undefined;
+}
+
+// IS保有リスト(Yes)から 正規化企業名 → { owner, lastContact, nextCall } のマップを構築
+// 同一企業の複数コンタクトは最新日付を採用（既存 _mergeLatestCompanyRow と同方針）
+function _buildReupIsMap() {
+  const parseD = (s) => {
+    if (!s) return null;
+    const d = new Date(String(s).trim().replace(/\//g, '-'));
+    return (isNaN(d.getTime()) || d.getFullYear() < 2000) ? null : d;
+  };
+  const map = new Map();
+  (isListYes || []).forEach(r => {
+    const key = _reupNormCompanyKey(r.company);
+    if (!key) return;
+    if (!map.has(key)) map.set(key, { owner: '', lastContact: null, nextCall: null, _ownerD: null });
+    const o = map.get(key);
+    const lc = parseD(r.lastContact);
+    const nc = parseD(r.nextCall);
+    if (lc && (!o.lastContact || lc > o.lastContact)) o.lastContact = lc;
+    if (nc && (!o.nextCall || nc > o.nextCall)) o.nextCall = nc;
+    // 所有者: 「前回の連絡」が最新のコンタクトの所有者を採用（日付なしなら非空優先）
+    if (r.owner && (lc ? (!o._ownerD || lc > o._ownerD) : !o.owner)) {
+      o.owner = r.owner;
+      if (lc) o._ownerD = lc;
+    }
+  });
+  return map;
+}
+
+function _collectReupRows() {
+  const isMap = _buildReupIsMap();
+  const fmtD = (d) => d ? `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}` : '';
+  const attachIs = (row) => {
+    const hit = _reupFuzzyGet(isMap, _reupNormCompanyKey(row.company));
+    row.isOwner     = hit ? (hit.owner || '') : '';
+    row.lastContact = hit ? fmtD(hit.lastContact) : '';
+    row.nextCall    = hit ? fmtD(hit.nextCall) : '';
+    row.nextCallD   = hit ? hit.nextCall : null;
+    return row;
+  };
+
+  // ★ 再アップ判定用: 正規化企業名 → 全取引の作成日(アポ作成日≒HubSpot取引作成日)一覧
+  const dealIdx = new Map();
+  const addIdx = (d) => {
+    if (!d.apoCreatedDate || !d.company) return;
+    const k = _reupNormCompanyKey(d.company);
+    if (!k) return;
+    if (!dealIdx.has(k)) dealIdx.set(k, []);
+    dealIdx.get(k).push({ created: d.apoCreatedDate, id: d.hubspotId || null });
+  };
+  [...pipeline, ...lostDeals].forEach(addIdx);
+  (reupDeals || []).forEach(addIdx);
+
+  // 前回取引のクローズ日境界（日不明なら月末＝判定が甘くならない側に倒す）
+  const _closeBoundary = (monthStr, day) => {
+    if (!monthStr) return null;
+    const p = String(monthStr).split('/').map(Number);
+    if (!p[0] || !p[1]) return null;
+    return day ? new Date(p[0], p[1]-1, day) : new Date(p[0], p[1], 0);
+  };
+
+  // 判定: 同一企業の別取引の作成日 > 前回クローズ日 → success / 所有者あり → is / それ以外 → forgot
+  const judgeRow = (row, boundary) => {
+    let newest = null;
+    if (boundary) {
+      (_reupFuzzyGet(dealIdx, _reupNormCompanyKey(row.company)) || []).forEach(e => {
+        if (row.hubspotId && e.id === row.hubspotId) return; // 自分自身は除外
+        if (e.created > boundary && (!newest || e.created > newest)) newest = e.created;
+      });
+    }
+    if (newest) {
+      row.judge = 'success';
+      row.judgeDate = `${newest.getMonth()+1}/${newest.getDate()}新取引`;
+    } else if (row.isOwner) {
+      row.judge = 'is';
+    } else {
+      row.judge = 'forgot';
+    }
+    return row;
+  };
+
+  const rows = [];
+  [...pipeline, ...lostDeals].forEach(d => {
+    if (!d.reupTiming) return;
+    const isLost = d.stage === '失注';
+    const prevStage = isLost ? (d.stageRaw || `失注（${d.lostLabel || 'その他'}）`) : (d.stageRaw || d.stage);
+    rows.push(judgeRow(attachIs({ company: d.company, name: d.name || '不明', reupTiming: d.reupTiming,
+                prevStage, isLost, lostReason: d.lostReason || d.mishoshoReason || '',
+                nyusaki: d.nyusaki || '', hubspotId: d.hubspotId || null }),
+                _closeBoundary(d.month, d.closeDay)));
+  });
+  (reupDeals || []).forEach(d => {
+    rows.push(judgeRow(attachIs({ company: d.company, name: d.name || '不明', reupTiming: d.reupTiming,
+                prevStage: d.prevStage || '不明', isLost: String(d.prevStage||'').includes('失注') || String(d.prevStage||'').includes('チャーン'),
+                lostReason: d.lostReason || '', nyusaki: d.nyusaki || '', hubspotId: d.hubspotId || null }),
+                _closeBoundary(d.closeMonth, d.closeDay)));
+  });
+  return rows;
+}
+
+// 担当者カードのクリック（複数選択トグル）
+function eReupToggleMember(enc) {
+  const n = decodeURIComponent(enc);
+  if (eReupMembers.has(n)) eReupMembers.delete(n); else eReupMembers.add(n);
+  renderECalReup();
+}
+
+function renderECalReup() {
+  const body    = document.getElementById('eCalReupBody');
+  const summary = document.getElementById('eCalReupSummary');
+  const label   = document.getElementById('eCalReupLabel');
+  const selP    = document.getElementById('eCalReupPeriod');
+  const clearBtn = document.getElementById('eCalReupClearBtn');
+  if (!body) return;
+
+  const allRows = _collectReupRows();
+  const isYm = (s) => /^\d{4}\/\d{2}$/.test(s);
+  const ymLabel = (s) => isYm(s) ? `${s.split('/')[0]}年${parseInt(s.split('/')[1],10)}月` : s;
+
+  // 時期フィルタ選択肢を構築（選択状態は維持）
+  const periods = Array.from(new Set(allRows.map(r => r.reupTiming)))
+    .sort((a,b) => (isYm(a)?0:1) - (isYm(b)?0:1) || String(a).localeCompare(String(b)));
+  if (selP) {
+    selP.innerHTML = '<option value="">時期: 全て</option>' + periods.map(p => `<option value="${p}" ${p===eReupPeriod?'selected':''}>${ymLabel(p)}</option>`).join('');
+    if (eReupPeriod && !periods.includes(eReupPeriod)) eReupPeriod = '';
+  }
+
+  // 時期フィルタ + ⚠戻し忘れフィルタを適用した行（担当カードの件数はここから算出）
+  const periodRows = allRows.filter(r =>
+    (!eReupPeriod || r.reupTiming === eReupPeriod) &&
+    (!eReupOnlyWarn || r.judge === 'forgot'));
+  // 存在しなくなった担当の選択を掃除
+  const memberSet = new Set(periodRows.map(r => r.name));
+  eReupMembers.forEach(m => { if (!memberSet.has(m)) eReupMembers.delete(m); });
+  // 担当カード選択（複数）を適用した行（一覧表示用）
+  const rows = periodRows.filter(r => eReupMembers.size === 0 || eReupMembers.has(r.name));
+
+  const warnTotal = rows.filter(r => r.judge === 'forgot').length;
+  if (label) label.textContent = `再アップ対象 ${rows.length}件${warnTotal > 0 ? `（⚠戻し忘れ ${warnTotal}件）` : ''}${eReupPeriod ? ` / ${ymLabel(eReupPeriod)}` : ''}${eReupMembers.size > 0 ? ` / 担当${eReupMembers.size}名選択中` : ''}`;
+  if (clearBtn) clearBtn.classList.toggle('hidden', eReupMembers.size === 0);
+
+  // ① メンバー別件数カード（クリックで複数選択トグル）
+  const memberCount = new Map();
+  periodRows.forEach(r => memberCount.set(r.name, (memberCount.get(r.name)||0) + 1));
+  const memberRows = Array.from(memberCount.entries()).sort((a,b) => b[1] - a[1]);
+  if (summary) {
+    summary.innerHTML = memberRows.map(([n,c]) => {
+      const sel = eReupMembers.has(n);
+      return `
+      <div class="rounded-lg p-3 cursor-pointer select-none transition-colors" onclick="eReupToggleMember('${encodeURIComponent(n)}')"
+           style="background:${sel ? '#fef3c7' : '#f8fafc'};border:2px solid ${sel ? '#b45309' : '#e2e8f0'}"
+           title="クリックで${sel ? '選択解除' : '絞り込み'}">
+        <div class="text-xs truncate font-semibold" style="color:${sel ? '#92400e' : '#64748b'}">${n}${sel ? ' ✓' : ''}</div>
+        <div class="text-xl font-bold" style="color:#b45309">${c}<span class="text-xs ml-1 font-semibold">件</span></div>
+      </div>`;
+    }).join('');
+  }
+
+  if (rows.length === 0) {
+    body.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">再アップ時期が入力されている案件はありません</div>';
+    return;
+  }
+
+  // ② 時期（月）ごとにグルーピング（年月パース不可は末尾）
+  const groups = new Map();
+  rows.forEach(r => {
+    if (!groups.has(r.reupTiming)) groups.set(r.reupTiming, []);
+    groups.get(r.reupTiming).push(r);
+  });
+  const sortedKeys = Array.from(groups.keys())
+    .sort((a,b) => (isYm(a)?0:1) - (isYm(b)?0:1) || String(a).localeCompare(String(b)));
+
+  const esc = (s) => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const stagePill = (r) => {
+    const bg = r.isLost ? '#fee2e2' : '#dbeafe';
+    const fg = r.isLost ? '#991b1b' : '#1e40af';
+    return `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap" style="background:${bg};color:${fg}">${esc(r.prevStage)}</span>`;
+  };
+  // 企業名: HubSpot取引リンク（既存の取引リンク形式を流用）
+  const companyCell = (r) => {
+    if (!r.hubspotId) return esc(r.company);
+    return `<a href="https://app.hubspot.com/contacts/23871469/record/0-3/${r.hubspotId}" target="_blank" rel="noopener" class="hover:underline" style="color:#0284c7">${esc(r.company)} ↗</a>`;
+  };
+  // 次回架電日: 過去=赤 / 今日=橙 / 未来=緑（既存IS保有リストの配色に準拠）
+  const _todayD = new Date(); _todayD.setHours(0,0,0,0);
+  const nextCallCell = (r) => {
+    if (!r.nextCall) return '<span class="text-slate-300">－</span>';
+    let color = '#64748b';
+    if (r.nextCallD) {
+      const d = new Date(r.nextCallD); d.setHours(0,0,0,0);
+      color = d < _todayD ? '#dc2626' : (d.getTime() === _todayD.getTime() ? '#ea580c' : '#16a34a');
+    }
+    return `<span class="font-semibold whitespace-nowrap" style="color:${color}">${esc(r.nextCall)}</span>`;
+  };
+  // 再アップ判定: success=新取引あり / forgot=所有者戻し忘れ疑い / is=IS保有中
+  const judgePill = (r) => {
+    if (r.judge === 'success') return `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap" style="background:#dcfce7;color:#166534" title="前回クローズ日より後に新しい取引が作成されています">✅ 再アップ成功${r.judgeDate ? `(${r.judgeDate})` : ''}</span>`;
+    if (r.judge === 'forgot')  return `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap" style="background:#fee2e2;color:#991b1b" title="新取引がなく、IS保有リストにも未登録。コンタクト所有者の戻し忘れの可能性">⚠ 戻し忘れ</span>`;
+    return `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap" style="background:#f1f5f9;color:#64748b" title="IS保有リストに登録済み（待機中）">IS保有中</span>`;
+  };
+
+  body.innerHTML = `<div class="border rounded-lg overflow-hidden" style="border-color:#e2e8f0">${sortedKeys.map(key => {
+    const list = groups.get(key).slice().sort((a,b) => String(a.name).localeCompare(String(b.name),'ja'));
+    return `
+    <div class="px-3 py-1.5 text-xs font-bold" style="background:#fef3c7;color:#92400e">🔁 ${ymLabel(key)}（${list.length}件）</div>
+    <div class="overflow-x-auto"><table class="w-full text-xs" style="border-collapse:collapse;min-width:880px">
+      <thead><tr class="text-slate-400 border-b" style="border-color:#e2e8f0">
+        <th class="text-left px-3 py-1.5 font-semibold" style="width:17%">企業名</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:9%">FS担当者</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:10%">会社所有者</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:14%">再アップ判定</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:12%">前回ステージ</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:15%">前回失注理由</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:8%">導入先</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:8%">前回の連絡</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:7%">次回架電日</th>
+      </tr></thead>
+      <tbody>${list.map(r => `
+        <tr class="border-b hover:bg-slate-50" style="border-color:#f1f5f9">
+          <td class="px-3 py-1.5 font-semibold text-slate-700">${companyCell(r)}</td>
+          <td class="px-2 py-1.5 text-slate-600">${esc(r.name)}</td>
+          <td class="px-2 py-1.5 text-slate-600">${esc(r.isOwner) || '<span class="text-slate-300">－</span>'}</td>
+          <td class="px-2 py-1.5">${judgePill(r)}</td>
+          <td class="px-2 py-1.5">${stagePill(r)}</td>
+          <td class="px-2 py-1.5 text-slate-500">${esc(r.lostReason) || '<span class="text-slate-300">－</span>'}</td>
+          <td class="px-2 py-1.5 text-slate-600">${esc(r.nyusaki) || '<span class="text-slate-300">－</span>'}</td>
+          <td class="px-2 py-1.5 text-slate-600 whitespace-nowrap">${esc(r.lastContact) || '<span class="text-slate-300">－</span>'}</td>
+          <td class="px-2 py-1.5">${nextCallCell(r)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>`;
   }).join('')}</div>`;
 }
 
