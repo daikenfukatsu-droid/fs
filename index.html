@@ -738,6 +738,33 @@
       <p class="text-[10px] text-slate-400 mt-1" id="is-list-note">担当者ごとの保有数を可視化（会社IDで重複統合）</p>
     </div>
 
+    <!-- ★ 2026-06-15 追加: パーセプションフロー活動（上昇数・アポ転換元） -->
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-4 border-l-4" style="border-left-color:#16a34a">
+      <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+        <p class="text-xs text-slate-500">🎯 パーセプションフロー活動（担当者ごとの上昇数・商談化転換元）</p>
+        <div class="inline-flex gap-0.5 p-0.5 rounded-lg" style="background:#f1f5f9;">
+          <button onclick="setPercActivityPeriod('daily')" id="percActDailyBtn"
+            class="text-[11px] px-2.5 py-1 rounded-md font-semibold">デイリー</button>
+          <button onclick="setPercActivityPeriod('weekly')" id="percActWeeklyBtn"
+            class="text-[11px] px-2.5 py-1 rounded-md font-semibold">週次</button>
+        </div>
+      </div>
+      <div id="percActivityBody"></div>
+      <p class="text-[10px] text-slate-400 mt-2">※「→上」=その段階より上位のパーセプションフローへ遷移した件数（複数段飛ばしも含む）。「商談化転換元」は商談化へ遷移した件数の遷移前内訳。データ収集を開始したばかりのため、数日〜数週間は数値が少なく表示されます。</p>
+    </div>
+
+    <!-- ★ 2026-06-15 追加: パーセプション遷移ドリルダウンモーダル -->
+    <div id="percTransModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4 py-8">
+      <div class="rounded-xl shadow-xl w-full max-w-md flex flex-col overflow-hidden bg-white" style="max-height:85vh;">
+        <div class="flex items-center justify-between px-5 py-3 border-b">
+          <h3 id="percTransModalTitle" class="font-semibold text-slate-700 text-sm"></h3>
+          <button onclick="closePercTransModal()" class="text-slate-400 hover:text-slate-600 text-lg leading-none">✕</button>
+        </div>
+        <p id="percTransModalSubtitle" class="text-[11px] text-slate-500 px-5 pt-2"></p>
+        <div id="percTransModalBody" class="px-5 py-3 overflow-y-auto" style="max-height:65vh;"></div>
+      </div>
+    </div>
+
     <!-- IS リスト保有数 詳細モーダル（3階層） -->
     <div id="isListModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4 py-8">
       <div id="isListModalCard" class="rounded-xl shadow-xl w-full max-w-3xl flex flex-col overflow-hidden transition-colors" style="background:#ffffff;max-height:90vh;">
@@ -2246,6 +2273,7 @@ async function fetchFromSheets(silent = false) {
           if (isJson.ok) {
             isListYes = (isJson.yes || []).map(_normalizeListRow);
             isListNo  = (isJson.no  || []).map(_normalizeListRow);
+            isTransitions = isJson.transitions || []; // ★ 2026-06-15 追加
             // ★ データ更新時に「本日の保有リストスナップショット」をlocalStorageへ自動保存（前日比較用）
             try { _saveIsListSnapshot(); } catch(e) { console.warn('[IS snap save]', e); }
             const isUpdatedAt = isJson.updatedAt ? new Date(isJson.updatedAt).toLocaleString('ja-JP') : '';
@@ -2971,6 +2999,7 @@ function render() {
 // ============================================================
 let isListYes = [];
 let isListNo  = [];
+let isTransitions = []; // ★ 2026-06-15 追加: パーセプションフロー遷移ログ（直近60日分）
 
 function _normalizeListRow(r) {
   // ★ 旧字体→新字体（惠→恵 等）担当者名の揺れを吸収
@@ -2996,8 +3025,8 @@ function _normalizeListRow(r) {
 
 // パーセプションフロー 優先順位（上ほど高優先・index小さいほど高優先）
 const PERCEPTION_FLOW_PRIORITY = [
-  '日程調整待ち',
   '商談化',
+  '日程調整待ち',
   '比較検討',
   '導入検討',
   '興味関心',
@@ -3271,6 +3300,170 @@ function _percKey(r) {
   const v = String(r && r.perceptionFlow || '').trim();
   if (!v) return '空欄';
   return PERC_META[v] ? v : '空欄';
+}
+
+// ============================================================
+// ★ 2026-06-15 追加: パーセプションフロー活動（上昇数・アポ転換元）
+//   未対応(最下位) → 対応中 → 対応終了 → 課題不明 → 課題認知 →
+//   興味関心 → 導入検討 → 比較検討 → 日程調整待ち → 商談化(最上位=ゴール)
+//   ※ 商談化を最上位（日程調整待ちより上）に変更
+//   ※ IS_GAS_v_latest5.js の PERCEPTION_UPWARD_ORDER と一致させること
+// ============================================================
+const PERCEPTION_UPWARD_ORDER = [
+  '未対応','対応中','対応終了','課題不明','課題認知','興味関心','導入検討','比較検討','日程調整待ち','商談化'
+];
+let _percActivityPeriod = 'daily'; // 'daily' | 'weekly'
+
+function setPercActivityPeriod(period) {
+  _percActivityPeriod = period;
+  renderPerceptionActivity();
+}
+
+// 期間に応じた遷移ログのフィルタ（daily=本日 / weekly=直近7日）
+function _filteredPercTransitions() {
+  if (!Array.isArray(isTransitions) || isTransitions.length === 0) return [];
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const todayStr = `${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}`;
+  if (_percActivityPeriod === 'daily') {
+    return isTransitions.filter(t => t.date === todayStr);
+  }
+  const cutoff = new Date(now);
+  cutoff.setDate(cutoff.getDate() - 6); // 本日含め7日間
+  return isTransitions.filter(t => {
+    const d = new Date(t.date);
+    return !isNaN(d.getTime()) && d >= cutoff && d <= now;
+  });
+}
+
+function _escAttrPerc(s) { return String(s).replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
+function _escHtmlPerc(s) { return _escapeHtml(String(s == null ? '' : s)); }
+
+function renderPerceptionActivity() {
+  // トグルボタンの選択状態
+  const dailyBtn  = document.getElementById('percActDailyBtn');
+  const weeklyBtn = document.getElementById('percActWeeklyBtn');
+  const onCss  = 'background:#ffffff;color:#16a34a;box-shadow:0 1px 2px rgba(0,0,0,0.08);';
+  const offCss = 'background:transparent;color:#64748b;';
+  if (dailyBtn)  dailyBtn.style.cssText  += (_percActivityPeriod === 'daily'  ? onCss : offCss);
+  if (weeklyBtn) weeklyBtn.style.cssText += (_percActivityPeriod === 'weekly' ? onCss : offCss);
+
+  const body = document.getElementById('percActivityBody');
+  if (!body) return;
+
+  const trans = _filteredPercTransitions();
+
+  // 担当者一覧（IS保有リストの担当者を基準に、遷移ログにのみ出る担当者も追加）
+  const ownerSet = new Set();
+  [...isListYes, ...isListNo].forEach(r => { if (r.owner) ownerSet.add(r.owner); });
+  trans.forEach(t => { if (t.owner) ownerSet.add(t.owner); });
+  const owners = [...ownerSet].sort((a, b) => a.localeCompare(b, 'ja'));
+
+  if (owners.length === 0) {
+    body.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">データがありません</p>`;
+    return;
+  }
+
+  const periodLabel = _percActivityPeriod === 'daily' ? '本日' : '今週';
+  const apoStages = PERCEPTION_UPWARD_ORDER.filter(s => s !== '商談化'); // 商談化転換元の候補（ゴール自身は除く）
+
+  const rowsHtml = owners.map(owner => {
+    const ownerTrans = trans.filter(t => t.owner === owner);
+
+    // 上昇数（fromごと）: 件数>0のみチップ表示
+    const upChips = apoStages.map(stage => {
+      const cnt = ownerTrans.filter(t => t.from === stage).length;
+      if (cnt === 0) return '';
+      const meta = PERC_META[stage] || PERC_META['空欄'];
+      return `<button onclick="openPercTransModal('${_escAttrPerc(owner)}','${_escAttrPerc(stage)}')"
+        class="text-[11px] font-semibold px-2 py-0.5 rounded-full hover:opacity-80"
+        style="background:${meta.bg};color:${meta.text};border:1px solid ${meta.border}">${stage}→上 ${cnt}</button>`;
+    }).filter(Boolean).join('');
+
+    const upHtml = upChips
+      ? `<div class="flex flex-wrap gap-1">${upChips}</div>`
+      : `<p class="text-[11px] text-slate-400">上昇なし</p>`;
+
+    // 商談化転換元（toが「商談化」の遷移をfromで集計・100%バー）
+    const apoTrans = ownerTrans.filter(t => t.to === '商談化');
+    const apoTotal = apoTrans.length;
+    let apoHtml;
+    if (apoTotal === 0) {
+      apoHtml = `<p class="text-[11px] text-slate-400">データ収集中</p>`;
+    } else {
+      const segs = apoStages.map(stage => ({
+        stage, cnt: apoTrans.filter(t => t.from === stage).length
+      })).filter(s => s.cnt > 0);
+      const barHtml = segs.map(s => {
+        const meta = PERC_META[s.stage] || PERC_META['空欄'];
+        const pct = (s.cnt / apoTotal) * 100;
+        const label = pct >= 12 ? `${Math.round(pct)}%` : '';
+        return `<div title="${s.stage} ${s.cnt}件 (${Math.round(pct)}%)"
+          style="width:${pct}%;background:${meta.bar};display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:600;">${label}</div>`;
+      }).join('');
+      apoHtml = `
+        <div style="display:flex;height:14px;border-radius:4px;overflow:hidden;background:#f1f5f9;">${barHtml}</div>
+        <p class="text-[10px] text-slate-400 mt-1">n=${apoTotal}（${segs.map(s => `${s.stage} ${s.cnt}`).join(' / ')}）</p>`;
+    }
+
+    return `
+      <div class="grid items-center gap-2 py-2 border-b border-slate-100 last:border-0" style="grid-template-columns: 64px 1fr 1fr;">
+        <div class="text-xs font-semibold text-slate-700">${_escHtmlPerc(owner)}</div>
+        <div>${upHtml}</div>
+        <div>${apoHtml}</div>
+      </div>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div class="grid gap-2 pb-1 mb-1 border-b border-slate-200" style="grid-template-columns: 64px 1fr 1fr;">
+      <div class="text-[10px] text-slate-400 font-semibold">担当者</div>
+      <div class="text-[10px] text-slate-400 font-semibold">${periodLabel}の上昇数（段階→上）</div>
+      <div class="text-[10px] text-slate-400 font-semibold">商談化転換元の内訳（${periodLabel}）</div>
+    </div>
+    ${rowsHtml}`;
+}
+
+// ===== パーセプション遷移 ドリルダウンモーダル =====
+function openPercTransModal(owner, fromStage) {
+  const trans = _filteredPercTransitions().filter(t => t.owner === owner && t.from === fromStage);
+  const title    = document.getElementById('percTransModalTitle');
+  const subtitle = document.getElementById('percTransModalSubtitle');
+  const bodyEl   = document.getElementById('percTransModalBody');
+  const periodLabel = _percActivityPeriod === 'daily' ? '本日' : '今週';
+  if (title)    title.textContent = `${owner}：${fromStage}から上に上がった企業`;
+  if (subtitle) subtitle.textContent = `${periodLabel}・計${trans.length}件`;
+
+  // toごとにグルーピングし、上位の段階から表示
+  const groups = {};
+  trans.forEach(t => {
+    if (!groups[t.to]) groups[t.to] = [];
+    groups[t.to].push(t);
+  });
+  const toOrderDesc = [...PERCEPTION_UPWARD_ORDER].reverse();
+  const html = toOrderDesc.filter(to => groups[to] && groups[to].length).map(to => {
+    const list = groups[to];
+    const stepNote = list.some(t => t.steps > 1) ? '・複数段飛ばし含む' : '';
+    const items = list.map(t => {
+      const url = t.companyId ? `https://app.hubspot.com/contacts/23871469/record/0-2/${t.companyId}` : null;
+      const name = _escHtmlPerc(t.company || '(会社名不明)');
+      return url
+        ? `<a href="${url}" target="_blank" rel="noopener" class="text-[12px] flex justify-between items-center hover:underline" style="color:#0284c7"><span>${name}</span><span>↗</span></a>`
+        : `<p class="text-[12px] text-slate-600">${name}</p>`;
+    }).join('');
+    return `
+      <div class="mb-2 pb-2 border-b border-slate-100 last:border-0">
+        <p class="text-[12px] font-semibold text-slate-600 mb-1">→ ${to}（${list.length}件${stepNote}）</p>
+        <div class="flex flex-col gap-1">${items}</div>
+      </div>`;
+  }).join('');
+
+  if (bodyEl) bodyEl.innerHTML = html || `<p class="text-xs text-slate-400 py-4 text-center">データがありません</p>`;
+  const modal = document.getElementById('percTransModal');
+  if (modal) modal.classList.remove('hidden');
+}
+function closePercTransModal() {
+  const modal = document.getElementById('percTransModal');
+  if (modal) modal.classList.add('hidden');
 }
 // 担当者ごとのパーセプションフロー内訳（_byOwnerStats と同じ重複統合ロジック）
 function _byOwnerPercStats(rows) {
@@ -4443,6 +4636,9 @@ function renderIsKpis() {
 
   // ⑤ IS 保有リスト数（期間に依存しないので毎回更新）
   renderIsListCard();
+
+  // ⑥ パーセプションフロー活動（上昇数・アポ転換元）（期間に依存しないので毎回更新）
+  renderPerceptionActivity();
 }
 
 // ===== IS KPI 詳細（管理方法別カード + モーダル） =====
