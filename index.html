@@ -1,5 +1,7 @@
 
 
+
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -9,6 +11,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.17.0/dist/tabler-icons.min.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+(function(){try{if((localStorage.getItem('dashTheme')||'light')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();
+function toggleTheme(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('dashTheme',d?'dark':'light');}catch(e){}var ic=document.getElementById('themeToggleIcon');if(ic)ic.className='ti '+(d?'ti-sun':'ti-moon');}
+document.addEventListener('DOMContentLoaded',function(){var ic=document.getElementById('themeToggleIcon');if(ic)ic.className='ti '+(document.documentElement.classList.contains('dark')?'ti-sun':'ti-moon');});
+</script>
 <style>
   body { font-family: -apple-system, "Hiragino Sans", "Yu Gothic", sans-serif; }
   .kpi-card { transition: transform 0.2s; }
@@ -24,16 +35,114 @@
   .drop-zone { display:none; }
   .status-chip { font-size: 0.7rem; padding: 2px 8px; border-radius: 9999px; font-weight: 600; }
   /* ステージ色: E-A = 青の濃淡、S = エメラルド */
-  .stage-e  { color: #94a3b8; }
-  .stage-d  { color: #7dd3fc; }
-  .stage-c  { color: #38bdf8; }
-  .stage-cp { color: #0ea5e9; }
-  .stage-b  { color: #0284c7; }
-  .stage-a  { color: #0369a1; }
-  .stage-s  { color: #10b981; }
+  .stage-e  { color: #9aa9bb; }
+  .stage-d  { color: #8fc4e0; }
+  .stage-c  { color: #5fb4cf; }
+  .stage-cp { color: #3a90c4; }
+  .stage-b  { color: #2f6fb0; }
+  .stage-a  { color: #1f4f86; }
+  .stage-s  { color: #2f9e8a; }
   .tab-active { background-color: var(--c-primary); color: white; }
   .tab-inactive { background-color: white; color: #475569; border: 1px solid #e2e8f0; }
   .tab-inactive:hover { background-color: #f1f5f9; }
+
+  /* ===== Design System v2 (Tide Guide級リデザイン / ライト・ダーク両対応) ===== */
+  :root{
+    --ink:#14304a; --ink-soft:#5e7790; --ink-faint:#93a7c0;
+    --brand:#14446e; --brand-mid:#3a78b5; --brand-bright:#2f8fc4; --cyan:#2bb0d4;
+    --success:#2f9e8a; --danger:#d9655c; --warm:#d98c4a;
+    --surface:#ffffff; --surface-2:#f4f8fc; --page:#e9eff6; --hair:rgba(20,48,74,0.07);
+    --shadow-soft:0 10px 30px rgba(8,52,98,.07),0 2px 6px rgba(8,52,98,.04);
+    --shadow-lift:0 18px 44px rgba(8,52,98,.14),0 4px 10px rgba(8,52,98,.07);
+  }
+  html.dark{
+    --ink:#eef4fa; --ink-soft:#8fa6c0; --ink-faint:#6b829d;
+    --brand:#62b6df; --brand-mid:#4a86c8; --brand-bright:#45c8ec; --cyan:#45c8ec;
+    --success:#34c0a6; --danger:#e2564e; --warm:#e6924a;
+    --surface:#16304a; --surface-2:#102438; --page:#0c1c2e; --hair:rgba(255,255,255,.08);
+    --shadow-soft:0 12px 34px rgba(0,0,0,.35); --shadow-lift:0 22px 50px rgba(0,0,0,.5);
+  }
+  body{ font-family:"Inter","Hiragino Sans","Yu Gothic",sans-serif; color:var(--ink); min-height:100vh;
+    background:radial-gradient(1100px 560px at 80% -8%, #ffffff 0%, var(--surface-2) 35%, var(--page) 100%) !important;
+    transition:background .4s ease,color .4s ease; }
+  html.dark body{ background:radial-gradient(1100px 560px at 78% -8%, #1a3a55 0%, #102438 42%, #0c1c2e 100%) !important; }
+  .num{ font-variant-numeric:tabular-nums; letter-spacing:-0.01em; }
+
+  /* カード質感の底上げ（全テーマ共通・低リスク） */
+  .shadow-sm{ box-shadow:var(--shadow-soft) !important; }
+  .rounded-xl{ border-radius:16px !important; }
+  .rounded-2xl{ border-radius:20px !important; }
+
+  /* 円形アイコンボタン */
+  .iconbtn{ width:40px;height:40px;border-radius:50%;background:var(--surface);border:1px solid var(--hair);
+    box-shadow:var(--shadow-soft);display:inline-grid;place-items:center;color:var(--brand);font-size:19px;
+    cursor:pointer;transition:transform .25s,box-shadow .25s,background .25s; }
+  .iconbtn:hover{ transform:translateY(-2px); box-shadow:var(--shadow-lift); }
+
+  /* 登場アニメーション */
+  @keyframes ds-rise{to{opacity:1;transform:none;}}
+  .ds-rise{opacity:0;transform:translateY(14px);animation:ds-rise .7s cubic-bezier(.2,.7,.2,1) forwards;}
+
+  /* ===== ダーク時のTailwindユーティリティとサーフェスのRe-map ===== */
+  html.dark .bg-white{ background:var(--surface) !important; }
+  html.dark .bg-slate-50,html.dark .bg-gray-50,html.dark .bg-sky-50{ background:var(--surface-2) !important; }
+  html.dark .bg-slate-100,html.dark .bg-gray-100{ background:#13283d !important; }
+  html.dark .text-slate-900,html.dark .text-slate-800,html.dark .text-slate-700,
+  html.dark .text-gray-900,html.dark .text-gray-800,html.dark .text-gray-700{ color:var(--ink) !important; }
+  html.dark .text-slate-600,html.dark .text-slate-500,html.dark .text-gray-600,html.dark .text-gray-500{ color:var(--ink-soft) !important; }
+  html.dark .text-slate-400,html.dark .text-gray-400{ color:var(--ink-faint) !important; }
+  html.dark .border-slate-200,html.dark .border-slate-100,html.dark .border-gray-200,
+  html.dark .border-gray-100,html.dark .border{ border-color:rgba(255,255,255,.10) !important; }
+  html.dark .divide-slate-100 > * + *,html.dark .divide-gray-100 > * + *{ border-color:rgba(255,255,255,.08) !important; }
+
+  /* ピル型セグメントタブ */
+  .seg2{ background:var(--hair); border-radius:9999px; padding:4px; display:inline-flex; gap:2px; }
+  .seg2-btn{ border:0; background:transparent; color:var(--ink-soft); font-weight:600; font-size:13px;
+    padding:8px 22px; border-radius:9999px; cursor:pointer; transition:all .3s; }
+  .seg2-btn:hover{ color:var(--ink); }
+  .seg2-on{ background:var(--surface); color:var(--brand); box-shadow:0 4px 14px rgba(12,68,124,.18); }
+  html.dark .seg2-on{ background:rgba(124,196,255,0.16); color:#bfe2ff;
+    box-shadow:0 0 0 1px rgba(124,196,255,.25),0 4px 14px rgba(56,189,248,.25); }
+
+  /* KPIカード仕上げ：質感・タイポ階層・等幅数字 */
+  .kpi-card{ background:var(--surface) !important; border:1px solid var(--hair); transition:transform .3s cubic-bezier(.2,.7,.2,1),box-shadow .3s; }
+  .kpi-card:hover{ transform:translateY(-4px); box-shadow:var(--shadow-lift) !important; }
+  .kpi-card [id^="kpi-"]{ font-variant-numeric:tabular-nums; letter-spacing:-0.01em; }
+  #kpi-target{ font-size:1.8rem; line-height:1.15; }
+  #kpi-s-amount, #kpi-sekisai-amount{ font-size:1.5rem; }
+
+  /* ダーク：主要モーダル/ドロップダウン（インラインstyleを上書き） */
+  html.dark #alertDropdown,
+  html.dark #globalSearchModal > div{ background:var(--surface) !important; border-color:rgba(255,255,255,.12) !important; color:var(--ink); }
+  html.dark #alertDropdown [style*="#f8fafc"],
+  html.dark #globalSearchModal [style*="#f8fafc"]{ background:rgba(255,255,255,.04) !important; }
+  html.dark #alertDropdown [style*="#e2e8f0"],
+  html.dark #globalSearchModal [style*="#e2e8f0"]{ border-color:rgba(255,255,255,.1) !important; }
+  html.dark #globalSearchInput{ color:var(--ink); }
+  html.dark #globalSearchInput::placeholder{ color:var(--ink-faint); }
+
+  /* ===== ダーク：インラインstyle直書きの色を横断的に再マッピング ===== */
+  html.dark [style*="background:#fff"], html.dark [style*="background: #fff"],
+  html.dark [style*="background:#ffffff"], html.dark [style*="background:white"],
+  html.dark [style*="background: white"]{ background:var(--surface) !important; }
+  html.dark [style*="background:#f8fafc"], html.dark [style*="background: #f8fafc"],
+  html.dark [style*="background:#f9fafb"], html.dark [style*="background:#f1f5f9"],
+  html.dark [style*="background:#f8f9fa"]{ background:var(--surface-2) !important; }
+  html.dark [style*="#e2e8f0"], html.dark [style*="#e5e7eb"], html.dark [style*="#cbd5e1"]{ border-color:rgba(255,255,255,.12) !important; }
+  html.dark [style*="color:#1e293b"], html.dark [style*="color:#0f172a"],
+  html.dark [style*="color:#1e3a5f"], html.dark [style*="color:#334155"],
+  html.dark [style*="color:#0c4a6e"], html.dark [style*="color:#075985"]{ color:var(--ink) !important; }
+  html.dark [style*="color:#475569"], html.dark [style*="color:#64748b"]{ color:var(--ink-soft) !important; }
+  html.dark [style*="color:#94a3b8"], html.dark [style*="color:#9ca3af"]{ color:var(--ink-faint) !important; }
+  /* 入力欄 */
+  html.dark input[type="text"], html.dark input[type="password"], html.dark input[type="number"],
+  html.dark input[type="search"], html.dark textarea, html.dark select{
+    background:rgba(255,255,255,.04) !important; color:var(--ink) !important; border-color:rgba(255,255,255,.14) !important; }
+  html.dark input::placeholder, html.dark textarea::placeholder{ color:var(--ink-faint) !important; }
+  /* テーブル行ホバー */
+  html.dark .hover\:bg-slate-50:hover, html.dark .hover\:bg-gray-50:hover{ background:rgba(255,255,255,.05) !important; }
+  .spin{ display:inline-block; animation:spin 1s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
 </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -41,51 +150,44 @@
 
   <!-- Header (Tabs) -->
   <div class="mb-6">
-    <div class="rounded-xl mb-3 overflow-hidden flex relative" style="background-color:#0284c7">
-      <button id="dashTab-fs" type="button" onclick="switchDashboard('fs')"
-        class="flex-1 px-6 py-4 text-left transition-colors hover:bg-sky-700 focus:outline-none">
-        <div class="flex items-center gap-2">
-          <span class="text-xl font-bold text-white">FS案件管理ダッシュボード</span>
-          <a href="https://docs.google.com/spreadsheets/d/1pKeHjAtMsakwgzAiUbk2zIsqVgP_D1UrPZLDHT0HVYs/edit?gid=490263780#gid=490263780"
-             target="_blank" rel="noopener" onclick="event.stopPropagation()"
-             class="text-white text-base hover:opacity-80" title="スプレッドシートを開く">↗</a>
+    <!-- ブランド行（ロゴ＋タイトル＋ツール） -->
+    <div class="flex items-center justify-between mb-4 ds-rise">
+      <div class="flex items-center" style="gap:14px;">
+        <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--brand),var(--brand-bright));display:grid;place-items:center;color:#fff;font-size:22px;box-shadow:0 8px 20px rgba(23,105,192,.35);flex-shrink:0;"><i class="ti ti-chart-histogram"></i></div>
+        <div>
+          <div class="flex items-center" style="gap:8px;">
+            <span id="dashTitle" style="font-size:20px;font-weight:700;color:var(--ink);line-height:1.15;">FS案件管理ダッシュボード</span>
+            <a id="dashSheetLink" href="https://docs.google.com/spreadsheets/d/1pKeHjAtMsakwgzAiUbk2zIsqVgP_D1UrPZLDHT0HVYs/edit?gid=490263780#gid=490263780"
+               target="_blank" rel="noopener" title="スプレッドシートを開く"
+               style="color:var(--brand-mid);font-size:17px;text-decoration:none;line-height:1;"><i class="ti ti-external-link"></i></a>
+          </div>
+          <p id="dashSubtitle" style="font-size:12px;color:var(--ink-soft);font-weight:500;margin-top:2px;">ギネスを狙え</p>
         </div>
-        <p class="text-indigo-200 text-xs mt-0.5">🏆 ギネスを狙え</p>
-      </button>
-      <div class="w-px bg-sky-300/50"></div>
-      <button id="dashTab-is" type="button" onclick="switchDashboard('is')"
-        class="flex-1 px-6 py-4 text-left transition-colors hover:bg-sky-700 focus:outline-none">
-        <div class="flex items-center gap-2">
-          <span class="text-xl font-bold text-white">IS案件管理ダッシュボード</span>
-          <a href="#" target="_blank" rel="noopener" onclick="event.stopPropagation()"
-             class="text-white text-base hover:opacity-80" title="リンク未設定">↗</a>
-        </div>
-        <p class="text-indigo-200 text-xs mt-0.5">準備中</p>
-      </button>
-      <!-- 🔔 停滞案件アラート + 🔍 検索 -->
-      <div style="position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:10px;z-index:20;">
-        <button onclick="openGlobalSearch()" title="企業検索 (Ctrl+K)"
-          style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);border-radius:6px;color:white;padding:4px 8px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;">
-          <span style="font-size:13px;">🔍</span>
-          <span style="opacity:0.95;font-family:monospace;font-size:10px;">Ctrl+K</span>
-        </button>
-        <button id="alertBellBtn" onclick="toggleAlertDropdown(event)" title="停滞案件アラート"
-          style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);border-radius:6px;color:white;padding:4px 8px;font-size:14px;cursor:pointer;position:relative;line-height:1;">
-          🔔
-          <span id="alertBadge" class="hidden" style="position:absolute;top:-6px;right:-6px;background:#dc2626;color:white;font-size:10px;font-weight:700;padding:1px 5px;border-radius:9999px;min-width:18px;text-align:center;">0</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="iconbtn" onclick="toggleTheme()" title="ライト / ダーク切替"><i id="themeToggleIcon" class="ti ti-moon"></i></button>
+        <button class="iconbtn" onclick="openGlobalSearch()" title="企業検索 (Ctrl+K)"><i class="ti ti-search"></i></button>
+        <button class="iconbtn" id="alertBellBtn" onclick="toggleAlertDropdown(event)" title="停滞案件アラート" style="position:relative;">
+          <i class="ti ti-bell"></i>
+          <span id="alertBadge" class="hidden" style="position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:9999px;min-width:18px;text-align:center;line-height:1.4;">0</span>
         </button>
       </div>
     </div>
-  </div><!-- /.mb-6 (header tabs only) -->
+    <!-- ピル型タブ（FS / IS） -->
+    <div class="seg2 ds-rise" style="animation-delay:.05s;">
+      <button id="dashTab-fs" type="button" onclick="switchDashboard('fs')" class="seg2-btn">FS案件</button>
+      <button id="dashTab-is" type="button" onclick="switchDashboard('is')" class="seg2-btn">IS案件</button>
+    </div>
+  </div><!-- /.mb-6 (header) -->
 
   <!-- 🔔 停滞案件アラート ドロップダウン -->
   <div id="alertDropdown" style="display:none;position:fixed;top:80px;right:24px;width:380px;max-height:520px;overflow:hidden;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.15);z-index:1000;flex-direction:column;">
     <div style="padding:12px 16px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;background:#f8fafc;">
       <div style="display:flex;align-items:center;gap:6px;">
-        <span style="font-size:14px;">⚠️</span>
+        <span style="font-size:14px;"><i class="ti ti-alert-triangle"></i></span>
         <span style="font-size:13px;font-weight:700;color:#1e293b;">要対応 <span id="alertCountTotal">0</span>件</span>
       </div>
-      <button onclick="document.getElementById('alertDropdown').classList.add('hidden')" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:16px;line-height:1;">✕</button>
+      <button onclick="document.getElementById('alertDropdown').classList.add('hidden')" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:16px;line-height:1;"><i class="ti ti-x"></i></button>
     </div>
     <div id="alertDropdownBody" style="overflow-y:auto;flex:1;padding:4px 0;"></div>
     <div style="padding:8px 16px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;background:#f8fafc;">
@@ -97,7 +199,7 @@
   <div id="globalSearchModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9999;align-items:flex-start;justify-content:center;padding-top:80px;">
     <div style="width:560px;max-width:90vw;background:white;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;max-height:70vh;">
       <div style="padding:10px 14px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:8px;">
-        <span style="font-size:16px;color:#94a3b8;">🔍</span>
+        <span style="font-size:16px;color:#94a3b8;"><i class="ti ti-search"></i></span>
         <input id="globalSearchInput" type="text" placeholder="企業名で横断検索…" autocomplete="off"
           style="flex:1;border:none;outline:none;font-size:14px;background:transparent;">
         <span style="background:#f1f5f9;color:#64748b;font-size:10px;padding:2px 6px;border-radius:4px;font-family:monospace;">ESC</span>
@@ -343,14 +445,14 @@
              class="hover:underline inline-flex items-center gap-1"
              style="color:#0284c7;"
              title="同期元スプレッドシートを開く">
-            パイプラインデータ読み込み <span class="text-xs">↗</span>
+            パイプラインデータ読み込み <span class="text-xs"><i class="ti ti-external-link"></i></span>
           </a>
         </h2>
         <p class="text-xs text-slate-500 mt-1">HubSpotのデータをGASが自動同期します。「データ更新」で最新を取得。</p>
       </div>
       <div class="flex gap-2 items-center">
         <button onclick="fetchFromSheets()" id="fetchBtn" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold flex items-center gap-1" style="background:#0284c7">
-          <span id="fetchBtnIcon">🔄</span> データ更新
+          <span id="fetchBtnIcon"><i class="ti ti-refresh"></i></span> データ更新
         </button>
         <span id="fileStatus" class="text-xs text-slate-500"></span>
       </div>
@@ -377,11 +479,11 @@
   <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
     <div class="flex items-center justify-between mb-3">
       <div>
-        <h3 class="font-semibold text-slate-700 text-sm">📸 スナップショット（経過追跡）</h3>
+        <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-camera"></i> スナップショット（経過追跡）</h3>
         <p class="text-xs text-slate-500 mt-0.5">毎日23時にサーバーが自動保存（開いた時も保険で保存）。期間で絞って積載率の推移を確認できます</p>
       </div>
       <div class="flex gap-2 items-center">
-        <button id="compareBtn" onclick="doCompare()" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold hidden" style="background:#0369a1">📊 比較する</button>
+        <button id="compareBtn" onclick="doCompare()" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold hidden" style="background:#0369a1"><i class="ti ti-git-compare"></i> 比較する</button>
       </div>
     </div>
     <div id="snapshotSection">
@@ -424,7 +526,7 @@
   <!-- Progress Chart -->
   <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
     <div class="flex items-center justify-between mb-3">
-      <h3 class="font-semibold text-slate-700 text-sm">📈 目標 vs 受注実績</h3>
+      <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-chart-line"></i> 目標 vs 受注実績</h3>
       <div class="flex items-center gap-2">
         <select id="chartMemberSelect" onchange="setChartMember(this.value)" class="text-xs border rounded px-2 py-1">
           <option value="">全体</option>
@@ -476,8 +578,8 @@
     </div>
     <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 border-sky-400">
       <div class="flex items-center justify-between mb-1">
-        <p class="text-xs text-slate-500">🎯 売上着地予想</p>
-        <button onclick="openWinRatesModal()" class="text-slate-400 hover:text-sky-700 text-sm leading-none" title="勝率を設定">⚙️</button>
+        <p class="text-xs text-slate-500"><i class="ti ti-target" style="color:var(--cyan);"></i> 売上着地予想</p>
+        <button onclick="openWinRatesModal()" class="text-slate-400 hover:text-sky-700 text-sm leading-none" title="勝率を設定"><i class="ti ti-settings"></i></button>
       </div>
       <!-- BASE (D以上) -->
       <div class="flex items-baseline gap-1.5">
@@ -493,6 +595,14 @@
           <span id="kpi-lande-rate" class="text-sm font-bold text-sky-700">0%</span>
         </div>
         <p class="text-xs text-slate-400">E込み最大着地 <span id="kpi-land-ratio" class="text-slate-300"></span></p>
+      </div>
+      <!-- 🗓 タイミング補正後（参考・併記）。2026-06-16 追加 -->
+      <div id="kpi-land-timed-wrap" class="border-t border-slate-100 mt-2 pt-2 hidden">
+        <div class="flex items-baseline gap-1.5">
+          <p id="kpi-land-timed" class="text-base font-bold text-amber-700">¥0</p>
+          <span id="kpi-land-timed-rate" class="text-xs font-bold text-amber-600">0%</span>
+        </div>
+        <p class="text-[11px] text-slate-400"><i class="ti ti-calendar"></i> タイミング補正後（参考）<span id="kpi-land-timed-note" class="text-slate-300"></span></p>
       </div>
       <!-- 達成可能性バッジ -->
       <div id="kpi-achieve-badge" class="mt-2 text-center text-xs font-bold px-2 py-1 rounded-lg"></div>
@@ -519,8 +629,8 @@
     <!-- 受注金額ランキング -->
     <div class="bg-white rounded-xl shadow-sm p-5">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="font-semibold text-slate-700 text-sm">🏆 FSメンバー別 受注金額ランキング</h3>
-        <button onclick="openChartDetailModal('jisshi')" class="text-[11px] font-semibold px-2 py-0.5 rounded border border-sky-300 text-sky-600 hover:bg-sky-50 transition-colors">📈 実施積載 詳細</button>
+        <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-trophy"></i> FSメンバー別 受注金額ランキング</h3>
+        <button onclick="openChartDetailModal('jisshi')" class="text-[11px] font-semibold px-2 py-0.5 rounded border border-sky-300 text-sky-600 hover:bg-sky-50 transition-colors"><i class="ti ti-chart-line"></i> 実施積載 詳細</button>
       </div>
       <div style="position:relative;width:100%;height:360px;">
         <canvas id="rankAmountChart"></canvas>
@@ -530,8 +640,8 @@
     <!-- 受注件数ランキング -->
     <div class="bg-white rounded-xl shadow-sm p-5">
       <div class="flex items-center justify-between mb-3">
-        <h3 class="font-semibold text-slate-700 text-sm">🎖️ FSメンバー別 受注件数ランキング</h3>
-        <button onclick="openChartDetailModal('landing')" class="text-[11px] font-semibold px-2 py-0.5 rounded border border-sky-400 text-sky-700 hover:bg-sky-50 transition-colors">🎯 着地予想 詳細</button>
+        <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-award"></i> FSメンバー別 受注件数ランキング</h3>
+        <button onclick="openChartDetailModal('landing')" class="text-[11px] font-semibold px-2 py-0.5 rounded border border-sky-400 text-sky-700 hover:bg-sky-50 transition-colors"><i class="ti ti-target"></i> 着地予想 詳細</button>
       </div>
       <div style="position:relative;width:100%;height:360px;">
         <canvas id="rankCountChart"></canvas>
@@ -545,7 +655,7 @@
     <div class="bg-white rounded-2xl shadow-2xl mx-4 overflow-hidden flex flex-col" style="width:min(720px,96vw);max-height:85vh;">
       <div id="lostDetailModal-header" class="flex items-center justify-between px-5 py-3 flex-shrink-0">
         <span id="lostDetailModal-title" class="font-bold text-sm"></span>
-        <button onclick="closeLostDetailModal()" class="text-slate-400 hover:text-slate-700 text-xl leading-none">✕</button>
+        <button onclick="closeLostDetailModal()" class="text-slate-400 hover:text-slate-700 text-xl leading-none"><i class="ti ti-x"></i></button>
       </div>
       <div id="lostDetailModal-body" class="overflow-y-auto px-5 pb-5" style="flex:1;"></div>
     </div>
@@ -556,7 +666,7 @@
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 flex flex-col" style="max-height:85vh;">
       <div id="chartDetailModal-header" class="flex items-center justify-between px-5 py-3 flex-shrink-0">
         <span id="chartDetailModal-title" class="font-semibold text-sm"></span>
-        <button onclick="closeChartDetailModal()" class="text-slate-400 hover:text-slate-700 text-lg leading-none">✕</button>
+        <button onclick="closeChartDetailModal()" class="text-slate-400 hover:text-slate-700 text-lg leading-none"><i class="ti ti-x"></i></button>
       </div>
       <div class="px-5 pb-5 overflow-y-auto" style="flex:1;">
         <div id="chartDetailModal-body"></div>
@@ -588,13 +698,13 @@
   <!-- E Stage Calendar -->
   <div class="bg-white rounded-xl shadow-sm p-5 mt-6">
     <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-      <h3 class="font-semibold text-slate-700 text-sm">📅 商談カレンダー</h3>
+      <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-calendar"></i> 商談カレンダー</h3>
       <!-- ★ ビュー切替タブ -->
       <div class="flex rounded-lg overflow-hidden border" style="border-color:#0284c7">
-        <button id="eCalView-cal"    onclick="setECalView('cal')"    class="px-3 py-1.5 text-xs font-semibold" style="background:#0284c7;color:white">📅 カレンダー</button>
-        <button id="eCalView-today"  onclick="setECalView('today')"  class="px-3 py-1.5 text-xs font-semibold border-l" style="background:white;color:#0284c7;border-color:#0284c7">✓ 本日</button>
-        <button id="eCalView-weekly" onclick="setECalView('weekly')" class="px-3 py-1.5 text-xs font-semibold border-l" style="background:white;color:#0284c7;border-color:#0284c7">📊 週次</button>
-        <button id="eCalView-reup"   onclick="setECalView('reup')"   class="px-3 py-1.5 text-xs font-semibold border-l" style="background:white;color:#0284c7;border-color:#0284c7">🔁 再アップ時期</button>
+        <button id="eCalView-cal"    onclick="setECalView('cal')"    class="px-3 py-1.5 text-xs font-semibold" style="background:#0284c7;color:white"><i class="ti ti-calendar"></i> カレンダー</button>
+        <button id="eCalView-today"  onclick="setECalView('today')"  class="px-3 py-1.5 text-xs font-semibold border-l" style="background:white;color:#0284c7;border-color:#0284c7"><i class="ti ti-check"></i> 本日</button>
+        <button id="eCalView-weekly" onclick="setECalView('weekly')" class="px-3 py-1.5 text-xs font-semibold border-l" style="background:white;color:#0284c7;border-color:#0284c7"><i class="ti ti-chart-bar"></i> 週次</button>
+        <button id="eCalView-reup"   onclick="setECalView('reup')"   class="px-3 py-1.5 text-xs font-semibold border-l" style="background:white;color:#0284c7;border-color:#0284c7"><i class="ti ti-refresh"></i> 再アップ時期</button>
       </div>
     </div>
 
@@ -621,7 +731,7 @@
       </div>
       <!-- Snapshot indicator -->
       <div id="eCalSnapBanner" class="hidden mb-3 px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2" style="background:#fef3c7;color:#92400e">
-        <span>📂</span><span id="eCalSnapLabel"></span>
+        <span><i class="ti ti-folder"></i></span><span id="eCalSnapLabel"></span>
       </div>
       <!-- Month Navigation -->
       <div class="flex items-center justify-center gap-4 mb-4">
@@ -632,7 +742,7 @@
       <div id="eCalendar"></div>
       <!-- E deals without date -->
       <div id="eCalNoDaySection" class="hidden mt-4">
-        <p class="text-xs font-semibold text-slate-500 mb-2">📌 アポ実施日未設定のE案件（クローズ予定月：この月）</p>
+        <p class="text-xs font-semibold text-slate-500 mb-2"><i class="ti ti-pin"></i> アポ実施日未設定のE案件（クローズ予定月：この月）</p>
         <div id="eCalNoDayList" class="flex flex-wrap gap-2"></div>
       </div>
     </div>
@@ -665,7 +775,7 @@
           </select>
           <label class="flex items-center gap-1 text-xs font-semibold cursor-pointer select-none" style="color:#b91c1c">
             <input type="checkbox" id="eCalReupWarnOnly" onchange="eReupOnlyWarn=this.checked;renderECalReup()" style="accent-color:#dc2626">
-            ⚠ 戻し忘れのみ
+            <i class="ti ti-alert-triangle"></i> 戻し忘れのみ
           </label>
           <button id="eCalReupClearBtn" onclick="eReupMembers.clear();renderECalReup()" class="hidden px-2 py-1 text-xs border rounded text-slate-500 hover:bg-slate-50">担当の選択解除</button>
         </div>
@@ -687,7 +797,7 @@
     <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-4xl mx-4">
       <div class="flex items-center justify-between mb-3 pb-3 border-b" style="border-bottom-color:#f59e0b">
         <h3 id="similarModalTitle" class="font-semibold text-slate-800 text-lg">🔍 類似企業</h3>
-        <button onclick="closeSimilarModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+        <button onclick="closeSimilarModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none"><i class="ti ti-x"></i></button>
       </div>
       <p id="similarModalSubtitle" class="text-[11px] text-slate-500 mb-3"></p>
       <div id="similarModalBody" class="text-sm text-slate-700 overflow-x-auto"></div>
@@ -712,7 +822,7 @@
           <button onclick="fetchFromSheets()" id="isFetchBtn"
             class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold flex items-center gap-1"
             style="background:#0284c7">
-            <span id="isFetchBtnIcon">🔄</span> データ更新
+            <span id="isFetchBtnIcon"><i class="ti ti-refresh"></i></span> データ更新
           </button>
           <span id="isFileStatus" class="text-xs text-slate-500"></span>
         </div>
@@ -727,7 +837,7 @@
       <button onclick="openIsListModal()"
         class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-500 text-sky-600 hover:bg-sky-50">詳細</button>
       <div class="flex items-center justify-between mb-2 flex-wrap gap-2 pr-12">
-        <p class="text-xs text-slate-500">📋🎯 IS保有リスト ＆ 商談化転換元</p>
+        <p class="text-xs text-slate-500"><i class="ti ti-list-check"></i> IS保有リスト ＆ 商談化転換元</p>
         <div class="inline-flex gap-0.5 p-0.5 rounded-lg" style="background:#f1f5f9;">
           <button onclick="setPercActivityPeriod('daily')" id="percActDailyBtn"
             class="text-[11px] px-2.5 py-1 rounded-md font-semibold">デイリー</button>
@@ -758,7 +868,7 @@
       <div class="rounded-xl shadow-xl w-full max-w-md flex flex-col overflow-hidden bg-white" style="max-height:85vh;">
         <div class="flex items-center justify-between px-5 py-3 border-b">
           <h3 id="percTransModalTitle" class="font-semibold text-slate-700 text-sm"></h3>
-          <button onclick="closePercTransModal()" class="text-slate-400 hover:text-slate-600 text-lg leading-none">✕</button>
+          <button onclick="closePercTransModal()" class="text-slate-400 hover:text-slate-600 text-lg leading-none"><i class="ti ti-x"></i></button>
         </div>
         <p id="percTransModalSubtitle" class="text-[11px] text-slate-500 px-5 pt-2"></p>
         <div id="percTransModalBody" class="px-5 py-3 overflow-y-auto" style="max-height:65vh;"></div>
@@ -774,7 +884,7 @@
             <button id="isListBack" onclick="isListBackToLevel1()" class="hidden text-slate-400 hover:text-slate-600 text-sm">‹ 戻る</button>
             <h3 id="isListModalTitle" class="font-semibold text-slate-800 text-lg">📋 IS 保有リスト詳細</h3>
           </div>
-          <button onclick="closeIsListModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+          <button onclick="closeIsListModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none"><i class="ti ti-x"></i></button>
         </div>
         <!-- スクロールするボディ（padding は内部の sticky 要素側で持たせる）-->
         <div id="isListModalBody" class="text-sm text-slate-700 overflow-y-auto" style="flex:1 1 auto;min-height:0;"></div>
@@ -803,7 +913,7 @@
       <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#0284c7">
         <button onclick="openIsKpiDetailModal('apo')"
           class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-400 text-sky-700 hover:bg-sky-600">詳細</button>
-        <p class="text-xs text-slate-500 mb-1">📞 アポ取得数</p>
+        <p class="text-xs text-slate-500 mb-1"><i class="ti ti-phone"></i> アポ取得数</p>
         <div class="flex items-baseline gap-2">
           <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-apo-count">0</span><span class="text-sm font-normal text-slate-400 ml-1">件</span></p>
           <p class="text-xs text-slate-500">/ <span id="is-kpi-apo-target">0</span></p>
@@ -817,7 +927,7 @@
       <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#f59e0b">
         <button onclick="openIsKpiDetailModal('jisshi')"
           class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-amber-500 text-amber-600 hover:bg-amber-50">詳細</button>
-        <p class="text-xs text-slate-500 mb-1">🤝 アポ実施数</p>
+        <p class="text-xs text-slate-500 mb-1"><i class="ti ti-calendar-check"></i> アポ実施数</p>
         <div class="flex items-baseline gap-2">
           <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-jisshi-count">0</span><span class="text-sm font-normal text-slate-400 ml-1">件</span></p>
           <p class="text-xs text-slate-500">/ <span id="is-kpi-jisshi-target">0</span></p>
@@ -837,7 +947,7 @@
       <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#0284c7">
         <button onclick="openIsKpiDetailModal('yomi')"
           class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-500 text-sky-600 hover:bg-sky-50">詳細</button>
-        <p class="text-xs text-slate-500 mb-1">📋 ヨミ化数</p>
+        <p class="text-xs text-slate-500 mb-1"><i class="ti ti-clipboard-check"></i> ヨミ化数</p>
         <div class="flex items-baseline gap-2">
           <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-yomi-count">0</span><span class="text-sm font-normal text-slate-400 ml-1">件</span></p>
           <p class="text-xs text-slate-500">/ <span id="is-kpi-yomi-target">0</span></p>
@@ -851,7 +961,7 @@
       <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#10b981">
         <button onclick="openIsKpiDetailModal('contrib')"
           class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-emerald-500 text-emerald-600 hover:bg-emerald-50">詳細</button>
-        <p class="text-xs text-slate-500 mb-1">🏆 受注貢献</p>
+        <p class="text-xs text-slate-500 mb-1"><i class="ti ti-trophy"></i> 受注貢献</p>
         <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-contrib-amount">¥0</span></p>
         <p class="text-xs text-slate-400 mt-0.5"><span id="is-kpi-contrib-count">0</span>件</p>
         <p class="text-[10px] text-amber-600 mt-1" id="is-kpi-contrib-note"></p>
@@ -863,7 +973,7 @@
     <!-- IS メンバー別 ランキング（FS同様の横棒ランキング形式 / 3グループ×2軸 切替） -->
     <div class="bg-white rounded-xl shadow-sm p-5 mt-4 mb-4">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <h3 class="font-semibold text-slate-700 text-sm">🏆 ISメンバー別 ランキング</h3>
+        <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-trophy"></i> ISメンバー別 ランキング</h3>
         <p class="text-[10px] text-slate-400">バーにカーソルで詳細／上位3名にメダル</p>
       </div>
       <!-- グループ切替タブ -->
@@ -895,7 +1005,7 @@
     <!-- IS 個人状況テーブル -->
     <div class="bg-white rounded-xl shadow-sm p-5 mt-4 mb-6">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <h3 class="font-semibold text-slate-700 text-sm">📊 担当者別 状況テーブル</h3>
+        <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-table"></i> 担当者別 状況テーブル</h3>
         <p class="text-[10px] text-slate-400">数値クリックで詳細表示</p>
       </div>
       <div class="overflow-x-auto">
@@ -934,19 +1044,19 @@
       <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-3xl mx-4">
         <div id="isMetricDetailHeader" class="flex items-center justify-between mb-4 pb-3 border-b">
           <h3 id="isMetricDetailTitle" class="font-semibold text-slate-800 text-lg">詳細</h3>
-          <button onclick="closeIsMetricDetail()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+          <button onclick="closeIsMetricDetail()" class="text-slate-400 hover:text-slate-600 text-xl leading-none"><i class="ti ti-x"></i></button>
         </div>
         <!-- 過去受注した企業ボタン / リスケした企業一覧ボタン（kind=apoかつグループ以外の時のみ表示） -->
         <div id="isMetricDetailPastWonBtnWrap" class="hidden mb-3 flex flex-wrap gap-2">
           <button onclick="openPastWonModal()"
             class="text-[12px] font-semibold rounded-full px-3 py-1.5 hover:opacity-80 transition-opacity"
             style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;">
-            🏆 過去受注した企業を見る
+            <i class="ti ti-trophy"></i> 過去受注した企業を見る
           </button>
           <button onclick="openReschedModal()"
             class="text-[12px] font-semibold rounded-full px-3 py-1.5 hover:opacity-80 transition-opacity"
             style="background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;">
-            🔄 リスケした企業一覧
+            <i class="ti ti-refresh"></i> リスケした企業一覧
           </button>
         </div>
         <div id="isMetricDetailBody" class="text-sm text-slate-700"></div>
@@ -958,7 +1068,7 @@
       <div class="bg-white rounded-xl shadow-xl w-full max-w-5xl flex flex-col overflow-hidden" style="max-height:90vh;">
         <div class="flex items-center justify-between px-6 py-4 border-b shrink-0" style="border-bottom-color:#10b981">
           <h3 id="pastWonModalTitle" class="font-semibold text-slate-800 text-lg">🏆 過去受注した企業</h3>
-          <button onclick="closePastWonModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+          <button onclick="closePastWonModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none"><i class="ti ti-x"></i></button>
         </div>
         <div id="pastWonModalBody" class="text-sm text-slate-700 overflow-y-auto" style="flex:1 1 auto;min-height:0;"></div>
       </div>
@@ -968,8 +1078,8 @@
     <div id="reschedModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-4 py-8">
       <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl flex flex-col overflow-hidden" style="max-height:90vh;">
         <div class="flex items-center justify-between px-6 py-4 border-b shrink-0" style="border-bottom-color:#ef4444">
-          <h3 id="reschedModalTitle" class="font-semibold text-slate-800 text-lg">🔄 リスケした企業一覧</h3>
-          <button onclick="closeReschedModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+          <h3 id="reschedModalTitle" class="font-semibold text-slate-800 text-lg"><i class="ti ti-refresh"></i> リスケした企業一覧</h3>
+          <button onclick="closeReschedModal()" class="text-slate-400 hover:text-slate-600 text-xl leading-none"><i class="ti ti-x"></i></button>
         </div>
         <div id="reschedModalBody" class="text-sm text-slate-700 overflow-y-auto" style="flex:1 1 auto;min-height:0;"></div>
       </div>
@@ -979,7 +1089,7 @@
     <div class="bg-white rounded-xl shadow-sm p-5 mt-6">
       <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
-          <h3 class="font-semibold text-slate-700 text-sm">📅 IS 商談カレンダー</h3>
+          <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-calendar"></i> IS 商談カレンダー</h3>
           <div class="flex items-center gap-3 mt-1">
             <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0ea5e9"></span><span class="text-slate-500">1回目（初回アポ・E案件）</span></span>
             <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#f97316"></span><span class="text-slate-500">2回目商談</span></span>
@@ -1001,7 +1111,7 @@
       </div>
       <!-- Snapshot indicator -->
       <div id="isCalSnapBanner" class="hidden mb-3 px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2" style="background:#fef3c7;color:#92400e">
-        <span>📂</span><span id="isCalSnapLabel"></span>
+        <span><i class="ti ti-folder"></i></span><span id="isCalSnapLabel"></span>
       </div>
       <!-- Month Navigation -->
       <div class="flex items-center justify-center gap-4 mb-4">
@@ -1012,7 +1122,7 @@
       <div id="isCalendar"></div>
       <!-- E deals without date -->
       <div id="isCalNoDaySection" class="hidden mt-4">
-        <p class="text-xs font-semibold text-slate-500 mb-2">📌 アポ実施日未設定のE案件（クローズ予定月：この月）</p>
+        <p class="text-xs font-semibold text-slate-500 mb-2"><i class="ti ti-pin"></i> アポ実施日未設定のE案件（クローズ予定月：この月）</p>
         <div id="isCalNoDayList" class="flex flex-wrap gap-2"></div>
       </div>
       <p class="text-[11px] text-slate-400 mt-3">※ 担当者フィルターは「レコード作成者」基準</p>
@@ -1035,7 +1145,7 @@
 <!-- 削除パスワード確認モーダル -->
 <div id="passModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl shadow-xl p-6 w-80">
-    <h3 class="font-semibold text-slate-800 mb-1">🔑 削除パスワード</h3>
+    <h3 class="font-semibold text-slate-800 mb-1"><i class="ti ti-key"></i> 削除パスワード</h3>
     <p class="text-xs text-slate-500 mb-3">削除を実行するにはパスワードを入力してください</p>
     <input type="password" id="passInput" class="w-full border rounded px-3 py-2 text-sm mb-1" placeholder="パスワード"
       onkeydown="if(event.key==='Enter')confirmDelete()" />
@@ -1051,7 +1161,7 @@
 <!-- 勝率設定モーダル -->
 <div id="winRatesModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl shadow-xl p-6 w-auto max-w-2xl max-h-screen overflow-y-auto">
-    <h3 class="font-semibold text-slate-800 mb-1">⚙️ 着地予想 勝率設定</h3>
+    <h3 class="font-semibold text-slate-800 mb-1"><i class="ti ti-settings"></i> 着地予想 勝率設定</h3>
     <p class="text-xs text-slate-500 mb-3">ステージ×検討サービスごとの勝率（%）を入力してください。※ 変更はブラウザに保存されます。</p>
     <!-- E案件設定 -->
     <div class="mb-4 p-3 bg-sky-600 rounded-lg border border-sky-400">
@@ -1066,9 +1176,25 @@
       </div>
       <p class="text-xs text-slate-400 mt-1">残営業日比率×この確率で期待値を算出。スナップショット学習で将来自動補正。</p>
     </div>
+    <!-- 🎯 精度モニター（スナップショット実測勝率 vs 設定値）。2026-06-16 追加 -->
+    <div class="mb-4 border border-sky-200 rounded-lg overflow-hidden">
+      <div class="px-3 py-2 bg-sky-50 flex items-center gap-2 flex-wrap">
+        <span class="text-sm font-semibold text-sky-800"><i class="ti ti-target"></i> 精度モニター</span>
+        <span class="text-[11px] text-slate-500">スナップショット履歴から実測した年次勝率と設定値のズレ</span>
+      </div>
+      <div id="accuMonitorBody" class="p-3 text-xs text-slate-500">読み込み中…</div>
+    </div>
+    <!-- 🗓 タイミングモニター（第2段階）。2026-06-16 追加 -->
+    <div class="mb-4 border border-amber-200 rounded-lg overflow-hidden">
+      <div class="px-3 py-2 bg-amber-50 flex items-center gap-2 flex-wrap">
+        <span class="text-sm font-semibold text-amber-800"><i class="ti ti-calendar"></i> タイミングモニター</span>
+        <span class="text-[11px] text-slate-500">クローズ月の移動から「予定月に決着する確率」を実測</span>
+      </div>
+      <div id="timingMonitorBody" class="p-3 text-xs text-slate-500">読み込み中…</div>
+    </div>
     <div id="winRatesTableWrap" class="mb-4 overflow-x-auto"></div>
     <div class="mt-3 p-3 bg-sky-600 rounded-lg text-xs text-slate-600">
-      <b class="text-sky-700">📌 滞留減衰について</b><br>
+      <b class="text-sky-700"><i class="ti ti-pin"></i> 滞留減衰について</b><br>
       D/C/C+/B は、スナップショット間で同じステージに留まった回数に応じて期待値が下がります。<br>
       減衰率: 1回あたり −12%、最低40%まで（スナップショットが溜まるほど自動で精度向上）
     </div>
@@ -1087,10 +1213,10 @@
   <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl mx-4">
     <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 sticky top-0 bg-white rounded-t-xl z-10">
       <div>
-        <h3 class="font-semibold text-slate-800">📊 スナップショット比較</h3>
+        <h3 class="font-semibold text-slate-800"><i class="ti ti-chart-bar"></i> スナップショット比較</h3>
         <p id="compareModalSubtitle" class="text-xs text-slate-500 mt-0.5"></p>
       </div>
-      <button onclick="closeCompareModal()" class="text-slate-400 hover:text-slate-700 text-xl leading-none font-bold">✕</button>
+      <button onclick="closeCompareModal()" class="text-slate-400 hover:text-slate-700 text-xl leading-none font-bold"><i class="ti ti-x"></i></button>
     </div>
     <div id="compareModalBody" class="p-5"></div>
   </div>
@@ -1099,7 +1225,7 @@
 <!-- パスワード設定モーダル -->
 <div id="passSetupModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
   <div class="bg-white rounded-xl shadow-xl p-6 w-80">
-    <h3 class="font-semibold text-slate-800 mb-1">🔑 削除パスワード設定</h3>
+    <h3 class="font-semibold text-slate-800 mb-1"><i class="ti ti-key"></i> 削除パスワード設定</h3>
     <p class="text-xs text-slate-500 mb-3">スナップショットの削除を保護するパスワードを設定します（4文字以上）</p>
     <input type="password" id="passSetupInput" class="w-full border rounded px-3 py-2 text-sm mb-2" placeholder="パスワード（4文字以上）" />
     <input type="password" id="passSetupConfirm" class="w-full border rounded px-3 py-2 text-sm mb-1" placeholder="確認用（もう一度）"
@@ -1343,16 +1469,17 @@ function switchDashboard(tab) {
     const content = document.getElementById('dashboardContent-' + t);
     const btn     = document.getElementById('dashTab-' + t);
     if (content) content.classList.toggle('hidden', t !== tab);
-    if (btn) {
-      if (t === tab) {
-        btn.style.background = '#0369a1';
-        btn.style.opacity = '1';
-      } else {
-        btn.style.background = '';
-        btn.style.opacity = '0.6';
-      }
-    }
+    if (btn) btn.classList.toggle('seg2-on', t === tab);
   });
+
+  // ブランド行のタイトル/サブ/スプシリンクを切替先に同期
+  var _dashMeta = { fs:{t:'FS案件管理ダッシュボード',s:'ギネスを狙え',l:'https://docs.google.com/spreadsheets/d/1pKeHjAtMsakwgzAiUbk2zIsqVgP_D1UrPZLDHT0HVYs/edit?gid=490263780#gid=490263780'},
+                    is:{t:'IS案件管理ダッシュボード',s:'準備中',l:'#'} };
+  var _m = _dashMeta[tab] || _dashMeta.fs;
+  var _t = document.getElementById('dashTitle'); if (_t) _t.textContent = _m.t;
+  var _s = document.getElementById('dashSubtitle'); if (_s) _s.textContent = _m.s;
+  var _l = document.getElementById('dashSheetLink'); if (_l) { _l.href = _m.l; _l.style.display = (_m.l === '#' ? 'none' : ''); }
+
   try { localStorage.setItem(DASH_TAB_KEY, tab); } catch (e) {}
 
   // 切替先のタブUIに状態を反映＋再描画
@@ -1715,7 +1842,7 @@ function openSimilarModal(companyEnc, industryEnc, productEnc) {
                 style="color:#0284c7;text-decoration:none;font-weight:500;cursor:pointer;font-size:11px;white-space:nowrap;"
                 onmouseover="this.style.textDecoration='underline'"
                 onmouseout="this.style.textDecoration='none'"
-                title="career-cloud で「${name}」の求人ページを検索">🔗 求人を見る</a>`;
+                title="career-cloud で「${name}」の求人ページを検索"><i class="ti ti-external-link"></i> 求人を見る</a>`;
     };
     const rows = sorted.map(c => `<tr class="border-b" style="border-color:#f1f5f9">
       <td class="px-2 py-1 text-[12px] font-medium" style="overflow:hidden;text-overflow:ellipsis;">${companyLink(c)}</td>
@@ -1912,7 +2039,7 @@ function _renderAlertDropdown() {
   const body = document.getElementById('alertDropdownBody');
   if (!body) return;
   if (total === 0) {
-    body.innerHTML = `<p style="text-align:center;color:#94a3b8;padding:24px 16px;font-size:12px;">🎉 要対応案件なし</p>`;
+    body.innerHTML = `<p style="text-align:center;color:#94a3b8;padding:24px 16px;font-size:12px;"><i class="ti ti-circle-check"></i> 要対応案件なし</p>`;
     return;
   }
   const itemHtml = (icon, color, bg, item) => {
@@ -2166,7 +2293,7 @@ async function fetchFromSheets(silent = false) {
   };
 
   btns.forEach(b => { if (b) b.disabled = true; });
-  icons.forEach(i => { if (i) i.textContent = '⏳'; });
+  icons.forEach(i => { if (i) i.innerHTML = '<i class="ti ti-loader-2 spin"></i>'; });
   if (!silent) setStatus('データ取得中...', '#0284c7');
 
   try {
@@ -2317,7 +2444,7 @@ async function fetchFromSheets(silent = false) {
     }
   } finally {
     btns.forEach(b => { if (b) b.disabled = false; });
-    icons.forEach(i => { if (i) i.textContent = '🔄'; });
+    icons.forEach(i => { if (i) i.innerHTML = '<i class="ti ti-refresh"></i>'; });
   }
 }
 
@@ -2814,6 +2941,98 @@ function calcLandingE(member, pipe, months) {
   return total;
 }
 
+// ============================================================
+// 🗓 タイミングモデル（第2段階・併記方式）
+//   クローズ月の移動履歴から「予定月に実際決着する確率（当月決着率）」を実測し、
+//   当月分の着地予想を補正した参考値 landTimed を併記する。
+//   ※ 現行 land は一切変更しない。データ不足時は現行と同値（softで代替）。
+// ============================================================
+const TIMING_MIN_SAMPLE = 30; // 当月決着率を採用する最小サンプル数
+let _timingStatsCache = null;  // render毎の再計算を避ける軽量キャッシュ
+
+function _timingMonthOf(dayStr) { return String(dayStr).slice(0, 7).replace('-', '/'); }
+
+function _timingStats() {
+  if (_timingStatsCache) return _timingStatsCache;
+  if (!Array.isArray(snapshots) || snapshots.length < 2) return null;
+  const k = d => d.hubspotId ? ('hs:' + d.hubspotId) : ((d.company || '') + '||' + (d.name || ''));
+  // 案件ごとの (観測日, クローズ月, ステージ) 時系列
+  const hist = {};
+  snapshots.forEach(s => {
+    const day = String(s.id || s.dateStr || '').slice(0, 10);
+    [...(s.pipeline || []), ...(s.lostDeals || [])].forEach(d => {
+      const kk = k(d);
+      (hist[kk] = hist[kk] || []).push({ day, month: d.month, stage: d.stage });
+    });
+  });
+  // 移動（流れ/前倒し）集計
+  let changed = 0, slip = 0, pull = 0, total = 0;
+  Object.values(hist).forEach(seq => {
+    const ms = seq.map(x => x.month).filter(Boolean);
+    if (ms.length < 2) return;
+    total++;
+    if (new Set(ms).size > 1) { changed++; const f = ms[0], l = ms[ms.length - 1]; if (l > f) slip++; else if (l < f) pull++; }
+  });
+  // 当月決着率：完了済みの各月について「月初時点で当月予定 → その月中に決着」を集計
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const monthsSeen = [...new Set(snapshots.flatMap(s => (s.pipeline || []).map(d => d.month).filter(Boolean)))].sort();
+  let due = 0, settled = 0, won = 0; const usedMonths = [];
+  monthsSeen.forEach(M => {
+    const [y, mo] = M.split('/').map(Number);
+    if (new Date(y, mo, 0) >= today) return; // 未完了の月は除外
+    const dueSet = new Set();
+    snapshots.forEach(s => {
+      const dM = _timingMonthOf(String(s.id || '').slice(0, 10));
+      if (dM === M) (s.pipeline || []).forEach(d => { if (d.month === M) dueSet.add(k(d)); });
+    });
+    if (dueSet.size === 0) return;
+    usedMonths.push(M);
+    dueSet.forEach(kk => {
+      const inM = (hist[kk] || []).filter(x => _timingMonthOf(x.day) === M);
+      due++;
+      if (inM.some(x => x.stage === 'S' || x.stage === '失注')) settled++;
+      if (inM.some(x => x.stage === 'S')) won++;
+    });
+  });
+  const ids = snapshots.map(s => String(s.id || '').slice(0, 10)).filter(Boolean).sort();
+  _timingStatsCache = {
+    changed, slip, pull, total,
+    slipPct: changed > 0 ? Math.round(slip / changed * 100) : 0,
+    pullPct: changed > 0 ? Math.round(pull / changed * 100) : 0,
+    due, settled, won,
+    settleRate: due > 0 ? settled / due : null,
+    usedMonths, span: ids.length ? `${ids[0]}〜${ids[ids.length - 1]}・${snapshots.length}件` : ''
+  };
+  return _timingStatsCache;
+}
+
+// 月mのタイミング係数：当月のみ実測の決着率を採用、それ以外は現行と同じsoftで代替
+function _timingFactor(m) {
+  const today = new Date();
+  const cm = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, '0')}`;
+  if (m === cm) {
+    const st = _timingStats();
+    if (st && st.settleRate !== null && st.due >= TIMING_MIN_SAMPLE) return st.settleRate;
+  }
+  return softenedBizRatio(getBizDaysRatio(m));
+}
+
+// 着地予想（タイミング補正版）。現行 calcLanding と同じ構造で、timing係数を全開放ステージへ適用
+function calcLandingTimed(member, pipe, months) {
+  let total = 0;
+  months.forEach(m => {
+    const tf = _timingFactor(m);
+    pipe.filter(d => d.name === member && d.month === m).forEach(d => {
+      if (d.stage === 'E') return;
+      let rate = getWinRate(d.stage, d.product);
+      rate *= getStaleFactor(d);
+      rate *= tf;
+      total += d.amount * rate;
+    });
+  });
+  return total;
+}
+
 // ===== 描画 =====
 function render() {
   // 保存ボタン制御（スナップショット閲覧中は無効化）
@@ -2828,8 +3047,9 @@ function render() {
   document.getElementById('periodLabel').textContent = '（' + getPeriodLabel() + '）';
   const months = getMonthsForPeriod();
   const activePipeline = getActivePipeline();
-  const totals = { target:0, j:0, jc:0, y:0, yc:0, s:0, sc:0, land:0, landE:0,
+  const totals = { target:0, j:0, jc:0, y:0, yc:0, s:0, sc:0, land:0, landE:0, landTimed:0,
                    e:0, ec:0, d:0, dc:0, c:0, cc:0, cp:0, cpc:0, b:0, bc:0, a:0, ac:0 };
+  _timingStatsCache = null; // タイミング統計を最新スナップショットで再計算
   // メンバーフィルター：スナップショット欄で選択中のメンバーに連動
   const activeMembers = currentSnapMember ? [currentSnapMember] : getFyMembers();
   const rows = activeMembers.map(m => {
@@ -2850,6 +3070,7 @@ function render() {
     const landE = calcLandingE(m, activePipeline, months);
     totals.land += land;
     totals.landE += landE;
+    totals.landTimed += calcLandingTimed(m, activePipeline, months);
     return {
       name: m, target, jisshi: p.jisshi, yomi: p.yomi, won: p.s, jNeed, yNeed, land, landE,
       jRate: jNeed>0 ? p.jisshi.amount/jNeed : (p.jisshi.amount>0?1:0),
@@ -2893,6 +3114,7 @@ function render() {
     extraNames.forEach(nm => {
       totals.land  += calcLanding(nm, activePipeline, months);
       totals.landE += calcLandingE(nm, activePipeline, months);
+      totals.landTimed += calcLandingTimed(nm, activePipeline, months);
     });
   }
 
@@ -2929,16 +3151,33 @@ function render() {
   document.getElementById('kpi-lande-rate').textContent = pct(tLErate);
   document.getElementById('kpi-lande-rate').className = 'text-sm font-bold ' + landColor(tLErate);
 
+  // 🗓 タイミング補正後（参考・併記）。実測の当月決着率が採用されている時のみ表示
+  const _tst = _timingStats();
+  const _timedWrap = document.getElementById('kpi-land-timed-wrap');
+  if (_timedWrap) {
+    const _useTimed = _tst && _tst.settleRate !== null && _tst.due >= TIMING_MIN_SAMPLE
+                      && Math.round(totals.landTimed) !== Math.round(totals.land);
+    if (_useTimed) {
+      _timedWrap.classList.remove('hidden');
+      document.getElementById('kpi-land-timed').textContent = fmt(totals.landTimed);
+      const tTrate = totals.target > 0 ? totals.landTimed / totals.target : 0;
+      document.getElementById('kpi-land-timed-rate').textContent = pct(tTrate);
+      document.getElementById('kpi-land-timed-note').textContent = `（当月決着率 ${Math.round(_tst.settleRate * 100)}% 反映）`;
+    } else {
+      _timedWrap.classList.add('hidden');
+    }
+  }
+
   // 達成可能性バッジ
   const badge = document.getElementById('kpi-achieve-badge');
   if (tLrate >= 1) {
-    badge.textContent = '✅ 確定圏';
+    badge.innerHTML = '<i class="ti ti-circle-check"></i> 確定圏';
     badge.className = 'mt-2 text-center text-xs font-bold px-2 py-1 rounded-lg bg-emerald-100 text-emerald-700';
   } else if (tLErate >= 1) {
-    badge.textContent = '📋 E次第で達成可能';
+    badge.innerHTML = '<i class="ti ti-clipboard-check"></i> E次第で達成可能';
     badge.className = 'mt-2 text-center text-xs font-bold px-2 py-1 rounded-lg bg-amber-100 text-amber-700';
   } else {
-    badge.textContent = '⚠️ 積み増し必要';
+    badge.innerHTML = '<i class="ti ti-alert-triangle"></i> 積み増し必要';
     badge.className = 'mt-2 text-center text-xs font-bold px-2 py-1 rounded-lg bg-red-100 text-red-700';
   }
 
@@ -4029,7 +4268,7 @@ function _renderIsListLevel1() {
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <button onclick="isListDrillTo('yes')"
         class="text-left bg-white border-2 rounded-xl p-5 hover:shadow-lg transition-all" style="border-color:#0284c7">
-        <p class="text-xs font-semibold mb-2" style="color:#0284c7">🔄 リサイクルコンタクト_Yes</p>
+        <p class="text-xs font-semibold mb-2" style="color:#0284c7"><i class="ti ti-refresh"></i> リサイクルコンタクト_Yes</p>
         <p class="text-3xl font-bold text-slate-700">${yesUnique}<span class="text-sm font-normal text-slate-400 ml-1">社</span>${deltaYes}</p>
         <p class="text-[11px] text-slate-500 mt-1">過去FSアポ実施 → 失注した企業</p>
         ${yesChart}
@@ -5390,9 +5629,11 @@ function renderProgressChart() {
           type: 'bar',
           label: '受注（期間）',
           data: barData,
-          backgroundColor: '#10b98130',
-          borderColor: '#10b981',
-          borderWidth: 1,
+          backgroundColor: 'rgba(47,158,138,0.16)',
+          borderColor: 'rgba(47,158,138,0)',
+          borderWidth: 0,
+          borderRadius: 6,
+          maxBarThickness: 38,
           yAxisID: 'y',
           order: 3,
         },
@@ -5400,10 +5641,21 @@ function renderProgressChart() {
           type: 'line',
           label: '受注累計',
           data: actualData,
-          borderColor: '#10b981',
-          backgroundColor: 'transparent',
-          tension: 0.3,
-          pointRadius: 3,
+          borderColor: '#2f9e8a',
+          borderWidth: 3,
+          tension: 0.4,
+          fill: true,
+          backgroundColor: (c) => {
+            const a = c.chart.chartArea; if (!a) return 'rgba(47,158,138,0.14)';
+            const g = c.chart.ctx.createLinearGradient(0, a.top, 0, a.bottom);
+            g.addColorStop(0, 'rgba(47,158,138,0.30)'); g.addColorStop(1, 'rgba(47,158,138,0)');
+            return g;
+          },
+          pointRadius: (c) => c.dataIndex === actualData.length - 1 ? 5 : 0,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#ffffff',
+          pointBorderColor: '#2f9e8a',
+          pointBorderWidth: 3,
           yAxisID: 'y',
           order: 1,
         },
@@ -5411,11 +5663,12 @@ function renderProgressChart() {
           type: 'line',
           label: '目標（累計）',
           data: targetData,
-          borderColor: '#94a3b8',
-          borderDash: [5, 5],
+          borderColor: 'rgba(143,166,192,0.9)',
+          borderDash: [4, 5],
+          borderWidth: 1.5,
           backgroundColor: 'transparent',
-          tension: 0,
-          pointRadius: 2,
+          tension: 0.25,
+          pointRadius: 0,
           yAxisID: 'y',
           order: 0,
         },
@@ -5423,11 +5676,12 @@ function renderProgressChart() {
           type: 'line',
           label: '昨対実績（累計）',
           data: lyData,
-          borderColor: '#f59e0b',
-          borderDash: [3, 3],
+          borderColor: '#d98c4a',
+          borderDash: [3, 4],
+          borderWidth: 1.8,
           backgroundColor: 'transparent',
-          tension: 0.3,
-          pointRadius: 2,
+          tension: 0.4,
+          pointRadius: 0,
           pointStyle: 'triangle',
           yAxisID: 'y',
           order: 2,
@@ -5436,14 +5690,19 @@ function renderProgressChart() {
     },
     options: {
       responsive: true, maintainAspectRatio: false,
+      animation: { duration: 1100, easing: 'easeInOutCubic' },
+      interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { display: true, position: 'top', labels: { font: { size: 11 } } },
+        legend: { display: true, position: 'top', labels: { font: { size: 11 }, color: '#8294ab', usePointStyle: true, pointStyleWidth: 10, boxHeight: 7 } },
         tooltip: { callbacks: { label: c => `${c.dataset.label}: ¥${Math.round(c.parsed.y).toLocaleString()}` } }
       },
       scales: {
+        x: { grid: { display: false }, ticks: { color: '#93a7c0', font: { size: 10 } } },
         y: {
           beginAtZero: true,
-          ticks: { callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v.toLocaleString() }
+          grid: { color: 'rgba(120,140,165,0.14)' },
+          border: { display: false },
+          ticks: { color: '#93a7c0', font: { size: 10 }, callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v.toLocaleString() }
         }
       }
     }
@@ -6053,7 +6312,7 @@ function drawChart(id, oldChart, labels, data, color, setter, tooltipLabel) {
   const tlabel = tooltipLabel || '充足率';
   const chart = new Chart(ctx, {
     type: 'bar',
-    data: { labels, datasets: [{ label: tlabel+'(%)', data, backgroundColor: data.map(v => v>=100?'#10b981':v>=60?'#0284c7':'#cbd5e1') }] },
+    data: { labels, datasets: [{ label: tlabel+'(%)', data, borderRadius: 6, maxBarThickness: 22, backgroundColor: data.map(v => v>=100?'#2f9e8a':v>=60?'#3a78b5':'#ccd6e2') }] },
     options: {
       responsive: true, indexAxis: 'y',
       scales: { x: { ticks: { callback: v => v+'%' }, suggestedMax: Math.max(120, ...data.map(v=>Math.ceil(v/10)*10+10)) } },
@@ -6083,7 +6342,7 @@ function drawRankChart(id, oldChart, rows, mode, setter) {
   const labels = sorted.map(r => r.name);
   const data   = sorted.map(r => valFn(r));
   const rankColors = ['#fbbf24', '#cbd5e1', '#d97706']; // 1位=金 2位=銀 3位=銅
-  const baseColor  = mode === 'amount' ? '#0284c7' : '#0ea5e9';
+  const baseColor  = mode === 'amount' ? '#3a78b5' : '#2bb0d4';
   const backgroundColor = data.map((v, i) => (v > 0 && i < 3) ? rankColors[i] : (v > 0 ? baseColor : '#e2e8f0'));
   const fmtVal = (v) => mode === 'amount'
     ? '¥' + Math.round(v / 10000).toLocaleString() + '万'
@@ -6130,8 +6389,58 @@ function drawRankChart(id, oldChart, rows, mode, setter) {
 }
 
 // ===== 勝率設定UI =====
+function renderTimingMonitor() {
+  const body = document.getElementById('timingMonitorBody');
+  if (!body) return;
+  _timingStatsCache = null;
+  const st = _timingStats();
+  if (!st || st.total === 0) {
+    body.innerHTML = `<p class="text-xs text-slate-500">スナップショットが2件以上たまると、クローズ月の移動と当月決着率が表示されます。</p>`;
+    return;
+  }
+  const enough = st.settleRate !== null && st.due >= TIMING_MIN_SAMPLE;
+  const settlePct = st.settleRate !== null ? Math.round(st.settleRate * 100) : null;
+  const stayN = Math.max(0, st.due - st.settled);
+  const settW = st.due > 0 ? Math.round(st.settled / st.due * 100) : 0;
+  const stayW = 100 - settW;
+  body.innerHTML = `
+    <div class="grid grid-cols-3 gap-2 mb-3">
+      <div class="bg-amber-50 rounded-lg p-2">
+        <p class="text-[10px] text-amber-700">当月決着率</p>
+        <p class="text-base font-bold text-amber-700">${settlePct === null ? '—' : settlePct + '%'}</p>
+        <p class="text-[9px] text-slate-400">予定→当月に決着</p>
+      </div>
+      <div class="bg-slate-50 rounded-lg p-2">
+        <p class="text-[10px] text-slate-500">流れ率（後ろ倒し）</p>
+        <p class="text-base font-bold text-slate-700">${st.slipPct}%</p>
+        <p class="text-[9px] text-slate-400">移動${st.changed}件の内訳</p>
+      </div>
+      <div class="bg-slate-50 rounded-lg p-2">
+        <p class="text-[10px] text-slate-500">前倒し率</p>
+        <p class="text-base font-bold text-slate-700">${st.pullPct}%</p>
+        <p class="text-[9px] text-slate-400">移動${st.changed}件の内訳</p>
+      </div>
+    </div>
+    <div class="mb-2">
+      <p class="text-[10px] text-slate-500 mb-1">当月クローズ予定だった案件のゆくえ（完了月の実測・予定${st.due}件）</p>
+      <div class="flex h-5 rounded-md overflow-hidden text-[9px] text-white">
+        <div style="width:${settW}%;background:#0284c7" class="flex items-center justify-center">決着 ${st.settled}</div>
+        <div style="width:${stayW}%;background:#fbbf24;color:#92400e" class="flex items-center justify-center">未決着→流出 ${stayN}</div>
+      </div>
+      <p class="text-[10px] text-slate-400 mt-1">決着${st.settled}件のうち受注 ${st.won}件。集計対象月：${st.usedMonths.join('・') || '—'}</p>
+    </div>
+    <div class="p-2 bg-amber-50 rounded text-[10px] text-amber-700 leading-relaxed">
+      ${enough
+        ? `当月決着率 ${settlePct}% を着地予想カードの「タイミング補正後（参考）」に反映中。`
+        : `決着サンプルが${st.due}件（採用には${TIMING_MIN_SAMPLE}件以上が必要）。現時点では着地予想に未反映で、現行値を表示しています。`}
+      月が進むほど自動で精度が上がります。対象期間 ${st.span}。
+    </div>`;
+}
+
 function openWinRatesModal() {
   renderWinRatesTable();
+  renderAccuracyMonitor();
+  renderTimingMonitor();
   const eEl = document.getElementById('wr-e-rate');
   if (eEl) eEl.value = Math.round(eWinRate * 100);
   document.getElementById('winRatesModal').classList.remove('hidden');
@@ -6218,6 +6527,204 @@ function resetWinRates() {
   eWinRate = 0.10;
   gasPost('saveWinRates', { winRates: { customWinRates: {}, eWinRate: 0.10 } });
   renderWinRatesTable();
+  renderAccuracyMonitor();
+}
+
+// ============================================================
+// 🎯 精度モニター（スナップショット実測勝率 vs 設定値）
+//   - 全スナップショットを横断し、案件ごとの「遭遇ステージ」を追跡
+//   - ステージ別に 経由数 / 決着数(受注+失注) / 受注数 を集計 → 実測勝率
+//   - 領域(d.product) / 担当者(d.name) でフィルタ
+//   - 推奨値はスムージング: (受注 + K×現設定) ÷ (決着 + K)
+// ============================================================
+const ACCU_STAGES = ['D', 'C', 'C+', 'B', 'A'];
+const ACCU_DOMAINS = ['全体', '新卒', '中途', '新卒・中途'];
+const ACCU_SMOOTH_K = 8;
+let _accuState = { domain: '全体', member: 'all' };
+
+function _accuDealKey(d) {
+  return d.hubspotId ? ('hs:' + d.hubspotId) : ((d.company || '') + '||' + (d.name || '') + '||' + (d.month || ''));
+}
+
+// snapshots を横断して案件ごとの遭遇ステージ・領域・担当者を集約
+function _accuBuildTrack() {
+  const track = {};
+  if (!Array.isArray(snapshots)) return track;
+  snapshots.forEach(s => {
+    const all = [...(s.pipeline || []), ...(s.lostDeals || [])];
+    all.forEach(d => {
+      const k = _accuDealKey(d);
+      if (!track[k]) track[k] = { ever: new Set(), product: '', name: '' };
+      if (d.stage) track[k].ever.add(d.stage);
+      if (d.product) track[k].product = d.product;
+      if (d.name) track[k].name = d.name;
+    });
+  });
+  return track;
+}
+
+// 指定フィルタでステージ別 {pass, resolved, won} を返す
+function _accuCompute(domain, member) {
+  const track = _accuBuildTrack();
+  const res = {};
+  ACCU_STAGES.forEach(st => res[st] = { pass: 0, resolved: 0, won: 0 });
+  Object.keys(track).forEach(k => {
+    const t = track[k];
+    if (domain !== '全体' && t.product !== domain) return;
+    if (member !== 'all' && t.name !== member) return;
+    const won = t.ever.has('S');
+    const resolved = won || t.ever.has('失注');
+    ACCU_STAGES.forEach(st => {
+      if (t.ever.has(st)) {
+        res[st].pass++;
+        if (resolved) res[st].resolved++;
+        if (won) res[st].won++;
+      }
+    });
+  });
+  return res;
+}
+
+function _accuConf(resolved) {
+  if (resolved >= 50) return { label: '高', cls: 'bg-emerald-100 text-emerald-700' };
+  if (resolved >= 20) return { label: '中', cls: 'bg-amber-100 text-amber-700' };
+  return { label: '低', cls: 'bg-red-100 text-red-700' };
+}
+
+// 推奨勝率(%)。決着が少ないほど現設定値へ寄せる
+function _accuRecommend(won, resolved, stage, prod) {
+  const prior = getWinRate(stage, prod === 'default' ? null : prod); // 0..1
+  return Math.round(((won + ACCU_SMOOTH_K * prior) / (resolved + ACCU_SMOOTH_K)) * 100);
+}
+
+function _accuSetDomain(d) { _accuState.domain = d; renderAccuracyMonitor(); }
+function _accuSetMember(v) { _accuState.member = v; renderAccuracyMonitor(); }
+
+// 現在の領域の推奨値を勝率入力欄へ転記（低信頼ステージは除外。保存は人が確認後）
+function _accuApplyRecommended() {
+  const { domain, member } = _accuState;
+  const prod = domain === '全体' ? 'default' : domain;
+  const data = _accuCompute(domain, member);
+  const applied = [], skipped = [];
+  ACCU_STAGES.forEach(st => {
+    const r = data[st];
+    if (r.resolved < 20) { skipped.push(st); return; }
+    const rec = _accuRecommend(r.won, r.resolved, st, prod);
+    const el = document.getElementById(`wr-${st.replace('+', 'p')}-${prod}`);
+    if (el) { el.value = rec; el.classList.add('border-sky-400', 'bg-sky-50'); applied.push(`${st}→${rec}%`); }
+  });
+  let msg = applied.length ? `下の「${prod === 'default' ? 'デフォルト' : prod}」列に推奨値を入力しました：\n${applied.join(' / ')}\n\n内容を確認し、よければ「保存して反映」を押してください。` : '反映できる十分なデータがありません。';
+  if (skipped.length) msg += `\n\n※ 決着20件未満で信頼度が低いため除外：${skipped.join(', ')}`;
+  alert(msg);
+}
+
+function renderAccuracyMonitor() {
+  const body = document.getElementById('accuMonitorBody');
+  if (!body) return;
+  if (!Array.isArray(snapshots) || snapshots.length === 0) {
+    body.innerHTML = `<p class="text-xs text-slate-500">スナップショットがまだありません。データが蓄積されると実測勝率が表示されます。</p>`;
+    return;
+  }
+  const { domain, member } = _accuState;
+  const data = _accuCompute(domain, member);
+
+  // 期間情報
+  const ids = snapshots.map(s => String(s.id || s.dateStr || '')).filter(Boolean).sort();
+  const span = ids.length ? `${ids[0].slice(0, 10)}〜${ids[ids.length - 1].slice(0, 10)}・${snapshots.length}件` : '';
+
+  // サマリー
+  let totRes = 0, totWon = 0, over = 0, lowCells = 0;
+  const prod = domain === '全体' ? 'default' : domain;
+  ACCU_STAGES.forEach(st => {
+    const r = data[st];
+    totRes += r.resolved; totWon += r.won;
+    if (r.resolved < 20) lowCells++;
+    if (r.resolved > 0) {
+      const act = Math.round((r.won / r.resolved) * 100);
+      const setv = Math.round(getWinRate(st, prod === 'default' ? null : prod) * 100);
+      if (act - setv <= -8) over++;
+    }
+  });
+  const totWinPct = totRes > 0 ? Math.round((totWon / totRes) * 100) : 0;
+
+  // 領域セグメント
+  const seg = ACCU_DOMAINS.map((d, i) => {
+    const on = d === domain;
+    return `<button onclick="_accuSetDomain('${d}')" class="px-3 py-1 text-[11px] ${i ? 'border-l border-slate-200' : ''} ${on ? 'bg-sky-100 text-sky-700 font-semibold' : 'bg-white text-slate-500 hover:bg-slate-50'}">${d}</button>`;
+  }).join('');
+
+  // 担当者ドロップダウン
+  const memOpts = ['<option value="all">全メンバー</option>']
+    .concat(MEMBERS.map(m => `<option value="${m}" ${m === member ? 'selected' : ''}>${m}</option>`)).join('');
+
+  // 行
+  const rows = ACCU_STAGES.map(st => {
+    const r = data[st];
+    const setv = Math.round(getWinRate(st, prod === 'default' ? null : prod) * 100);
+    if (r.resolved === 0) {
+      return `<tr class="border-t border-slate-100">
+        <td class="px-2 py-2"><span class="stage-${st.toLowerCase().replace('+', 'p')} font-semibold">${st}</span></td>
+        <td class="px-2 py-2 text-slate-300" colspan="2">決着データなし（設定 ${setv}%）</td>
+        <td class="px-2 py-2 text-center text-slate-400">0</td>
+        <td class="px-2 py-2 text-center"><span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-400">–</span></td>
+        <td class="px-2 py-2 text-right text-slate-400">${setv}%</td></tr>`;
+    }
+    const act = Math.round((r.won / r.resolved) * 100);
+    const diff = act - setv;
+    const rec = _accuRecommend(r.won, r.resolved, st, prod);
+    const conf = _accuConf(r.resolved);
+    const tone = diff <= -10 ? 'text-red-600' : (Math.abs(diff) <= 5 ? 'text-emerald-600' : 'text-amber-600');
+    const toneBar = diff <= -10 ? '#dc2626' : (Math.abs(diff) <= 5 ? '#10b981' : '#d97706');
+    const actW = Math.max(2, Math.min(100, act));
+    const setMark = Math.min(100, setv);
+    return `<tr class="border-t border-slate-100">
+      <td class="px-2 py-2 whitespace-nowrap"><span class="stage-${st.toLowerCase().replace('+', 'p')} font-semibold">${st}</span></td>
+      <td class="px-2 py-2" style="min-width:150px">
+        <div style="position:relative;height:16px;background:#f1f5f9;border-radius:6px">
+          <div style="position:absolute;left:0;top:0;height:16px;width:${actW}%;background:#0284c7;border-radius:6px;opacity:.85"></div>
+          <div style="position:absolute;left:${setMark}%;top:-2px;height:20px;width:2px;background:${toneBar}"></div>
+        </div>
+        <div class="flex gap-2 mt-0.5 text-[10px]">
+          <span class="text-sky-700 font-semibold">実測 ${act}%</span>
+          <span class="text-slate-400">設定 ${setv}%</span>
+          <span class="${tone} font-semibold">${diff > 0 ? '+' : ''}${diff}pt</span>
+        </div>
+      </td>
+      <td class="px-2 py-2 text-center text-slate-500 whitespace-nowrap">${r.won}/${r.resolved}</td>
+      <td class="px-2 py-2 text-center text-slate-400">${r.pass}</td>
+      <td class="px-2 py-2 text-center"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${conf.cls}">${conf.label}</span></td>
+      <td class="px-2 py-2 text-right font-semibold text-sky-700">${rec}%</td></tr>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div class="flex items-center gap-2 flex-wrap mb-3">
+      <div class="inline-flex border border-slate-200 rounded-lg overflow-hidden">${seg}</div>
+      <div class="inline-flex items-center gap-1 ml-auto">
+        <span class="text-[11px] text-slate-400">担当者</span>
+        <select onchange="_accuSetMember(this.value)" class="text-[11px] border rounded px-1 py-0.5 bg-white">${memOpts}</select>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 gap-2 mb-3">
+      <div class="bg-slate-50 rounded-lg p-2"><p class="text-[10px] text-slate-500">決着案件</p><p class="text-base font-bold text-slate-700">${totRes}件</p></div>
+      <div class="bg-slate-50 rounded-lg p-2"><p class="text-[10px] text-slate-500">平均実測勝率</p><p class="text-base font-bold text-slate-700">${totWinPct}%</p></div>
+      <div class="bg-sky-50 rounded-lg p-2"><p class="text-[10px] text-sky-700">設定より過大</p><p class="text-base font-bold text-sky-700">${over}ステージ</p></div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs">
+        <thead><tr class="text-slate-500 text-[10px] text-left">
+          <th class="px-2 py-1">ステージ</th><th class="px-2 py-1">実測 vs 設定</th>
+          <th class="px-2 py-1 text-center">受注/決着</th><th class="px-2 py-1 text-center">経由</th>
+          <th class="px-2 py-1 text-center">信頼度</th><th class="px-2 py-1 text-right">推奨</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="mt-2 p-2 bg-amber-50 rounded text-[10px] text-amber-700 leading-relaxed">
+      ${lowCells > 0 ? `この条件は決着20件未満のステージが${lowCells}つあり信頼度が下がります。` : ''}対象期間 ${span}。推奨値は決着が少ないほど現設定へ寄せる補正済み。月次の流れ・前倒しを加味するタイミングモデルは第2段階で追加予定。
+    </div>
+    <div class="mt-2 text-right">
+      <button onclick="_accuApplyRecommended()" class="px-3 py-1.5 text-[11px] text-white rounded-lg hover:opacity-90 font-semibold" style="background:#0284c7">推奨値を下の入力欄へ反映</button>
+    </div>`;
 }
 
 // ===== Eステージ カレンダー =====
@@ -7061,17 +7568,27 @@ function _renderLandingTrendChart() {
     data: {
       labels,
       datasets: [
-        { label: '目標', data: targetArr, borderColor: '#0369a1', borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0 },
-        { label: '受注済み', data: wonArr, borderColor: '#059669', backgroundColor: '#05966920', borderWidth: 2, pointRadius: 3, tension: 0.2, fill: false },
-        { label: 'Min',     data: minArr, borderColor: '#dc2626', backgroundColor: '#dc262620', borderWidth: 2, pointRadius: 3, tension: 0.2, fill: false },
-        { label: 'Mid',     data: midArr, borderColor: '#d97706', backgroundColor: '#d9770620', borderWidth: 2, pointRadius: 3, tension: 0.2, fill: false },
-        { label: 'Max',     data: maxArr, borderColor: '#0284c7', backgroundColor: '#0284c720', borderWidth: 2, pointRadius: 3, tension: 0.2, fill: false },
+        { label: '目標', data: targetArr, borderColor: 'rgba(143,166,192,0.9)', borderDash: [4, 5], borderWidth: 1.3, pointRadius: 0, fill: false, tension: 0.25 },
+        { label: '受注済み', data: wonArr, borderColor: '#2f9e8a', borderWidth: 3, tension: 0.4, fill: true,
+          backgroundColor: (c) => {
+            const a = c.chart.chartArea; if (!a) return 'rgba(47,158,138,0.12)';
+            const g = c.chart.ctx.createLinearGradient(0, a.top, 0, a.bottom);
+            g.addColorStop(0, 'rgba(47,158,138,0.26)'); g.addColorStop(1, 'rgba(47,158,138,0)');
+            return g;
+          },
+          pointRadius: (c) => c.dataIndex === wonArr.length - 1 ? 5 : 0, pointHoverRadius: 6,
+          pointBackgroundColor: '#ffffff', pointBorderColor: '#2f9e8a', pointBorderWidth: 3 },
+        { label: 'Min', data: minArr, borderColor: '#d9655c', borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, tension: 0.4, fill: false },
+        { label: 'Mid', data: midArr, borderColor: '#d98c4a', borderWidth: 2, pointRadius: 0, pointHoverRadius: 5, tension: 0.4, fill: false },
+        { label: 'Max', data: maxArr, borderColor: '#2bb0d4', borderWidth: 2.4, pointRadius: 0, pointHoverRadius: 5, tension: 0.4, fill: false },
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
+      animation: { duration: 1100, easing: 'easeInOutCubic' },
+      interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'bottom', labels: { font: { size: 11 } } },
+        legend: { position: 'bottom', labels: { font: { size: 11 }, color: '#8294ab', usePointStyle: true, pointStyleWidth: 10, boxHeight: 7 } },
         tooltip: {
           callbacks: {
             label: (ctx) => `${ctx.dataset.label}: ¥${ctx.parsed.y.toLocaleString()}`
@@ -7079,8 +7596,8 @@ function _renderLandingTrendChart() {
         }
       },
       scales: {
-        y: { beginAtZero: true, ticks: { callback: v => '¥' + (v/10000).toFixed(0) + '万' } },
-        x: { ticks: { font: { size: 10 } } }
+        y: { beginAtZero: true, grid: { color: 'rgba(120,140,165,0.14)' }, border: { display: false }, ticks: { color: '#93a7c0', callback: v => '¥' + (v/10000).toFixed(0) + '万' } },
+        x: { grid: { display: false }, ticks: { color: '#93a7c0', font: { size: 10 } } }
       }
     }
   });
@@ -9493,7 +10010,7 @@ function renderSnapshots() {
   if (compareBtn) {
     if (selectedSnapIds.size >= 2) {
       compareBtn.classList.remove('hidden');
-      compareBtn.textContent = `📊 比較する（${selectedSnapIds.size}件選択中）`;
+      compareBtn.innerHTML = `<i class="ti ti-git-compare"></i> 比較する（${selectedSnapIds.size}件選択中）`;
     } else {
       compareBtn.classList.add('hidden');
     }
@@ -9924,6 +10441,36 @@ function toggleCmpMember(id) {
 function closeCompareModal() {
   document.getElementById('compareModal').classList.add('hidden');
 }
+</script>
+<script>
+/* KPI数字の初回カウントアップ演出（データ初回表示時に1回だけ） */
+(function(){
+  var KPI_IDS = ['kpi-target','kpi-s-amount','kpi-sekisai-amount','kpi-land-amount'];
+  var done = {};
+  function parse(s){ if(!s) return null; var d = String(s).replace(/[^0-9.]/g,''); if(!d) return null; return parseFloat(d); }
+  function run(el){
+    if(done[el.id]) return;
+    var target = parse(el.textContent);
+    if(target === null || target === 0) return;
+    done[el.id] = true;
+    var orig = el.textContent, hasYen = /¥/.test(orig), s = null, dur = 1100;
+    function step(t){ if(!s) s = t; var p = Math.min((t-s)/dur,1); var e = 1 - Math.pow(1-p,3);
+      el.textContent = (hasYen ? '¥' : '') + Math.round(target*e).toLocaleString();
+      if(p < 1){ requestAnimationFrame(step); } else { el.textContent = orig; } }
+    requestAnimationFrame(step);
+  }
+  function check(){ KPI_IDS.forEach(function(id){ var el = document.getElementById(id); if(el) run(el); }); }
+  function start(){
+    var obs = new MutationObserver(function(){
+      check();
+      if(KPI_IDS.every(function(id){ return done[id] || !document.getElementById(id); })) obs.disconnect();
+    });
+    obs.observe(document.body, { subtree:true, childList:true, characterData:true });
+    setTimeout(function(){ obs.disconnect(); }, 8000);
+    check();
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
 </script>
 </body>
 </html>
