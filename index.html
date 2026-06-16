@@ -722,26 +722,12 @@
     <!-- 期間表示 -->
     <p class="text-[11px] text-slate-400 mb-3">期間: <span id="isPeriodLabel" class="font-semibold text-slate-600">—</span> ／ <span class="text-emerald-600">独立</span>: FSタブとは別に切替可能</p>
 
-    <!-- IS リスト保有数 KPIカード -->
+    <!-- ★ 2026-06-16 統合: IS保有リスト ＆ 商談化転換元（3段階アコーディオン） -->
     <div class="bg-white rounded-xl shadow-sm p-4 mb-4 border-l-4 relative" style="border-left-color:#0ea5e9">
       <button onclick="openIsListModal()"
         class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-500 text-sky-600 hover:bg-sky-50">詳細</button>
-      <p class="text-xs text-slate-500 mb-1">📋 IS 保有リスト数</p>
-      <div class="flex items-baseline gap-3">
-        <p class="text-2xl font-bold text-slate-700"><span id="is-list-total">0</span><span class="text-sm font-normal text-slate-400 ml-1">社</span></p>
-        <p class="text-[11px] text-slate-500">
-          <span style="color:#0284c7;font-weight:600">リサイクル <span id="is-list-yes">0</span></span>
-          <span class="text-slate-300 mx-1">/</span>
-          <span style="color:#10b981;font-weight:600">新規 <span id="is-list-no">0</span></span>
-        </p>
-      </div>
-      <p class="text-[10px] text-slate-400 mt-1" id="is-list-note">担当者ごとの保有数を可視化（会社IDで重複統合）</p>
-    </div>
-
-    <!-- ★ 2026-06-15 追加: パーセプションフロー活動（上昇数・アポ転換元） -->
-    <div class="bg-white rounded-xl shadow-sm p-4 mb-4 border-l-4" style="border-left-color:#16a34a">
-      <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
-        <p class="text-xs text-slate-500">🎯 パーセプションフロー活動（担当者ごとの上昇数・商談化転換元）</p>
+      <div class="flex items-center justify-between mb-2 flex-wrap gap-2 pr-12">
+        <p class="text-xs text-slate-500">📋🎯 IS保有リスト ＆ 商談化転換元</p>
         <div class="inline-flex gap-0.5 p-0.5 rounded-lg" style="background:#f1f5f9;">
           <button onclick="setPercActivityPeriod('daily')" id="percActDailyBtn"
             class="text-[11px] px-2.5 py-1 rounded-md font-semibold">デイリー</button>
@@ -749,8 +735,22 @@
             class="text-[11px] px-2.5 py-1 rounded-md font-semibold">週次</button>
         </div>
       </div>
-      <div id="percActivityBody"></div>
-      <p class="text-[10px] text-slate-400 mt-2">※「→上」=その段階より上位のパーセプションフローへ遷移した件数（複数段飛ばしも含む）。「商談化転換元」は商談化へ遷移した件数の遷移前内訳。データ収集を開始したばかりのため、数日〜数週間は数値が少なく表示されます。</p>
+      <!-- 全体KPI -->
+      <div class="rounded-lg p-3 mb-2" style="background:#f8fafc;border:1px solid #e2e8f0;">
+        <div class="flex items-baseline gap-4 flex-wrap">
+          <p class="text-2xl font-bold text-slate-700"><span id="is-list-total">0</span><span class="text-sm font-normal text-slate-400 ml-1">社</span></p>
+          <p class="text-[11px]">
+            <span style="color:#0284c7;font-weight:600">リサイクル <span id="is-list-yes">0</span></span>
+            <span class="text-slate-300 mx-1">/</span>
+            <span style="color:#10b981;font-weight:600">新規 <span id="is-list-no">0</span></span>
+          </p>
+          <p class="text-[11px] text-slate-500 ml-auto"><span id="perc-goal-period">本日</span>の商談化転換 <span id="perc-goal-count" style="color:#16a34a;font-weight:700">0</span> 件</p>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-1">担当者ごとの保有数を可視化（会社IDで重複統合）</p>
+      </div>
+      <!-- 3段階アコーディオン: 担当者 → 担当者名(保有数) → 商談化転換元バー -->
+      <div id="isCombinedBody"></div>
+      <p class="text-[10px] text-slate-400 mt-2">※「担当者」を開くと担当者別の保有数、担当者名を開くとその人の商談化転換元バーが表示されます。バーの色をクリックで「→商談化」企業一覧。データ収集を開始したばかりのため、数日〜数週間は数値が少なく表示されます。</p>
     </div>
 
     <!-- ★ 2026-06-15 追加: パーセプション遷移ドリルダウンモーダル -->
@@ -3339,8 +3339,24 @@ function _filteredPercTransitions() {
 function _escAttrPerc(s) { return String(s).replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
 function _escHtmlPerc(s) { return _escapeHtml(String(s == null ? '' : s)); }
 
+// ★ 2026-06-16 統合: 3段階アコーディオンの開閉状態
+//   段階1=「担当者」見出し / 段階3=商談化転換元バーを開いている担当者（1人ずつ）
+let _isAccTier1Open = true;
+let _isAccOpenOwner = null;
+
+function toggleIsAccTier1() {
+  _isAccTier1Open = !_isAccTier1Open;
+  if (!_isAccTier1Open) _isAccOpenOwner = null; // 親を閉じたら子も閉じる
+  renderPerceptionActivity();
+}
+function toggleIsAccOwner(owner) {
+  _isAccOpenOwner = (_isAccOpenOwner === owner) ? null : owner; // 1人ずつ（他を閉じる）
+  renderPerceptionActivity();
+}
+
+// 統合カード本体（KPI補足＋3段階アコーディオン）を描画
 function renderPerceptionActivity() {
-  // トグルボタンの選択状態
+  // 期間トグルボタンの選択状態
   const dailyBtn  = document.getElementById('percActDailyBtn');
   const weeklyBtn = document.getElementById('percActWeeklyBtn');
   const onCss  = 'background:#ffffff;color:#16a34a;box-shadow:0 1px 2px rgba(0,0,0,0.08);';
@@ -3348,89 +3364,110 @@ function renderPerceptionActivity() {
   if (dailyBtn)  dailyBtn.style.cssText  += (_percActivityPeriod === 'daily'  ? onCss : offCss);
   if (weeklyBtn) weeklyBtn.style.cssText += (_percActivityPeriod === 'weekly' ? onCss : offCss);
 
-  const body = document.getElementById('percActivityBody');
-  if (!body) return;
-
+  const periodLabel = _percActivityPeriod === 'daily' ? '本日' : '今週';
   const trans = _filteredPercTransitions();
 
-  // 担当者一覧（IS保有リストの担当者を基準に、遷移ログにのみ出る担当者も追加）
+  // 全体KPI: 商談化転換の総件数
+  const goalCount = trans.filter(t => t.to === '商談化').length;
+  setText('perc-goal-count', goalCount);
+  setText('perc-goal-period', periodLabel);
+
+  const body = document.getElementById('isCombinedBody');
+  if (!body) return;
+
+  // 担当者別の保有数（リサイクル=Yes / 新規=No、いずれも会社で重複統合済み）
+  const yesStats = _byOwnerStats(isListYes);
+  const noStats  = _byOwnerStats(isListNo);
+
+  // 担当者一覧（保有リスト＋遷移ログのオーナーを統合）
   const ownerSet = new Set();
+  Object.keys(yesStats).forEach(o => ownerSet.add(o));
+  Object.keys(noStats).forEach(o => ownerSet.add(o));
   [...isListYes, ...isListNo].forEach(r => { if (r.owner) ownerSet.add(r.owner); });
   trans.forEach(t => { if (t.owner) ownerSet.add(t.owner); });
   const owners = [...ownerSet].sort((a, b) => a.localeCompare(b, 'ja'));
 
-  if (owners.length === 0) {
-    body.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">データがありません</p>`;
-    return;
+  // ===== 段階1: 「担当者」見出し =====
+  const tier1Icon = _isAccTier1Open ? '▾' : '▸';
+  let html = `
+    <div onclick="toggleIsAccTier1()" class="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer" style="background:#e0f2fe;">
+      <span class="text-[13px] font-bold" style="color:#075985;">${tier1Icon} 担当者</span>
+      <span class="text-[10px]" style="color:#0891b2;">${owners.length}名 ・ ${periodLabel}の商談化転換 ${goalCount}件</span>
+    </div>`;
+
+  if (_isAccTier1Open) {
+    if (owners.length === 0) {
+      html += `<p class="text-xs text-slate-400 py-4 text-center">データがありません</p>`;
+    } else {
+      const apoStages = PERCEPTION_UPWARD_ORDER.filter(s => s !== '商談化'); // 商談化転換元の候補（ゴール自身は除く）
+      html += owners.map(owner => {
+        const yc  = (yesStats[owner] && yesStats[owner].total) || 0;
+        const nc  = (noStats[owner]  && noStats[owner].total)  || 0;
+        const tot = yc + nc;
+        const isOpen = (_isAccOpenOwner === owner);
+        const ownerIcon = isOpen ? '▾' : '▸';
+
+        // ===== 段階2: 担当者名 ＋ 保有数（R/N） =====
+        let block = `
+          <div onclick="toggleIsAccOwner('${_escAttrPerc(owner)}')"
+            class="grid items-center gap-2 py-2 px-2 mt-1 rounded-lg cursor-pointer ${isOpen ? '' : 'hover:bg-slate-50'}"
+            style="grid-template-columns: 18px 1fr auto;${isOpen ? 'background:#dcfce7;' : 'background:#f8fafc;'}">
+            <span class="text-xs ${isOpen ? 'text-emerald-700 font-bold' : 'text-slate-400'}">${ownerIcon}</span>
+            <span class="text-xs font-semibold text-slate-700">${_escHtmlPerc(owner)}</span>
+            <span class="flex items-center gap-1.5 text-[11px]">
+              <span class="font-bold text-slate-700">${tot}</span>
+              <span class="px-1.5 py-0.5 rounded-full" style="background:#f0f9ff;border:1px solid #bae6fd;color:#0284c7;">R ${yc}</span>
+              <span class="px-1.5 py-0.5 rounded-full" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;">N ${nc}</span>
+            </span>
+          </div>`;
+
+        // ===== 段階3: 商談化転換元バー（開いている担当者のみ） =====
+        if (isOpen) {
+          const apoTrans = trans.filter(t => t.owner === owner && t.to === '商談化');
+          const apoTotal = apoTrans.length;
+          let barBlock;
+          if (apoTotal === 0) {
+            barBlock = `<p class="text-[11px] text-slate-400">${periodLabel}の商談化転換はデータ収集中</p>`;
+          } else {
+            const segs = apoStages.map(stage => ({
+              stage, cnt: apoTrans.filter(t => t.from === stage).length
+            })).filter(s => s.cnt > 0);
+            const barHtml = segs.map(s => {
+              const meta = PERC_META[s.stage] || PERC_META['空欄'];
+              const pct = (s.cnt / apoTotal) * 100;
+              const label = pct >= 12 ? `${Math.round(pct)}%` : '';
+              // バーの各色をクリックで「→商談化」企業一覧ドリルダウン（行クリックの開閉とは独立）
+              return `<div onclick="event.stopPropagation();openPercTransModal('${_escAttrPerc(owner)}','${_escAttrPerc(s.stage)}','商談化')"
+                title="${s.stage} ${s.cnt}件 (${Math.round(pct)}%) ・クリックで企業一覧"
+                style="width:${pct}%;background:${meta.bar};display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:600;cursor:pointer;">${label}</div>`;
+            }).join('');
+            barBlock = `
+              <p class="text-[10px] font-semibold mb-1" style="color:#16a34a;">商談化転換元（${periodLabel}）</p>
+              <div style="display:flex;height:14px;border-radius:4px;overflow:hidden;background:#f1f5f9;">${barHtml}</div>
+              <p class="text-[10px] text-slate-400 mt-1">n=${apoTotal}（${segs.map(s => `${s.stage} ${s.cnt}`).join(' / ')}）・各色クリックで「→商談化」企業一覧</p>`;
+          }
+          block += `<div class="ml-5 mr-1 mb-1 px-3 py-2 rounded-lg" style="background:#ffffff;border:1px solid #bbf7d0;">${barBlock}</div>`;
+        }
+        return block;
+      }).join('');
+    }
   }
 
-  const periodLabel = _percActivityPeriod === 'daily' ? '本日' : '今週';
-  const apoStages = PERCEPTION_UPWARD_ORDER.filter(s => s !== '商談化'); // 商談化転換元の候補（ゴール自身は除く）
-
-  const rowsHtml = owners.map(owner => {
-    const ownerTrans = trans.filter(t => t.owner === owner);
-
-    // 上昇数（fromごと）: 件数>0のみチップ表示
-    const upChips = apoStages.map(stage => {
-      const cnt = ownerTrans.filter(t => t.from === stage).length;
-      if (cnt === 0) return '';
-      const meta = PERC_META[stage] || PERC_META['空欄'];
-      return `<button onclick="openPercTransModal('${_escAttrPerc(owner)}','${_escAttrPerc(stage)}')"
-        class="text-[11px] font-semibold px-2 py-0.5 rounded-full hover:opacity-80"
-        style="background:${meta.bg};color:${meta.text};border:1px solid ${meta.border}">${stage}→上 ${cnt}</button>`;
-    }).filter(Boolean).join('');
-
-    const upHtml = upChips
-      ? `<div class="flex flex-wrap gap-1">${upChips}</div>`
-      : `<p class="text-[11px] text-slate-400">上昇なし</p>`;
-
-    // 商談化転換元（toが「商談化」の遷移をfromで集計・100%バー）
-    const apoTrans = ownerTrans.filter(t => t.to === '商談化');
-    const apoTotal = apoTrans.length;
-    let apoHtml;
-    if (apoTotal === 0) {
-      apoHtml = `<p class="text-[11px] text-slate-400">データ収集中</p>`;
-    } else {
-      const segs = apoStages.map(stage => ({
-        stage, cnt: apoTrans.filter(t => t.from === stage).length
-      })).filter(s => s.cnt > 0);
-      const barHtml = segs.map(s => {
-        const meta = PERC_META[s.stage] || PERC_META['空欄'];
-        const pct = (s.cnt / apoTotal) * 100;
-        const label = pct >= 12 ? `${Math.round(pct)}%` : '';
-        return `<div title="${s.stage} ${s.cnt}件 (${Math.round(pct)}%)"
-          style="width:${pct}%;background:${meta.bar};display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:600;">${label}</div>`;
-      }).join('');
-      apoHtml = `
-        <div style="display:flex;height:14px;border-radius:4px;overflow:hidden;background:#f1f5f9;">${barHtml}</div>
-        <p class="text-[10px] text-slate-400 mt-1">n=${apoTotal}（${segs.map(s => `${s.stage} ${s.cnt}`).join(' / ')}）</p>`;
-    }
-
-    return `
-      <div class="grid items-center gap-2 py-2 border-b border-slate-100 last:border-0" style="grid-template-columns: 64px 1fr 1fr;">
-        <div class="text-xs font-semibold text-slate-700">${_escHtmlPerc(owner)}</div>
-        <div>${upHtml}</div>
-        <div>${apoHtml}</div>
-      </div>`;
-  }).join('');
-
-  body.innerHTML = `
-    <div class="grid gap-2 pb-1 mb-1 border-b border-slate-200" style="grid-template-columns: 64px 1fr 1fr;">
-      <div class="text-[10px] text-slate-400 font-semibold">担当者</div>
-      <div class="text-[10px] text-slate-400 font-semibold">${periodLabel}の上昇数（段階→上）</div>
-      <div class="text-[10px] text-slate-400 font-semibold">商談化転換元の内訳（${periodLabel}）</div>
-    </div>
-    ${rowsHtml}`;
+  body.innerHTML = html;
 }
 
 // ===== パーセプション遷移 ドリルダウンモーダル =====
-function openPercTransModal(owner, fromStage) {
-  const trans = _filteredPercTransitions().filter(t => t.owner === owner && t.from === fromStage);
+// ★ toStage を指定すると、その遷移先（例: 商談化）に絞り込む
+function openPercTransModal(owner, fromStage, toStage) {
+  let trans = _filteredPercTransitions().filter(t => t.owner === owner && t.from === fromStage);
+  if (toStage) trans = trans.filter(t => t.to === toStage);
   const title    = document.getElementById('percTransModalTitle');
   const subtitle = document.getElementById('percTransModalSubtitle');
   const bodyEl   = document.getElementById('percTransModalBody');
   const periodLabel = _percActivityPeriod === 'daily' ? '本日' : '今週';
-  if (title)    title.textContent = `${owner}：${fromStage}から上に上がった企業`;
+  if (title)    title.textContent = toStage
+    ? `${owner}：${fromStage} → ${toStage} に転換した企業`
+    : `${owner}：${fromStage}から上に上がった企業`;
   if (subtitle) subtitle.textContent = `${periodLabel}・計${trans.length}件`;
 
   // toごとにグルーピングし、上位の段階から表示
