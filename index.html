@@ -764,15 +764,19 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
       <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div class="flex items-center gap-3 flex-wrap">
           <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0ea5e9"></span><span class="text-slate-500">1回目（初回アポ・E案件）</span></span>
-          <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#f97316"></span><span class="text-slate-500">2回目商談</span></span>
-          <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0284c7"></span><span class="text-slate-500">3回目商談</span></span>
+          <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0ea5e9"></span><span class="text-slate-500">2回目商談</span></span>
+          <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0ea5e9"></span><span class="text-slate-500">3回目商談</span></span>
+          <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0ea5e9"></span><span class="text-slate-500">4回目商談</span></span>
+          <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0ea5e9"></span><span class="text-slate-500">5回目商談</span></span>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
           <div class="flex rounded-lg overflow-hidden border" style="border-color:#e2e8f0">
             <button id="calTab-0" onclick="setCalTab(0)" class="px-3 py-1 text-xs font-semibold" style="background:#0284c7;color:white">全て</button>
             <button id="calTab-1" onclick="setCalTab(1)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0ea5e9;border-color:#e2e8f0">1回目</button>
-            <button id="calTab-2" onclick="setCalTab(2)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#f97316;border-color:#e2e8f0">2回目</button>
-            <button id="calTab-3" onclick="setCalTab(3)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0284c7;border-color:#e2e8f0">3回目</button>
+            <button id="calTab-2" onclick="setCalTab(2)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0ea5e9;border-color:#e2e8f0">2回目</button>
+            <button id="calTab-3" onclick="setCalTab(3)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0ea5e9;border-color:#e2e8f0">3回目</button>
+            <button id="calTab-4" onclick="setCalTab(4)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0ea5e9;border-color:#e2e8f0">4回目</button>
+            <button id="calTab-5" onclick="setCalTab(5)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0ea5e9;border-color:#e2e8f0">5回目</button>
           </div>
           <span id="eCalTotalBadge" class="text-xs font-semibold px-3 py-1 rounded-full" style="background:#dbeafe;color:#0284c7"></span>
           <select id="eCalMemberFilter" onchange="setECalMember(this.value)" class="px-2 py-1 text-xs border rounded">
@@ -802,7 +806,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
     <div id="eCalView-content-today" class="hidden">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
         <p class="text-xs text-slate-500" id="eCalTodayLabel">本日 - / 合計 0件</p>
-        <span class="text-[10px] text-slate-400">1〜3回目すべて含む・件数降順</span>
+        <span class="text-[10px] text-slate-400">1〜5回目すべて含む・件数降順</span>
       </div>
       <div id="eCalTodayBody" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
     </div>
@@ -811,7 +815,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
     <div id="eCalView-content-weekly" class="hidden">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
         <p class="text-xs text-slate-500" id="eCalWeeklyLabel">今週 - / 合計 0件</p>
-        <span class="text-[10px] text-slate-400">1〜3回目すべて含む・メンバー別合計</span>
+        <span class="text-[10px] text-slate-400">1〜5回目すべて含む・メンバー別合計</span>
       </div>
       <div id="eCalWeeklyBody"></div>
     </div>
@@ -1148,16 +1152,20 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
           <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-calendar"></i> IS 商談カレンダー</h3>
           <div class="flex items-center gap-3 mt-1">
             <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0ea5e9"></span><span class="text-slate-500">1回目（初回アポ・E案件）</span></span>
-            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#f97316"></span><span class="text-slate-500">2回目商談</span></span>
-            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0284c7"></span><span class="text-slate-500">3回目商談</span></span>
+            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0ea5e9"></span><span class="text-slate-500">2回目商談</span></span>
+            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0ea5e9"></span><span class="text-slate-500">3回目商談</span></span>
+            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0ea5e9"></span><span class="text-slate-500">4回目商談</span></span>
+            <span class="flex items-center gap-1 text-[11px]"><span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#0ea5e9"></span><span class="text-slate-500">5回目商談</span></span>
           </div>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
           <div class="flex rounded-lg overflow-hidden border" style="border-color:#e2e8f0">
             <button id="isCalTab-0" onclick="setIsCalTab(0)" class="px-3 py-1 text-xs font-semibold" style="background:#0284c7;color:white">全て</button>
             <button id="isCalTab-1" onclick="setIsCalTab(1)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0ea5e9;border-color:#e2e8f0">1回目</button>
-            <button id="isCalTab-2" onclick="setIsCalTab(2)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#f97316;border-color:#e2e8f0">2回目</button>
-            <button id="isCalTab-3" onclick="setIsCalTab(3)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0284c7;border-color:#e2e8f0">3回目</button>
+            <button id="isCalTab-2" onclick="setIsCalTab(2)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0ea5e9;border-color:#e2e8f0">2回目</button>
+            <button id="isCalTab-3" onclick="setIsCalTab(3)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0ea5e9;border-color:#e2e8f0">3回目</button>
+            <button id="isCalTab-4" onclick="setIsCalTab(4)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0ea5e9;border-color:#e2e8f0">4回目</button>
+            <button id="isCalTab-5" onclick="setIsCalTab(5)" class="px-3 py-1 text-xs font-semibold border-l" style="background:white;color:#0ea5e9;border-color:#e2e8f0">5回目</button>
           </div>
           <span id="isCalTotalBadge" class="text-xs font-semibold px-3 py-1 rounded-full" style="background:#dbeafe;color:#0284c7"></span>
           <select id="isCalMemberFilter" onchange="setIsCalMember(this.value)" class="px-2 py-1 text-xs border rounded">
@@ -2365,16 +2373,29 @@ async function fetchFromSheets(silent = false) {
   if (!silent) setStatus('データ取得中...', '#0284c7');
 
   try {
-    // FS GAS にもタイムアウトを設定（180秒に延長：類似企業マスタ + 週次スナップショット 読み込みが重く、90秒では不足するケースがあるため）
-    const fsCtrl = new AbortController();
-    const fsTimer = setTimeout(() => fsCtrl.abort(), 180000);
-    // 手動更新(!silent)はキャッシュを無視して最新取得（C: GASキャッシュ対策）
-    const fsUrl = GAS_URL + '?token=' + GAS_TOKEN + (silent ? '' : '&fresh=1');
-    const res = await fetch(fsUrl, { signal: fsCtrl.signal });
-    clearTimeout(fsTimer);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    if (!json.ok) throw new Error(json.error || '取得失敗');
+    // FS GAS取得ヘルパー（180秒タイムアウト・トークン付き）。useFresh=true でキャッシュ無視の最新取得
+    const _fetchFsJson = async (useFresh) => {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 180000);
+      try {
+        const url = GAS_URL + '?token=' + GAS_TOKEN + (useFresh ? '&fresh=1' : '');
+        const r = await fetch(url, { signal: ctrl.signal });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const j = await r.json();
+        if (!j.ok) throw new Error(j.error || '取得失敗');
+        return j;
+      } finally { clearTimeout(timer); }
+    };
+    // 手動/初回(!silent)は fresh=1 で最新取得。GASが重く失敗した場合はキャッシュ版(fresh無し)へ
+    // フォールバックし、直近データだけでも表示する（耐障害化）。自動ポーリング(silent)は常にキャッシュ版。
+    let json;
+    try {
+      json = await _fetchFsJson(!silent);
+    } catch (freshErr) {
+      if (silent) throw freshErr;
+      setStatus('最新取得に時間がかかっています。直近キャッシュを試します...', '#d97706');
+      json = await _fetchFsJson(false);
+    }
 
     // パイプライン
     reupDeals = [];  // ★ normalizeRow が FY期間外の再アップ案件を push するため先にリセット
@@ -2643,6 +2664,8 @@ function normalizeRow(row, hubspotId = null) {
   const nyusaki     = String(find('導入先','field5__c') || '').trim();
   const appoint2Raw = find('FS2回目商談実施日','fs2_______') || null;
   const appoint3Raw = find('FS3回目商談実施日','fs3_______') || null;
+  const appoint4Raw = find('FS4回目商談実施日','fs4_______') || null;
+  const appoint5Raw = find('FS5回目商談実施日','fs5_______') || null;
   // リードソース・業種・再アップ・リード作成日（中項目分類＆時期判定用）
   const leadSourceRaw = String(find('リードソース_hubspot','リードソース','hubspot') || '').trim();
   const industryRaw   = String(find('業種_baseconnect','業種','industry_baseconnect') || '').trim();
@@ -2773,13 +2796,17 @@ function normalizeRow(row, hubspotId = null) {
   const appointMonth = appt1.month;
   const appointDay   = appt1.day;
 
-  // FS2回目・3回目商談実施日のパース
+  // FS2〜5回目商談実施日のパース
   const appt2 = parseApptDate(appoint2Raw);
   const appt3 = parseApptDate(appoint3Raw);
+  const appt4 = parseApptDate(appoint4Raw);
+  const appt5 = parseApptDate(appoint5Raw);
 
   return { company, name, month, closeDay, appointDate, appointMonth, appointDay,
            appt2Date: appt2.date, appt2Month: appt2.month, appt2Day: appt2.day,
            appt3Date: appt3.date, appt3Month: appt3.month, appt3Day: appt3.day,
+           appt4Date: appt4.date, appt4Month: appt4.month, appt4Day: appt4.day,
+           appt5Date: appt5.date, appt5Month: appt5.month, appt5Day: appt5.day,
            amount, stage, product, estimated, hubspotId, lostReason,
            mishoshoReason,  // ★追加: 未商談化理由（実施数フィルタ用）
            shinStatus, chuStatus, replaceNew, replaceChu, nyusaki,
@@ -7900,8 +7927,8 @@ function setCalTab(t) {
   eCalTab = t;
   eCalExpandedDays.clear();
   // ボタンスタイル更新
-  const TAB_COLORS = { 0: '#0284c7', 1: '#0ea5e9', 2: '#f97316', 3: '#0284c7' };
-  [0,1,2,3].forEach(i => {
+  const TAB_COLORS = { 0: '#0284c7', 1: '#0ea5e9', 2: '#0ea5e9', 3: '#0ea5e9', 4: '#0ea5e9', 5: '#0ea5e9' };
+  [0,1,2,3,4,5].forEach(i => {
     const btn = document.getElementById('calTab-' + i);
     if (!btn) return;
     if (i === t) {
@@ -7946,6 +7973,8 @@ const CAL_COLORS = {
   1: { main: '#0ea5e9', bg: '#e0f2fe', label: '1回目' },
   2: { main: '#f97316', bg: '#fff7ed', label: '2回目' },
   3: { main: '#0284c7', bg: '#f0f9ff', label: '3回目' },
+  4: { main: '#16a34a', bg: '#f0fdf4', label: '4回目' },
+  5: { main: '#9333ea', bg: '#faf5ff', label: '5回目' },
 };
 
 function renderECalendar() {
@@ -8006,19 +8035,25 @@ function renderECalendar() {
   const eDeals2 = allDeals.filter(d => d.appt2Month === eCalViewMonth && d.appt2Day);
   // 3回目: ステージ問わず、appt3Month がこの月 & 日付あり
   const eDeals3 = allDeals.filter(d => d.appt3Month === eCalViewMonth && d.appt3Day);
+  // 4回目: ステージ問わず、appt4Month がこの月 & 日付あり
+  const eDeals4 = allDeals.filter(d => d.appt4Month === eCalViewMonth && d.appt4Day);
+  // 5回目: ステージ問わず、appt5Month がこの月 & 日付あり
+  const eDeals5 = allDeals.filter(d => d.appt5Month === eCalViewMonth && d.appt5Day);
 
   // 1回目: アポ実施日が選択月の案件のみカウント（実施日未設定E案件は参考表示で別カウント）
   const count1 = eDeals1.length;
   const count2 = eDeals2.length;
   const count3 = eDeals3.length;
-  const totalCount = count1 + count2 + count3;
-  const displayCount = eCalTab === 0 ? totalCount : eCalTab === 1 ? count1 : eCalTab === 2 ? count2 : count3;
+  const count4 = eDeals4.length;
+  const count5 = eDeals5.length;
+  const totalCount = count1 + count2 + count3 + count4 + count5;
+  const displayCount = eCalTab === 0 ? totalCount : eCalTab === 1 ? count1 : eCalTab === 2 ? count2 : eCalTab === 3 ? count3 : eCalTab === 4 ? count4 : count5;
   const badge = document.getElementById('eCalTotalBadge');
-  const TAB_BADGE_COLORS = { 0: {bg:'#dbeafe',col:'#0284c7'}, 1: {bg:'#e0f2fe',col:'#0ea5e9'}, 2: {bg:'#fff7ed',col:'#f97316'}, 3: {bg:'#f0f9ff',col:'#0284c7'} };
+  const TAB_BADGE_COLORS = { 0: {bg:'#dbeafe',col:'#0284c7'}, 1: {bg:'#e0f2fe',col:'#0ea5e9'}, 2: {bg:'#e0f2fe',col:'#0ea5e9'}, 3: {bg:'#e0f2fe',col:'#0ea5e9'}, 4: {bg:'#e0f2fe',col:'#0ea5e9'}, 5: {bg:'#e0f2fe',col:'#0ea5e9'} };
   const bc = TAB_BADGE_COLORS[eCalTab];
   if (badge) {
     badge.textContent = eCalTab === 0
-      ? `${mo}月 合計 ${totalCount}件（1回目:${count1} 2回目:${count2} 3回目:${count3}）`
+      ? `${mo}月 合計 ${totalCount}件（1回目:${count1} 2回目:${count2} 3回目:${count3} 4回目:${count4} 5回目:${count5}）`
       : `${mo}月 ${CAL_COLORS[eCalTab]?.label || ''}${displayCount}件`;
     badge.style.background = bc.bg;
     badge.style.color = bc.col;
@@ -8030,6 +8065,8 @@ function renderECalendar() {
     if (eCalTab === 0 || eCalTab === 1) eDeals1.filter(d => d.appointDay === dayNum).forEach(d => entries.push({ d, type: 1 }));
     if (eCalTab === 0 || eCalTab === 2) eDeals2.filter(d => d.appt2Day === dayNum).forEach(d => entries.push({ d, type: 2 }));
     if (eCalTab === 0 || eCalTab === 3) eDeals3.filter(d => d.appt3Day === dayNum).forEach(d => entries.push({ d, type: 3 }));
+    if (eCalTab === 0 || eCalTab === 4) eDeals4.filter(d => d.appt4Day === dayNum).forEach(d => entries.push({ d, type: 4 }));
+    if (eCalTab === 0 || eCalTab === 5) eDeals5.filter(d => d.appt5Day === dayNum).forEach(d => entries.push({ d, type: 5 }));
     return entries;
   }
 
@@ -8145,6 +8182,8 @@ function renderECalendar() {
     ${eCalTab === 0 || eCalTab === 1 ? `<span style="color:${CAL_COLORS[1].main}">● 1回目 ${count1}件</span>` : ''}
     ${eCalTab === 0 || eCalTab === 2 ? `<span style="color:${CAL_COLORS[2].main}">● 2回目 ${count2}件</span>` : ''}
     ${eCalTab === 0 || eCalTab === 3 ? `<span style="color:${CAL_COLORS[3].main}">● 3回目 ${count3}件</span>` : ''}
+    ${eCalTab === 0 || eCalTab === 4 ? `<span style="color:${CAL_COLORS[4].main}">● 4回目 ${count4}件</span>` : ''}
+    ${eCalTab === 0 || eCalTab === 5 ? `<span style="color:${CAL_COLORS[5].main}">● 5回目 ${count5}件</span>` : ''}
   </div>`;
 
   cal.innerHTML = html;
@@ -8225,22 +8264,24 @@ function renderECalToday() {
   if (!body) return;
   const today = _ymdTodayStr();
   const all = [...pipeline, ...lostDeals];
-  const map = new Map(); // name -> { c1, c2, c3 }
+  const map = new Map(); // name -> { c1..c5 }
   const bump = (name, kind) => {
     if (!name) return;
-    if (!map.has(name)) map.set(name, { c1:0, c2:0, c3:0 });
+    if (!map.has(name)) map.set(name, { c1:0, c2:0, c3:0, c4:0, c5:0 });
     const o = map.get(name);
-    if (kind === 1) o.c1++; else if (kind === 2) o.c2++; else if (kind === 3) o.c3++;
+    if (kind === 1) o.c1++; else if (kind === 2) o.c2++; else if (kind === 3) o.c3++; else if (kind === 4) o.c4++; else if (kind === 5) o.c5++;
   };
   // ★ 0件メンバーも表示するため、FYメンバー全員を初期化
-  try { (getFyMembers() || []).forEach(n => { if (!map.has(n)) map.set(n, { c1:0, c2:0, c3:0 }); }); } catch(e) {}
+  try { (getFyMembers() || []).forEach(n => { if (!map.has(n)) map.set(n, { c1:0, c2:0, c3:0, c4:0, c5:0 }); }); } catch(e) {}
   all.forEach(d => {
     if (d.appointDate === today) bump(d.name, 1);
     if (d.appt2Date   === today) bump(d.name, 2);
     if (d.appt3Date   === today) bump(d.name, 3);
+    if (d.appt4Date   === today) bump(d.name, 4);
+    if (d.appt5Date   === today) bump(d.name, 5);
   });
   const rows = Array.from(map.entries())
-    .map(([n,v]) => ({ name:n, ...v, total: v.c1+v.c2+v.c3 }))
+    .map(([n,v]) => ({ name:n, ...v, total: v.c1+v.c2+v.c3+v.c4+v.c5 }))
     .sort((a,b) => b.total - a.total);
   const total = rows.reduce((s,r)=>s+r.total, 0);
   if (label) label.textContent = `本日 ${today} / 合計 ${total}件`;
@@ -8256,8 +8297,10 @@ function renderECalToday() {
         <div class="font-semibold ${zero ? 'text-slate-400' : 'text-slate-700'} text-sm">${r.name}</div>
         <div class="text-[11px] flex items-center gap-2 mt-1">
           <span style="color:${zero ? '#94a3b8' : '#0ea5e9'}">1回目 ${r.c1}</span>
-          <span style="color:${zero ? '#94a3b8' : '#f97316'}">2回目 ${r.c2}</span>
-          <span style="color:${zero ? '#94a3b8' : '#0284c7'}">3回目 ${r.c3}</span>
+          <span style="color:${zero ? '#94a3b8' : '#0ea5e9'}">2回目 ${r.c2}</span>
+          <span style="color:${zero ? '#94a3b8' : '#0ea5e9'}">3回目 ${r.c3}</span>
+          <span style="color:${zero ? '#94a3b8' : '#0ea5e9'}">4回目 ${r.c4}</span>
+          <span style="color:${zero ? '#94a3b8' : '#0ea5e9'}">5回目 ${r.c5}</span>
         </div>
       </div>
       <div class="text-xl font-bold" style="color:${zero ? '#cbd5e1' : '#0284c7'}">${r.total}<span class="text-xs ml-1">件</span></div>
@@ -8278,6 +8321,8 @@ function renderECalWeekly() {
     if (inWeek(d.appointDate)) bump(d.name);
     if (inWeek(d.appt2Date))   bump(d.name);
     if (inWeek(d.appt3Date))   bump(d.name);
+    if (inWeek(d.appt4Date))   bump(d.name);
+    if (inWeek(d.appt5Date))   bump(d.name);
   });
   // ★ 除外メンバー
   const EXCLUDE_WEEKLY = new Set(['萌 小島', '小島 萌']);
@@ -9645,8 +9690,8 @@ let isCalExpandedDays = new Set();
 function setIsCalTab(t) {
   isCalTab = t;
   isCalExpandedDays.clear();
-  const TAB_COLORS = { 0: '#0284c7', 1: '#0ea5e9', 2: '#f97316', 3: '#0284c7' };
-  [0,1,2,3].forEach(i => {
+  const TAB_COLORS = { 0: '#0284c7', 1: '#0ea5e9', 2: '#0ea5e9', 3: '#0ea5e9', 4: '#0ea5e9', 5: '#0ea5e9' };
+  [0,1,2,3,4,5].forEach(i => {
     const btn = document.getElementById('isCalTab-' + i);
     if (!btn) return;
     if (i === t) { btn.style.background = TAB_COLORS[i]; btn.style.color = 'white'; }
@@ -9721,19 +9766,23 @@ function renderIsCalendar() {
   const eDealsNoDate = allDeals.filter(d => d.stage === 'E' && !d.appointDate && d.month === isCalViewMonth);
   const eDeals2 = allDeals.filter(d => d.appt2Month === isCalViewMonth && d.appt2Day);
   const eDeals3 = allDeals.filter(d => d.appt3Month === isCalViewMonth && d.appt3Day);
+  const eDeals4 = allDeals.filter(d => d.appt4Month === isCalViewMonth && d.appt4Day);
+  const eDeals5 = allDeals.filter(d => d.appt5Month === isCalViewMonth && d.appt5Day);
 
   // 1回目: アポ実施日が選択月の案件のみカウント（実施日未設定E案件は参考表示で別カウント）
   const count1 = eDeals1.length;
   const count2 = eDeals2.length;
   const count3 = eDeals3.length;
-  const totalCount = count1 + count2 + count3;
-  const displayCount = isCalTab === 0 ? totalCount : isCalTab === 1 ? count1 : isCalTab === 2 ? count2 : count3;
+  const count4 = eDeals4.length;
+  const count5 = eDeals5.length;
+  const totalCount = count1 + count2 + count3 + count4 + count5;
+  const displayCount = isCalTab === 0 ? totalCount : isCalTab === 1 ? count1 : isCalTab === 2 ? count2 : isCalTab === 3 ? count3 : isCalTab === 4 ? count4 : count5;
   const badge = document.getElementById('isCalTotalBadge');
-  const TAB_BADGE_COLORS = { 0: {bg:'#dbeafe',col:'#0284c7'}, 1: {bg:'#e0f2fe',col:'#0ea5e9'}, 2: {bg:'#fff7ed',col:'#f97316'}, 3: {bg:'#f0f9ff',col:'#0284c7'} };
+  const TAB_BADGE_COLORS = { 0: {bg:'#dbeafe',col:'#0284c7'}, 1: {bg:'#e0f2fe',col:'#0ea5e9'}, 2: {bg:'#e0f2fe',col:'#0ea5e9'}, 3: {bg:'#e0f2fe',col:'#0ea5e9'}, 4: {bg:'#e0f2fe',col:'#0ea5e9'}, 5: {bg:'#e0f2fe',col:'#0ea5e9'} };
   const bc = TAB_BADGE_COLORS[isCalTab];
   if (badge) {
     badge.textContent = isCalTab === 0
-      ? `${mo}月 合計 ${totalCount}件（1回目:${count1} 2回目:${count2} 3回目:${count3}）`
+      ? `${mo}月 合計 ${totalCount}件（1回目:${count1} 2回目:${count2} 3回目:${count3} 4回目:${count4} 5回目:${count5}）`
       : `${mo}月 ${CAL_COLORS[isCalTab]?.label || ''}${displayCount}件`;
     badge.style.background = bc.bg;
     badge.style.color = bc.col;
@@ -9744,6 +9793,8 @@ function renderIsCalendar() {
     if (isCalTab === 0 || isCalTab === 1) eDeals1.filter(d => d.appointDay === dayNum).forEach(d => entries.push({ d, type: 1 }));
     if (isCalTab === 0 || isCalTab === 2) eDeals2.filter(d => d.appt2Day === dayNum).forEach(d => entries.push({ d, type: 2 }));
     if (isCalTab === 0 || isCalTab === 3) eDeals3.filter(d => d.appt3Day === dayNum).forEach(d => entries.push({ d, type: 3 }));
+    if (isCalTab === 0 || isCalTab === 4) eDeals4.filter(d => d.appt4Day === dayNum).forEach(d => entries.push({ d, type: 4 }));
+    if (isCalTab === 0 || isCalTab === 5) eDeals5.filter(d => d.appt5Day === dayNum).forEach(d => entries.push({ d, type: 5 }));
     return entries;
   }
 
@@ -9856,6 +9907,8 @@ function renderIsCalendar() {
     ${isCalTab === 0 || isCalTab === 1 ? `<span style="color:${CAL_COLORS[1].main}">● 1回目 ${count1}件</span>` : ''}
     ${isCalTab === 0 || isCalTab === 2 ? `<span style="color:${CAL_COLORS[2].main}">● 2回目 ${count2}件</span>` : ''}
     ${isCalTab === 0 || isCalTab === 3 ? `<span style="color:${CAL_COLORS[3].main}">● 3回目 ${count3}件</span>` : ''}
+    ${isCalTab === 0 || isCalTab === 4 ? `<span style="color:${CAL_COLORS[4].main}">● 4回目 ${count4}件</span>` : ''}
+    ${isCalTab === 0 || isCalTab === 5 ? `<span style="color:${CAL_COLORS[5].main}">● 5回目 ${count5}件</span>` : ''}
   </div>`;
 
   cal.innerHTML = html;
