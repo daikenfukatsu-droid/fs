@@ -892,7 +892,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
       <button onclick="openIsListModal()"
         class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-500 text-sky-600 hover:bg-sky-50">詳細</button>
       <div class="flex items-center justify-between mb-2 flex-wrap gap-2 pr-12">
-        <p class="text-xs text-slate-500"><i class="ti ti-list-check"></i> IS保有リスト ＆ 商談化転換元</p>
+        <p class="text-xs text-slate-500"><i class="ti ti-list-check"></i> IS保有リスト ＆ フェーズ上昇</p>
         <select onchange="setPercActivityPeriod(this.value)" id="percActPeriodSelect"
           class="text-[11px] font-semibold rounded-lg px-2 py-1 cursor-pointer"
           style="background:#f1f5f9;border:1px solid #e2e8f0;color:#334155;outline:none;">
@@ -914,13 +914,13 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
             <span class="text-slate-300 mx-1">/</span>
             <span style="color:#10b981;font-weight:600">新規 <span id="is-list-no">0</span></span>
           </p>
-          <p class="text-[11px] text-slate-500 ml-auto"><span id="perc-goal-period">本日</span>の商談化転換 <span id="perc-goal-count" style="color:#16a34a;font-weight:700">0</span> 件</p>
+          <p class="text-[11px] text-slate-500 ml-auto"><span id="perc-goal-period">本日</span>のフェーズ上昇 <span id="perc-goal-count" style="color:#16a34a;font-weight:700">0</span> 件</p>
         </div>
         <p class="text-[10px] text-slate-400 mt-1">担当者ごとの保有数を可視化（会社IDで重複統合）</p>
       </div>
       <!-- 3段階アコーディオン: 担当者 → 担当者名(保有数) → 商談化転換元バー -->
       <div id="isCombinedBody"></div>
-      <p class="text-[10px] text-slate-400 mt-2">※「担当者」を開くと担当者別の保有数、担当者名を開くとその人の商談化転換元バーが表示されます。バーの色をクリックで「→商談化」企業一覧。データ収集を開始したばかりのため、数日〜数週間は数値が少なく表示されます。</p>
+      <p class="text-[10px] text-slate-400 mt-2">※「担当者」を開くと担当者別の保有数、担当者名を開くとその人の「フェーズ上昇（到達段階別）」バーが表示されます。バーの色をクリックでその段階に上がった企業一覧。データ収集を開始したばかりのため、数日〜数週間は数値が少なく表示されます。</p>
     </div>
 
     <!-- ★ 2026-06-15 追加: パーセプション遷移ドリルダウンモーダル -->
@@ -3740,7 +3740,7 @@ function renderPerceptionActivity() {
   const trans = _filteredPercTransitions();
 
   // 全体KPI: 商談化転換の総件数
-  const goalCount = trans.filter(t => t.to === '商談化').length;
+  const goalCount = trans.length; // フェーズ上昇（すべての上昇遷移）の件数
   setText('perc-goal-count', goalCount);
   setText('perc-goal-period', periodLabel);
 
@@ -3764,7 +3764,7 @@ function renderPerceptionActivity() {
   let html = `
     <div onclick="toggleIsAccTier1()" class="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer" style="background:#e0f2fe;">
       <span class="text-[13px] font-bold" style="color:#075985;">${tier1Icon} 担当者</span>
-      <span class="text-[10px]" style="color:#0891b2;">${owners.length}名 ・ ${periodLabel}の商談化転換 ${goalCount}件</span>
+      <span class="text-[10px]" style="color:#0891b2;">${owners.length}名 ・ ${periodLabel}のフェーズ上昇 ${goalCount}件</span>
     </div>`;
 
   if (_isAccTier1Open) {
@@ -3793,30 +3793,31 @@ function renderPerceptionActivity() {
             </span>
           </div>`;
 
-        // ===== 段階3: 商談化転換元バー（開いている担当者のみ） =====
+        // ===== 段階3: フェーズ上昇の内訳バー（到達段階別・開いている担当者のみ） =====
         if (isOpen) {
-          const apoTrans = trans.filter(t => t.owner === owner && t.to === '商談化');
-          const apoTotal = apoTrans.length;
+          const upTrans = trans.filter(t => t.owner === owner); // すべての上昇遷移
+          const upTotal = upTrans.length;
           let barBlock;
-          if (apoTotal === 0) {
-            barBlock = `<p class="text-[11px] text-slate-400">${periodLabel}の商談化転換はデータ収集中</p>`;
+          if (upTotal === 0) {
+            barBlock = `<p class="text-[11px] text-slate-400">${periodLabel}のフェーズ上昇はデータ収集中</p>`;
           } else {
-            const segs = apoStages.map(stage => ({
-              stage, cnt: apoTrans.filter(t => t.from === stage).length
+            const GOAL_COLOR = '#7c3aed'; // 商談化（ゴール）は他段階と被らない独自色
+            const segs = PERCEPTION_UPWARD_ORDER.map(stage => ({
+              stage, cnt: upTrans.filter(t => t.to === stage).length
             })).filter(s => s.cnt > 0);
             const barHtml = segs.map(s => {
-              const meta = PERC_META[s.stage] || PERC_META['空欄'];
-              const pct = (s.cnt / apoTotal) * 100;
+              const color = s.stage === '商談化' ? GOAL_COLOR : ((PERC_META[s.stage] || PERC_META['空欄']).bar);
+              const pct = (s.cnt / upTotal) * 100;
               const label = pct >= 12 ? `${Math.round(pct)}%` : '';
-              // バーの各色をクリックで「→商談化」企業一覧ドリルダウン（行クリックの開閉とは独立）
-              return `<div onclick="event.stopPropagation();openPercTransModal('${_escAttrPerc(owner)}','${_escAttrPerc(s.stage)}','商談化')"
-                title="${s.stage} ${s.cnt}件 (${Math.round(pct)}%) ・クリックで企業一覧"
-                style="width:${pct}%;background:${meta.bar};display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:600;cursor:pointer;">${label}</div>`;
+              // 到達段階をクリックで「その段階に上がった企業」一覧ドリルダウン
+              return `<div onclick="event.stopPropagation();openPercTransModal('${_escAttrPerc(owner)}','','${_escAttrPerc(s.stage)}')"
+                title="→${s.stage} ${s.cnt}件 (${Math.round(pct)}%) ・クリックで企業一覧"
+                style="width:${pct}%;background:${color};display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:600;cursor:pointer;">${label}</div>`;
             }).join('');
             barBlock = `
-              <p class="text-[10px] font-semibold mb-1" style="color:#16a34a;">商談化転換元（${periodLabel}）</p>
+              <p class="text-[10px] font-semibold mb-1" style="color:#16a34a;">フェーズ上昇の内訳（到達段階別・${periodLabel}）</p>
               <div style="display:flex;height:14px;border-radius:4px;overflow:hidden;background:#f1f5f9;">${barHtml}</div>
-              <p class="text-[10px] text-slate-400 mt-1">n=${apoTotal}（${segs.map(s => `${s.stage} ${s.cnt}`).join(' / ')}）・各色クリックで「→商談化」企業一覧</p>`;
+              <p class="text-[10px] text-slate-400 mt-1">n=${upTotal}（${segs.map(s => `${s.stage} ${s.cnt}`).join(' / ')}）・各色クリックで企業一覧</p>`;
           }
           block += `<div class="ml-5 mr-1 mb-1 px-3 py-2 rounded-lg" style="background:#ffffff;border:1px solid #bbf7d0;">${barBlock}</div>`;
         }
@@ -3831,15 +3832,17 @@ function renderPerceptionActivity() {
 // ===== パーセプション遷移 ドリルダウンモーダル =====
 // ★ toStage を指定すると、その遷移先（例: 商談化）に絞り込む
 function openPercTransModal(owner, fromStage, toStage) {
-  let trans = _filteredPercTransitions().filter(t => t.owner === owner && t.from === fromStage);
-  if (toStage) trans = trans.filter(t => t.to === toStage);
+  let trans = _filteredPercTransitions().filter(t => t.owner === owner);
+  if (fromStage) trans = trans.filter(t => t.from === fromStage);
+  if (toStage)   trans = trans.filter(t => t.to === toStage);
   const title    = document.getElementById('percTransModalTitle');
   const subtitle = document.getElementById('percTransModalSubtitle');
   const bodyEl   = document.getElementById('percTransModalBody');
   const periodLabel = _percPeriodLabel(_percActivityPeriod);
-  if (title)    title.textContent = toStage
-    ? `${owner}：${fromStage} → ${toStage} に転換した企業`
-    : `${owner}：${fromStage}から上に上がった企業`;
+  if (title)    title.textContent =
+    (fromStage && toStage) ? `${owner}：${fromStage} → ${toStage} に転換した企業`
+    : toStage              ? `${owner}：${toStage} に上がった企業`
+    :                        `${owner}：${fromStage}から上に上がった企業`;
   if (subtitle) subtitle.textContent = `${periodLabel}・計${trans.length}件`;
 
   // toごとにグルーピングし、上位の段階から表示
@@ -3855,9 +3858,10 @@ function openPercTransModal(owner, fromStage, toStage) {
     const items = list.map(t => {
       const url = t.companyId ? `https://app.hubspot.com/contacts/23871469/record/0-2/${t.companyId}` : null;
       const name = _escHtmlPerc(t.company || '(会社名不明)');
+      const flow = `<span style="color:#94a3b8;font-size:11px;">（${_escHtmlPerc(t.from || '?')} → ${_escHtmlPerc(t.to || '?')}）</span>`;
       return url
-        ? `<a href="${url}" target="_blank" rel="noopener" class="text-[12px] flex justify-between items-center hover:underline" style="color:#0284c7"><span>${name}</span><span>↗</span></a>`
-        : `<p class="text-[12px] text-slate-600">${name}</p>`;
+        ? `<a href="${url}" target="_blank" rel="noopener" class="text-[12px] flex justify-between items-center gap-2 hover:underline" style="color:#0284c7"><span>${name} ${flow}</span><span>↗</span></a>`
+        : `<p class="text-[12px] text-slate-600">${name} ${flow}</p>`;
     }).join('');
     return `
       <div class="mb-2 pb-2 border-b border-slate-100 last:border-0">
