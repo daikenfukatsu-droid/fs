@@ -1313,7 +1313,7 @@ function toggleRules() {
 }
 
 // ===== 定数 =====
-const MEMBERS = ['藤森 悠太','林 日向子','久保田 翔世','平井 良輝','梶山 勇亮','深澤 陸','廣澤 未来','山口 学','髙橋 柚基','大野 杏海','秋山 恵'];
+const MEMBERS = ['藤森 悠太','林 日向子','久保田 翔世','平井 良輝','梶山 勇亮','深澤 陸','廣澤 未来','山口 学','髙橋 柚基','大野 杏海','秋山 恵','田中 俊也'];
 const FY2025_MEMBERS = ['藤森 悠太','外山 未来','石橋 尚子','織笠 大地','林 日向子','久保田 翔世','平井 良輝','梶山 勇亮','深澤 陸','佐々木 祐太朗','廣澤 未来','山口 学','髙橋 柚基'];
 const FY2025_MONTHS = ['2025/04','2025/05','2025/06','2025/07','2025/08','2025/09','2025/10','2025/11','2025/12','2026/01','2026/02','2026/03'];
 const FY2025_QUARTERS = {
@@ -1340,18 +1340,18 @@ const HALVES = {
 
 // ===== 目標データ（未設定月は0。05/06は確定値）=====
 const _TARGETS_BASE = {
-  '2026/04': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3000000,'平井 良輝':4000000,'梶山 勇亮':3000000,'深澤 陸':2500000,'廣澤 未来':2000000,'山口 学':3000000,'髙橋 柚基':1000000,'大野 杏海':0,'秋山 恵':0},
-  '2026/05': {'藤森 悠太':4000000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':4000000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':1500000,'大野 杏海':0,'秋山 恵':1000000},
-  '2026/06': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3000000,'平井 良輝':4000000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2000000,'山口 学':3000000,'髙橋 柚基':2000000,'大野 杏海':1000000,'秋山 恵':1000000},
-  '2026/07': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3000000,'平井 良輝':4000000,'梶山 勇亮':3000000,'深澤 陸':2500000,'廣澤 未来':2000000,'山口 学':3000000,'髙橋 柚基':1000000,'大野 杏海':1000000,'秋山 恵':1000000},
-  '2026/08': {'藤森 悠太':3500000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':3500000,'梶山 勇亮':3500000,'深澤 陸':3000000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':1500000,'大野 杏海':1500000,'秋山 恵':1500000},
-  '2026/09': {'藤森 悠太':3500000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':3500000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':2500000,'大野 杏海':2500000,'秋山 恵':2500000},
-  '2026/10': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3000000,'平井 良輝':4000000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':2500000,'大野 杏海':2500000,'秋山 恵':2500000},
-  '2026/11': {'藤森 悠太':4000000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':4000000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':3000000,'大野 杏海':2500000,'秋山 恵':2500000},
-  '2026/12': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3500000,'平井 良輝':4000000,'梶山 勇亮':3500000,'深澤 陸':3000000,'廣澤 未来':3000000,'山口 学':3500000,'髙橋 柚基':3000000,'大野 杏海':2500000,'秋山 恵':2500000},
-  '2027/01': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3500000,'平井 良輝':4000000,'梶山 勇亮':3000000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3000000,'髙橋 柚基':2000000,'大野 杏海':2000000,'秋山 恵':2500000},
-  '2027/02': {'藤森 悠太':3500000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':3500000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':3000000,'大野 杏海':2500000,'秋山 恵':2500000},
-  '2027/03': {'藤森 悠太':3500000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':3500000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':3000000,'山口 学':3500000,'髙橋 柚基':2000000,'大野 杏海':2500000,'秋山 恵':2000000}
+  '2026/04': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3000000,'平井 良輝':4000000,'梶山 勇亮':3000000,'深澤 陸':2500000,'廣澤 未来':2000000,'山口 学':3000000,'髙橋 柚基':1000000,'大野 杏海':0,'秋山 恵':0,'田中 俊也':0},
+  '2026/05': {'藤森 悠太':4000000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':4000000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':1500000,'大野 杏海':0,'秋山 恵':1000000,'田中 俊也':0},
+  '2026/06': {'藤森 悠太':4000000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':4000000,'梶山 勇亮':3500000,'深澤 陸':3000000,'廣澤 未来':2000000,'山口 学':3500000,'髙橋 柚基':2000000,'大野 杏海':1000000,'秋山 恵':1000000,'田中 俊也':0},
+  '2026/07': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3500000,'平井 良輝':4000000,'梶山 勇亮':3000000,'深澤 陸':2500000,'廣澤 未来':2000000,'山口 学':3000000,'髙橋 柚基':1000000,'大野 杏海':1000000,'秋山 恵':1000000,'田中 俊也':0},
+  '2026/08': {'藤森 悠太':3500000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':3500000,'梶山 勇亮':3500000,'深澤 陸':3000000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':1500000,'大野 杏海':1500000,'秋山 恵':1500000,'田中 俊也':0},
+  '2026/09': {'藤森 悠太':3500000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':3500000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':2500000,'大野 杏海':2500000,'秋山 恵':2500000,'田中 俊也':1000000},
+  '2026/10': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3500000,'平井 良輝':4000000,'梶山 勇亮':3000000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3000000,'髙橋 柚基':2500000,'大野 杏海':2500000,'秋山 恵':2500000,'田中 俊也':1500000},
+  '2026/11': {'藤森 悠太':4000000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':4000000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':2500000,'大野 杏海':2500000,'秋山 恵':2500000,'田中 俊也':2500000},
+  '2026/12': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3500000,'平井 良輝':4000000,'梶山 勇亮':3500000,'深澤 陸':3000000,'廣澤 未来':3000000,'山口 学':3000000,'髙橋 柚基':3000000,'大野 杏海':2500000,'秋山 恵':2500000,'田中 俊也':2500000},
+  '2027/01': {'藤森 悠太':4000000,'林 日向子':3000000,'久保田 翔世':3000000,'平井 良輝':4000000,'梶山 勇亮':3000000,'深澤 陸':2500000,'廣澤 未来':2500000,'山口 学':3000000,'髙橋 柚基':2000000,'大野 杏海':2000000,'秋山 恵':2000000,'田中 俊也':2000000},
+  '2027/02': {'藤森 悠太':3500000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':3500000,'梶山 勇亮':3500000,'深澤 陸':3000000,'廣澤 未来':2500000,'山口 学':3500000,'髙橋 柚基':3000000,'大野 杏海':2500000,'秋山 恵':2500000,'田中 俊也':2500000},
+  '2027/03': {'藤森 悠太':3500000,'林 日向子':3500000,'久保田 翔世':3500000,'平井 良輝':3500000,'梶山 勇亮':3500000,'深澤 陸':2500000,'廣澤 未来':2000000,'山口 学':3500000,'髙橋 柚基':2000000,'大野 杏海':2000000,'秋山 恵':2000000,'田中 俊也':2000000}
 };
 const _FY2025_TARGETS_BASE = {
   '2025/04': {'藤森 悠太':2000000,'外山 未来':0,'石橋 尚子':0,'織笠 大地':0,'林 日向子':2500000,'久保田 翔世':2500000,'平井 良輝':1000000,'梶山 勇亮':2500000,'深澤 陸':0,'佐々木 祐太朗':0,'廣澤 未来':0,'山口 学':0,'髙橋 柚基':0},
@@ -7122,6 +7122,23 @@ function _getFSUnitsForPeriod(months) {
   return FS_UNITS_BEFORE_2026_06;
 }
 
+// ★ メンバー×月 でユニットを解決（着地予想 詳細の期間集計用）
+//   秋山 恵 : 〜2026/05 林 / 2026/06〜 藤森
+//   大野 杏海: 〜2026/06 林 / 2026/07〜 藤森
+//   田中 俊也: 2026/07〜 林（それ以前は所属なし＝非表示）
+const FS_UNIT_FIXED = {
+  '藤森 悠太':'藤森ユニット','久保田 翔世':'藤森ユニット','林 日向子':'藤森ユニット','廣澤 未来':'藤森ユニット',
+  '平井 良輝':'平井ユニット','梶山 勇亮':'平井ユニット','深澤 陸':'平井ユニット','山口 学':'平井ユニット','髙橋 柚基':'平井ユニット',
+};
+const FS_UNIT_ORDER = ['藤森ユニット', '平井ユニット', '林ユニット'];
+function _fsUnitForMonth(member, ym) {
+  if (FS_UNIT_FIXED[member]) return FS_UNIT_FIXED[member];
+  if (member === '秋山 恵')   return (ym >= '2026/06') ? '藤森ユニット' : '林ユニット';
+  if (member === '大野 杏海') return (ym >= '2026/07') ? '藤森ユニット' : '林ユニット';
+  if (member === '田中 俊也') return (ym >= '2026/07') ? '林ユニット' : null;
+  return null;
+}
+
 // 案件分類（Min/Mid/Max/該当なし）の localStorage 永続化
 const LANDING_CLASS_KEY = 'fs-landing-class-v1';
 let _landingClassMap = {};
@@ -7249,40 +7266,52 @@ function _renderLandingHierarchy(col) {
   const months = getMonthsForPeriod();
   const activePipeline = getActivePipeline();
 
-  // ★ 選択中の期間に応じてユニット構成を切替（2026/06 で秋山が林→藤森へ異動）
-  const _unitsDef = _getFSUnitsForPeriod(months);
-
-  // メンバー単位で集計
-  // 表示ルール:
-  //   Min = Min のみ
-  //   Mid = Min + Mid（累積）
-  //   Max = Min + Mid + Max（累積）
-  // ★ E ステージは集計・表示から除外
-  const memberAgg = {};
-  _unitsDef.forEach(u => {
-    u.members.forEach(m => {
-      const target = getTargetFor(m, months);
-      const deals = activePipeline.filter(d => d.name === m && months.includes(d.month) && d.stage !== 'E');
-      const wonAmt = deals.filter(d => d.stage === 'S').reduce((s, d) => s + (d.amount || 0), 0);
-      const raw = { min: 0, mid: 0, max: 0 };
-      deals.forEach(d => {
-        const k = _landingDealKey(d);
-        const cls = _landingClassMap[k];
-        if (cls && raw[cls] !== undefined) raw[cls] += (d.amount || 0);
-      });
-      // 累積に変換
-      const min = raw.min;
-      const mid = raw.min + raw.mid;
-      const max = raw.min + raw.mid + raw.max;
-      memberAgg[m] = { name: m, target, wonAmt, min, mid, max, deals };
+  // ★ メンバー×月でユニット帰属（秋山:2026/06〜藤森 / 大野:2026/07〜藤森 / 田中:2026/07〜林）
+  //   四半期・半期・年間など複数月の期間では、同一メンバーが所属した各ユニットに
+  //   その所属月ぶんだけ（目標・受注済み・Min/Mid/Max・案件）を分割計上する。
+  //   実績は案件の「クローズ月」の所属ユニットへ振り分け。E ステージは集計・表示から除外。
+  const _ensureUM = (map, unit, m) => {
+    if (!map[unit]) map[unit] = {};
+    if (!map[unit][m]) map[unit][m] = { name: m, target: 0, wonAmt: 0, _rawMin: 0, _rawMid: 0, _rawMax: 0, deals: [] };
+    return map[unit][m];
+  };
+  const _um = {};               // unit -> member -> agg
+  const _otherMemberMap = {};   // ユニット非所属メンバー
+  // 目標：全FSメンバー × 期間内各月 → その月の所属ユニットへ加算
+  MEMBERS.forEach(m => {
+    months.forEach(ym => {
+      const unit = _fsUnitForMonth(m, ym);
+      if (!unit) return;
+      const tgt = getTargetFor(m, [ym]);
+      if (tgt) _ensureUM(_um, unit, m).target += tgt;
     });
   });
+  // 実績：案件をクローズ月の所属ユニットへ振り分け
+  activePipeline.forEach(d => {
+    if (!d.name || !months.includes(d.month) || d.stage === 'E') return;
+    const unit = _fsUnitForMonth(d.name, d.month);
+    let e;
+    if (unit) {
+      e = _ensureUM(_um, unit, d.name);
+    } else {
+      if (!_otherMemberMap[d.name]) _otherMemberMap[d.name] = { name: d.name, target: 0, wonAmt: 0, _rawMin: 0, _rawMid: 0, _rawMax: 0, deals: [] };
+      e = _otherMemberMap[d.name];
+    }
+    e.deals.push(d);
+    if (d.stage === 'S') e.wonAmt += (d.amount || 0);
+    const cls = _landingClassMap[_landingDealKey(d)];
+    if (cls === 'min')      e._rawMin += (d.amount || 0);
+    else if (cls === 'mid') e._rawMid += (d.amount || 0);
+    else if (cls === 'max') e._rawMax += (d.amount || 0);
+  });
+  const _finalize = (e) => { e.min = e._rawMin; e.mid = e._rawMin + e._rawMid; e.max = e._rawMin + e._rawMid + e._rawMax; return e; };
 
-  // ユニット集計
-  const unitAgg = _unitsDef.map(u => {
-    const ms = u.members.map(m => memberAgg[m]);
+  // ユニット集計（藤森→平井→林 の順、所属者がいるユニットのみ）
+  const unitAgg = FS_UNIT_ORDER.filter(un => _um[un]).map(un => {
+    const ms = Object.values(_um[un]).map(_finalize)
+      .sort((a, b) => (b.wonAmt + b.max + b.target) - (a.wonAmt + a.max + a.target));
     return {
-      unit: u.unit,
+      unit: un,
       members: ms,
       target: ms.reduce((s, m) => s + m.target, 0),
       wonAmt: ms.reduce((s, m) => s + m.wonAmt, 0),
@@ -7293,30 +7322,7 @@ function _renderLandingHierarchy(col) {
   });
 
   // === その他: ユニット非所属メンバーの案件 ===
-  const _unitMemberSet = new Set();
-  _unitsDef.forEach(u => u.members.forEach(m => _unitMemberSet.add(m)));
-  const _otherDeals = activePipeline.filter(d =>
-    d.name && !_unitMemberSet.has(d.name) && months.includes(d.month) && d.stage !== 'E'
-  );
-  const _otherMemberMap = {};
-  _otherDeals.forEach(d => {
-    const mname = d.name;
-    if (!_otherMemberMap[mname]) _otherMemberMap[mname] = { name: mname, target: 0, wonAmt: 0, _rawMin: 0, _rawMid: 0, _rawMax: 0, deals: [] };
-    const o = _otherMemberMap[mname];
-    o.deals.push(d);
-    if (d.stage === 'S') o.wonAmt += (d.amount || 0);
-    const k = _landingDealKey(d);
-    const cls = _landingClassMap[k];
-    if (cls === 'min')      o._rawMin += (d.amount || 0);
-    else if (cls === 'mid') o._rawMid += (d.amount || 0);
-    else if (cls === 'max') o._rawMax += (d.amount || 0);
-  });
-  Object.values(_otherMemberMap).forEach(m => {
-    m.min = m._rawMin;
-    m.mid = m._rawMin + m._rawMid;
-    m.max = m._rawMin + m._rawMid + m._rawMax;
-  });
-  const _otherMembers = Object.values(_otherMemberMap).sort((a, b) => (b.wonAmt + b.max) - (a.wonAmt + a.max));
+  const _otherMembers = Object.values(_otherMemberMap).map(_finalize).sort((a, b) => (b.wonAmt + b.max) - (a.wonAmt + a.max));
   const otherAgg = _otherMembers.length ? {
     unit: 'その他',
     members: _otherMembers,
@@ -7400,8 +7406,14 @@ function _renderLandingHierarchy(col) {
           if (m.deals.length === 0) {
             body += `<tr style="background:#ffffff;"><td></td><td colspan="6" style="padding:6px 8px 6px 48px;font-size:10px;color:#94a3b8;">対象案件なし</td></tr>`;
           } else {
-            // 案件は金額の降順
-            const sortedDeals = m.deals.slice().sort((a, b) => (b.amount || 0) - (a.amount || 0));
+            // 案件はステージ順(S>A>B>C+>C>D>E>失注) → 同ステージ内は金額降順
+            const _stageOrd = { 'S':0, 'A':1, 'B':2, 'C+':3, 'C':4, 'D':5, 'E':6, '失注':7 };
+            const sortedDeals = m.deals.slice().sort((a, b) => {
+              const sa = _stageOrd[a.stage] != null ? _stageOrd[a.stage] : 98;
+              const sb = _stageOrd[b.stage] != null ? _stageOrd[b.stage] : 98;
+              if (sa !== sb) return sa - sb;
+              return (b.amount || 0) - (a.amount || 0);
+            });
             // 案件ヘッダー（説明行）: 順序変更 → 分類 → メモ の順
             body += `<tr style="background:#fafafa;border-bottom:1px solid #e2e8f0;">
               <td></td>
