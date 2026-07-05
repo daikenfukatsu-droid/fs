@@ -8684,6 +8684,45 @@ const IS_UNITS_FY2026 = {
   '新卒メンバー': ['近藤 璃空','前田 朱梨','吉井 琉杏','宮原 亘輝','川上 陸斗','一色 柚穂','谷原 葵衣','中村 雅','高橋 玲衣','宇佐美 朱莉','開発 茉子','久保 智花'],
 };
 
+// ★ 2026-07〜 の構成（新卒メンバー群を廃止し吉住/駒田へ統合。吉井/田中/川上/宇佐美/中村は部署異動で除外）
+const IS_TABLE_ROWS_FY2026_JUL = [
+  { name:'吉住 碧斗', color:'sky' },
+  { name:'福永 将也', color:'sky' },
+  { name:'近藤 璃空', color:'sky' },
+  { name:'前田 朱梨', color:'sky' },
+  { name:'宮原 亘輝', color:'sky' },
+  { name:'一色 柚穂', color:'sky' },
+  { name:'開発 茉子', color:'sky' },
+  { name:'駒田 智士', color:'emerald' },
+  { name:'大井 駿空', color:'emerald' },
+  { name:'大山 耕太郎', color:'emerald' },
+  { name:'谷原 葵衣', color:'emerald' },
+  { name:'高橋 玲衣', color:'emerald' },
+  { name:'久保 智花', color:'emerald' },
+  { name:'若本 海人', color:'emerald' },
+  { name:'池田 美亜', color:'rose' },
+  { name:'本島 翼', color:'rose' },
+  { name:'西 倖平', color:'rose' },
+  { name:'田代 大和', color:'rose' },
+];
+const IS_UNITS_FY2026_JUL = {
+  '吉住ユニット': ['吉住 碧斗','福永 将也','近藤 璃空','前田 朱梨','宮原 亘輝','一色 柚穂','開発 茉子'],
+  '駒田ユニット': ['駒田 智士','大井 駿空','大山 耕太郎','谷原 葵衣','高橋 玲衣','久保 智花','若本 海人'],
+  'MKグループ':  ['池田 美亜','本島 翼','西 倖平','田代 大和'],
+};
+
+// 期間に応じて 状況テーブルの行/ユニット構成を返す（2026/07以降を含めば新構成）
+function _isTableJulOrLater(months) {
+  return Array.isArray(months) && months.some(m => m >= '2026/07');
+}
+function getIsTableRows(months) {
+  if (currentFY !== 'FY2026') return IS_TABLE_ROWS_FY2025;
+  return _isTableJulOrLater(months) ? IS_TABLE_ROWS_FY2026_JUL : IS_TABLE_ROWS_FY2026;
+}
+function getIsUnits(months) {
+  return _isTableJulOrLater(months) ? IS_UNITS_FY2026_JUL : IS_UNITS_FY2026;
+}
+
 // 行カラー: 全て白背景（点線で区切り）
 const IS_ROW_BG = {
   sky:     '#ffffff',
@@ -8910,7 +8949,7 @@ function renderIsRanking() {
   if (nt) nt.textContent = cfg.note;
 
   const months = getMonthsForPeriod();
-  const rows = (currentFY === 'FY2026') ? IS_TABLE_ROWS_FY2026 : IS_TABLE_ROWS_FY2025;
+  const rows = getIsTableRows(months);
   const stats = rows.map(r => ({ name: r.name, s: _isMemberStats(r.name, months) }));
 
   const itemsLeft  = stats.map(x => Object.assign({ name:x.name }, _isRankMetric(cfg.left.kind,  x.s)));
@@ -8925,7 +8964,7 @@ function renderIsMemberTable() {
   if (!tbody) return;
 
   const months = getMonthsForPeriod();
-  const rows = (currentFY === 'FY2026') ? IS_TABLE_ROWS_FY2026 : IS_TABLE_ROWS_FY2025;
+  const rows = getIsTableRows(months);
 
   // 1メンバー集計
   function statsFor(member) {
@@ -9048,7 +9087,7 @@ function renderIsMemberTable() {
   let footerHtml = aggregateRow('合計', allNames, FOOTER_BG);
 
   if (currentFY === 'FY2026') {
-    Object.entries(IS_UNITS_FY2026).forEach(([name, members]) => {
+    Object.entries(getIsUnits(months)).forEach(([name, members]) => {
       footerHtml += aggregateRow(name, members, FOOTER_BG);
     });
   }
