@@ -2326,7 +2326,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setLostSvcFilter('all');
   render();
   // ページ読み込み時に自動でスプレッドシートからデータ取得
-  fetchFromSheets();
+  // ★ 初回はキャッシュ利用(useFresh=false)で高速表示。最新が必要な時は「データ更新」ボタン。
+  fetchFromSheets(false, false);
 });
 // ============================================================
 //  スプレッドシート（Apps Script Web App）との双方向同期
@@ -2355,7 +2356,9 @@ async function gasPost(action, data) {
 }
 
 // GAS からデータ取得（パイプライン＋スナップショット＋受注率）
-async function fetchFromSheets(silent = false) {
+// useFresh: true=キャッシュ無視で最新取得（データ更新ボタン）。省略時は !silent（従来互換）。
+// 初回オープンは fetchFromSheets(false, false) でキャッシュ利用＝高速表示（最大30分前のデータ→自動更新で追随）。
+async function fetchFromSheets(silent = false, useFresh = !silent) {
   // FS / IS の両ボタン/ステータスを同時に更新
   const btns    = [document.getElementById('fetchBtn'),     document.getElementById('isFetchBtn')];
   const icons   = [document.getElementById('fetchBtnIcon'), document.getElementById('isFetchBtnIcon')];
@@ -2387,13 +2390,13 @@ async function fetchFromSheets(silent = false) {
         return j;
       } finally { clearTimeout(timer); }
     };
-    // 手動/初回(!silent)は fresh=1 で最新取得。GASが重く失敗した場合はキャッシュ版(fresh無し)へ
-    // フォールバックし、直近データだけでも表示する（耐障害化）。自動ポーリング(silent)は常にキャッシュ版。
+    // データ更新ボタン(useFresh=true)は fresh=1 で最新取得。GASが重く失敗した場合はキャッシュ版(fresh無し)へ
+    // フォールバックし、直近データだけでも表示する（耐障害化）。初回オープン・自動ポーリングは常にキャッシュ版＝高速。
     let json;
     try {
-      json = await _fetchFsJson(!silent);
+      json = await _fetchFsJson(useFresh);
     } catch (freshErr) {
-      if (silent) throw freshErr;
+      if (silent || !useFresh) throw freshErr;
       setStatus('最新取得に時間がかかっています。直近キャッシュを試します...', '#d97706');
       json = await _fetchFsJson(false);
     }
@@ -2485,7 +2488,7 @@ async function fetchFromSheets(silent = false) {
           const ctrl = new AbortController();
           // ★ 大量データ対応: 60秒タイムアウト（旧:20秒）
           const timer = setTimeout(() => ctrl.abort(), 60000);
-          const isUrl = IS_GAS_URL + '?token=' + IS_GAS_TOKEN + (silent ? '' : '&fresh=1');
+          const isUrl = IS_GAS_URL + '?token=' + IS_GAS_TOKEN + (useFresh ? '&fresh=1' : '');
           const isRes  = await fetch(isUrl, { signal: ctrl.signal });
           clearTimeout(timer);
           if (!isRes.ok) throw new Error(`HTTP ${isRes.status}`);
@@ -7273,7 +7276,7 @@ function _renderLandingHierarchy(col) {
   //   実績は案件の「クローズ月」の所属ユニットへ振り分け。E ステージは集計・表示から除外。
   const _ensureUM = (map, unit, m) => {
     if (!map[unit]) map[unit] = {};
-    if (!map[unit][m]) map[unit][m] = { name: m, target: 0, wonAmt: 0, _rawMin: 0, _rawMid: 0, _rawMax: 0, deals: [] };
+    if (!map[unit][m]) map[unit][m] = { name: m, target: 0, wonAmt: 0, wonCnt: 0, _rawMin: 0, _rawMid: 0, _rawMax: 0, _cntMin: 0, _cntMid: 0, _cntMax: 0, deals: [] };
     return map[unit][m];
   };
   const _um = {};               // unit -> member -> agg
@@ -7295,17 +7298,21 @@ function _renderLandingHierarchy(col) {
     if (unit) {
       e = _ensureUM(_um, unit, d.name);
     } else {
-      if (!_otherMemberMap[d.name]) _otherMemberMap[d.name] = { name: d.name, target: 0, wonAmt: 0, _rawMin: 0, _rawMid: 0, _rawMax: 0, deals: [] };
+      if (!_otherMemberMap[d.name]) _otherMemberMap[d.name] = { name: d.name, target: 0, wonAmt: 0, wonCnt: 0, _rawMin: 0, _rawMid: 0, _rawMax: 0, _cntMin: 0, _cntMid: 0, _cntMax: 0, deals: [] };
       e = _otherMemberMap[d.name];
     }
     e.deals.push(d);
-    if (d.stage === 'S') e.wonAmt += (d.amount || 0);
+    if (d.stage === 'S') { e.wonAmt += (d.amount || 0); e.wonCnt += 1; }
     const cls = _landingClassMap[_landingDealKey(d)];
-    if (cls === 'min')      e._rawMin += (d.amount || 0);
-    else if (cls === 'mid') e._rawMid += (d.amount || 0);
-    else if (cls === 'max') e._rawMax += (d.amount || 0);
+    if (cls === 'min')      { e._rawMin += (d.amount || 0); e._cntMin += 1; }
+    else if (cls === 'mid') { e._rawMid += (d.amount || 0); e._cntMid += 1; }
+    else if (cls === 'max') { e._rawMax += (d.amount || 0); e._cntMax += 1; }
   });
-  const _finalize = (e) => { e.min = e._rawMin; e.mid = e._rawMin + e._rawMid; e.max = e._rawMin + e._rawMid + e._rawMax; return e; };
+  const _finalize = (e) => {
+    e.min = e._rawMin; e.mid = e._rawMin + e._rawMid; e.max = e._rawMin + e._rawMid + e._rawMax;
+    e.minCnt = e._cntMin; e.midCnt = e._cntMin + e._cntMid; e.maxCnt = e._cntMin + e._cntMid + e._cntMax;
+    return e;
+  };
 
   // ユニット集計（藤森→平井→林 の順、所属者がいるユニットのみ）
   const unitAgg = FS_UNIT_ORDER.filter(un => _um[un]).map(un => {
@@ -7316,9 +7323,13 @@ function _renderLandingHierarchy(col) {
       members: ms,
       target: ms.reduce((s, m) => s + m.target, 0),
       wonAmt: ms.reduce((s, m) => s + m.wonAmt, 0),
+      wonCnt: ms.reduce((s, m) => s + m.wonCnt, 0),
       min:    ms.reduce((s, m) => s + m.min, 0),
       mid:    ms.reduce((s, m) => s + m.mid, 0),
       max:    ms.reduce((s, m) => s + m.max, 0),
+      minCnt: ms.reduce((s, m) => s + m.minCnt, 0),
+      midCnt: ms.reduce((s, m) => s + m.midCnt, 0),
+      maxCnt: ms.reduce((s, m) => s + m.maxCnt, 0),
     };
   });
 
@@ -7329,18 +7340,26 @@ function _renderLandingHierarchy(col) {
     members: _otherMembers,
     target: 0,
     wonAmt: _otherMembers.reduce((s, m) => s + m.wonAmt, 0),
+    wonCnt: _otherMembers.reduce((s, m) => s + m.wonCnt, 0),
     min:    _otherMembers.reduce((s, m) => s + m.min,    0),
     mid:    _otherMembers.reduce((s, m) => s + m.mid,    0),
     max:    _otherMembers.reduce((s, m) => s + m.max,    0),
+    minCnt: _otherMembers.reduce((s, m) => s + m.minCnt, 0),
+    midCnt: _otherMembers.reduce((s, m) => s + m.midCnt, 0),
+    maxCnt: _otherMembers.reduce((s, m) => s + m.maxCnt, 0),
   } : null;
 
   // 全体合計（その他も Min/Mid/Max・受注済みに反映。目標は据え置き）
   const tot = {
     target: unitAgg.reduce((s, u) => s + u.target, 0),
     wonAmt: unitAgg.reduce((s, u) => s + u.wonAmt, 0) + (otherAgg ? otherAgg.wonAmt : 0),
+    wonCnt: unitAgg.reduce((s, u) => s + u.wonCnt, 0) + (otherAgg ? otherAgg.wonCnt : 0),
     min:    unitAgg.reduce((s, u) => s + u.min,    0) + (otherAgg ? otherAgg.min    : 0),
     mid:    unitAgg.reduce((s, u) => s + u.mid,    0) + (otherAgg ? otherAgg.mid    : 0),
     max:    unitAgg.reduce((s, u) => s + u.max,    0) + (otherAgg ? otherAgg.max    : 0),
+    minCnt: unitAgg.reduce((s, u) => s + u.minCnt, 0) + (otherAgg ? otherAgg.minCnt : 0),
+    midCnt: unitAgg.reduce((s, u) => s + u.midCnt, 0) + (otherAgg ? otherAgg.midCnt : 0),
+    maxCnt: unitAgg.reduce((s, u) => s + u.maxCnt, 0) + (otherAgg ? otherAgg.maxCnt : 0),
   };
 
   // ヘッダー（紫系）
@@ -7369,6 +7388,8 @@ function _renderLandingHierarchy(col) {
     const col2 = (opts && opts.color) || '#475569';
     return `<td style="padding:${pad};font-size:11px;text-align:${align};font-weight:${fw};color:${col2};white-space:nowrap;">${txt}</td>`;
   };
+  // 金額の下に小さく件数を併記（0件でも表示）
+  const cntLine = (n) => `<div style="font-size:9px;color:#94a3b8;font-weight:400;margin-top:1px;">${(n || 0)}件</div>`;
   const arrow = (open) => open ? '▼' : '▶';
 
   let body = '';
@@ -7381,10 +7402,10 @@ function _renderLandingHierarchy(col) {
       <td style="padding:6px 4px;text-align:center;color:${purple};font-weight:700;">${arrow(uOpen)}</td>
       <td style="padding:6px 8px;font-weight:700;color:${purple};font-size:12px;">${u.unit} <span style="font-size:10px;color:#94a3b8;font-weight:400;">(${u.members.length}名)</span></td>
       ${td(fmt(u.target), { fw: '700', color: purple })}
-      ${td(fmt(u.wonAmt), { fw: '700', color: '#059669' })}
-      ${td(fmt(u.min),    { fw: '700', color: '#dc2626' })}
-      ${td(fmt(u.mid),    { fw: '700', color: '#d97706' })}
-      ${td(fmt(u.max),    { fw: '700', color: '#0284c7' })}
+      ${td(fmt(u.wonAmt) + cntLine(u.wonCnt), { fw: '700', color: '#059669' })}
+      ${td(fmt(u.min) + cntLine(u.minCnt),    { fw: '700', color: '#dc2626' })}
+      ${td(fmt(u.mid) + cntLine(u.midCnt),    { fw: '700', color: '#d97706' })}
+      ${td(fmt(u.max) + cntLine(u.maxCnt),    { fw: '700', color: '#0284c7' })}
     </tr>`;
 
     if (uOpen) {
@@ -7396,10 +7417,10 @@ function _renderLandingHierarchy(col) {
           <td style="padding:5px 4px;text-align:center;color:#64748b;padding-left:20px;">${arrow(mOpen)}</td>
           <td style="padding:5px 8px;color:#334155;font-weight:600;font-size:11px;padding-left:24px;">${m.name} <span style="font-size:10px;color:#94a3b8;font-weight:400;">(${m.deals.length}件)</span></td>
           ${td(fmt(m.target))}
-          ${td(fmt(m.wonAmt), { color: '#059669' })}
-          ${td(fmt(m.min), { color: '#dc2626' })}
-          ${td(fmt(m.mid), { color: '#d97706' })}
-          ${td(fmt(m.max), { color: '#0284c7' })}
+          ${td(fmt(m.wonAmt) + cntLine(m.wonCnt), { color: '#059669' })}
+          ${td(fmt(m.min) + cntLine(m.minCnt), { color: '#dc2626' })}
+          ${td(fmt(m.mid) + cntLine(m.midCnt), { color: '#d97706' })}
+          ${td(fmt(m.max) + cntLine(m.maxCnt), { color: '#0284c7' })}
         </tr>`;
 
         if (mOpen) {
@@ -7496,10 +7517,10 @@ function _renderLandingHierarchy(col) {
       <td style="padding:6px 4px;text-align:center;color:#64748b;font-weight:700;">${arrow(uOpen)}</td>
       <td style="padding:6px 8px;font-weight:700;color:#64748b;font-size:12px;">その他 <span style="font-size:10px;color:#94a3b8;font-weight:400;">(${otherAgg.members.length}名・ユニット非所属)</span></td>
       ${td(fmt(otherAgg.target), { fw: '700', color: '#94a3b8' })}
-      ${td(fmt(otherAgg.wonAmt), { fw: '700', color: '#059669' })}
-      ${td(fmt(otherAgg.min),    { fw: '700', color: '#dc2626' })}
-      ${td(fmt(otherAgg.mid),    { fw: '700', color: '#d97706' })}
-      ${td(fmt(otherAgg.max),    { fw: '700', color: '#0284c7' })}
+      ${td(fmt(otherAgg.wonAmt) + cntLine(otherAgg.wonCnt), { fw: '700', color: '#059669' })}
+      ${td(fmt(otherAgg.min) + cntLine(otherAgg.minCnt),    { fw: '700', color: '#dc2626' })}
+      ${td(fmt(otherAgg.mid) + cntLine(otherAgg.midCnt),    { fw: '700', color: '#d97706' })}
+      ${td(fmt(otherAgg.max) + cntLine(otherAgg.maxCnt),    { fw: '700', color: '#0284c7' })}
     </tr>`;
     if (uOpen) {
       otherAgg.members.forEach(m => {
@@ -7509,10 +7530,10 @@ function _renderLandingHierarchy(col) {
           <td style="padding:5px 4px;text-align:center;color:#64748b;padding-left:20px;">${arrow(mOpen)}</td>
           <td style="padding:5px 8px;color:#334155;font-weight:600;font-size:11px;padding-left:24px;">${m.name} <span style="font-size:10px;color:#94a3b8;font-weight:400;">(${m.deals.length}件)</span></td>
           ${td(fmt(m.target))}
-          ${td(fmt(m.wonAmt), { color: '#059669' })}
-          ${td(fmt(m.min), { color: '#dc2626' })}
-          ${td(fmt(m.mid), { color: '#d97706' })}
-          ${td(fmt(m.max), { color: '#0284c7' })}
+          ${td(fmt(m.wonAmt) + cntLine(m.wonCnt), { color: '#059669' })}
+          ${td(fmt(m.min) + cntLine(m.minCnt), { color: '#dc2626' })}
+          ${td(fmt(m.mid) + cntLine(m.midCnt), { color: '#d97706' })}
+          ${td(fmt(m.max) + cntLine(m.maxCnt), { color: '#0284c7' })}
         </tr>`;
         if (mOpen) {
           if (m.deals.length === 0) {
@@ -7589,10 +7610,10 @@ function _renderLandingHierarchy(col) {
     <td></td>
     <td style="padding:8px;font-weight:700;font-size:12px;">合計</td>
     ${td(fmt(tot.target), { fw: '700', color: purple })}
-    ${td(fmt(tot.wonAmt), { fw: '700', color: '#059669' })}
-    ${td(fmt(tot.min),    { fw: '700', color: '#dc2626' })}
-    ${td(fmt(tot.mid),    { fw: '700', color: '#d97706' })}
-    ${td(fmt(tot.max),    { fw: '700', color: '#0284c7' })}
+    ${td(fmt(tot.wonAmt) + cntLine(tot.wonCnt), { fw: '700', color: '#059669' })}
+    ${td(fmt(tot.min) + cntLine(tot.minCnt),    { fw: '700', color: '#dc2626' })}
+    ${td(fmt(tot.mid) + cntLine(tot.midCnt),    { fw: '700', color: '#d97706' })}
+    ${td(fmt(tot.max) + cntLine(tot.maxCnt),    { fw: '700', color: '#0284c7' })}
   </tr>`;
 
   const note = `<p style="font-size:10px;color:#94a3b8;margin-top:6px;">
