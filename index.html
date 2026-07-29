@@ -2297,6 +2297,87 @@ let currentSnapMember = '';
 let eCalMember = '';
 let snapshotView = null; // { id, dateStr, label, pipeline } or null
 
+// ★ v3: GAS が返す snapshotsV2（キー名を省いた配列形式）を従来のオブジェクト形式へ復元する。
+//    { f:[フィールド名...], s:[ [id, dateStr, label, pipeline[][], lostDeals[][]] ... ] }
+//    キー名の重複送信をやめることで転送量が 212MB → 23MB（-89%）になる。復元後の形は従来と完全に同一。
+function unpackSnapshotsV2(v2) {
+  if (!v2 || !Array.isArray(v2.f) || !Array.isArray(v2.s)) return [];
+  const fields = v2.f, fn = fields.length;
+  const toDeals = (rows) => {
+    if (!Array.isArray(rows)) return [];
+    const out = new Array(rows.length);
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i], o = {};
+      for (let k = 0; k < fn; k++) {
+        const v = row[k];
+        o[fields[k]] = (v === 0 || v === undefined) ? '' : v;
+      }
+      // amount は数値、estimated は真偽値として復元（0 は空文字ではなく 0/false が正しい）
+      o.amount = Number(row[fields.indexOf('amount')]) || 0;
+      o.estimated = row[fields.indexOf('estimated')] === true;
+      out[i] = o;
+    }
+    return out;
+  };
+  return v2.s.map(s => ({
+    id: s[0], dateStr: s[1], label: s[2],
+    pipeline: toDeals(s[3]), lostDeals: toDeals(s[4]),
+  }));
+}
+
+// GASから受け取ったスナップショット群を localStorage 分とマージして確定させる。
+// 本体レスポンス同梱（旧GAS）／後追い取得（v4）のどちらからも呼ばれる。
+async function applyGasSnapshots(gasSnaps) {
+  gasSnaps = gasSnaps || [];
+  await migrateLocalSnapshotsToGas(gasSnaps);
+  const gasIds = new Set(gasSnaps.map(s => s.id));
+  const localOnly = snapshots.filter(s => !gasIds.has(s.id));
+  snapshots = [...gasSnaps, ...localOnly]
+    .sort((a, b) => new Date(a.id) - new Date(b.id));
+  snapshots = dedupeSnapshotsByDay(snapshots); // 同日重複（過去行・サーバー/フロント混在）を1件に集約
+  migrateSnapshotNames();
+  persistSnapshots();
+  // ★ 当日分のスナップショットが未保存なら自動保存（毎日23時運用の代替）
+  setTimeout(() => autoSaveTodaySnapshot(), 1500);
+}
+
+// ★ v4: スナップショットの後追い取得。本体表示をブロックしないよう await しない。
+//   取得できたらマージして再描画。失敗しても本体表示には影響させない。
+async function _loadSnapshotsLazy(useFresh) {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 180000);
+    const url = GAS_URL + '?token=' + GAS_TOKEN + '&only=snapshots' + (useFresh ? '&fresh=1' : '');
+    const r = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const j = await r.json();
+    if (!j || !j.ok) throw new Error((j && j.error) || 'snapshots応答エラー');
+    await applyGasSnapshots(unpackSnapshotsV2(j.snapshotsV2));
+    render(); // スナップショット依存のビュー（滞留・推移など）をここで反映
+  } catch (e) {
+    console.warn('[snapshots lazy] 取得失敗（本体表示は継続）:', e);
+  }
+}
+
+// ★ v3: IS GAS が返す列指向形式 { f:[列名...], r:[[値...] ...] } をオブジェクト配列へ復元。
+//    31,142行 × 18キーのキー名送信をやめることで 19.13MB → 12.44MB（-35%）。
+//    空値は送信側で 0 に寄せているので、ここで '' に戻して従来と同じ形にする。
+function unpackIsRowsV2(v2) {
+  if (!v2 || !Array.isArray(v2.f) || !Array.isArray(v2.r)) return [];
+  const fields = v2.f, fn = fields.length, rows = v2.r;
+  const out = new Array(rows.length);
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i], o = {};
+    for (let k = 0; k < fn; k++) {
+      const v = row[k];
+      o[fields[k]] = (v === 0 || v === undefined || v === null) ? '' : v;
+    }
+    out[i] = o;
+  }
+  return out;
+}
+
 function getActivePipeline() { return snapshotView ? snapshotView.pipeline : pipeline; }
 
 function viewSnapshot(id) {
@@ -2407,19 +2488,19 @@ async function fetchFromSheets(silent = false, useFresh = !silent) {
     pipeline  = allRows.filter(r => r.stage !== '失注');
     lostDeals = allRows.filter(r => r.stage === '失注');
 
+    // ★ v3: snapshotsV2（配列形式・転送量-89%）で来た場合は従来のオブジェクト形式へ復元してから合流させる。
+    //    旧GAS（snapshots）／新GAS（snapshotsV2）どちらでも動くのでデプロイ順序を問わない。
+    if (json.snapshotsV2 && json.snapshots === undefined) {
+      json.snapshots = unpackSnapshotsV2(json.snapshotsV2);
+    }
+
     // スナップショット：GAS + localStorage をマージ（GAS優先、localStorageのみのものを移行）
     if (json.snapshots !== undefined) {
-      const gasSnaps = json.snapshots || [];
-      await migrateLocalSnapshotsToGas(gasSnaps);
-      const gasIds = new Set(gasSnaps.map(s => s.id));
-      const localOnly = snapshots.filter(s => !gasIds.has(s.id));
-      snapshots = [...gasSnaps, ...localOnly]
-        .sort((a, b) => new Date(a.id) - new Date(b.id));
-      snapshots = dedupeSnapshotsByDay(snapshots); // 同日重複（過去行・サーバー/フロント混在）を1件に集約
-      migrateSnapshotNames();
-      persistSnapshots();
-      // ★ 当日分のスナップショットが未保存なら自動保存（毎日23時運用の代替）
-      setTimeout(() => autoSaveTodaySnapshot(), 1500);
+      await applyGasSnapshots(json.snapshots || []);
+    } else if (json.snapshotsLazy) {
+      // ★ v4: 本体レスポンスには snapshots を含めない（本体を約7.5MBに収めてキャッシュを有効化）。
+      //   画面を先に描画し、スナップショットは裏で取得してから該当ビューだけ再描画する。
+      _loadSnapshotsLazy(useFresh);
     }
 
     // 受注率
@@ -2494,8 +2575,12 @@ async function fetchFromSheets(silent = false, useFresh = !silent) {
           if (!isRes.ok) throw new Error(`HTTP ${isRes.status}`);
           const isJson = await isRes.json();
           if (isJson.ok) {
-            isListYes = (isJson.yes || []).map(_normalizeListRow);
-            isListNo  = (isJson.no  || []).map(_normalizeListRow);
+            // ★ v3: 列指向形式（yesV2/noV2）で来たら従来のオブジェクト配列へ復元。
+            //    旧GAS（yes/no）／新GAS（yesV2/noV2）どちらでも動くのでデプロイ順序を問わない。
+            const _isYes = isJson.yesV2 ? unpackIsRowsV2(isJson.yesV2) : (isJson.yes || []);
+            const _isNo  = isJson.noV2  ? unpackIsRowsV2(isJson.noV2)  : (isJson.no  || []);
+            isListYes = _isYes.map(_normalizeListRow);
+            isListNo  = _isNo.map(_normalizeListRow);
             isTransitions = isJson.transitions || []; // ★ 2026-06-15 追加
             // ★ データ更新時に「本日の保有リストスナップショット」をlocalStorageへ自動保存（前日比較用）
             try { _saveIsListSnapshot(); } catch(e) { console.warn('[IS snap save]', e); }
