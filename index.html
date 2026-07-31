@@ -1657,6 +1657,25 @@ function getLeadCategory(deal) {
   return { major: cat.major, minor: cat.minor, period };
 }
 
+// ★ 2026/07 運用変更: 未商談化理由が「ターゲット外」でもアポイントとしてカウントする例外
+// 条件（AND）:
+//   1. リードソースが SDR大項目（オーガニック/Paid/外部比較サイト/セミナー/SEO）
+//      または 展示会（オンライン含む）← BDR分類だが当期リードなら SDR 相当として扱う運用
+//   2. リードの作成日が当期FY（currentFY に連動＝画面のFY切替で 2025年度/2026年度が切り替わる）
+// 背景: セミナー・展示会・カンファレンス等で当期に獲得したリードは、
+//       エントリー数50名等でターゲット外判定になってもアポ獲得の実績として評価する。
+const _TARGET_GAI_EXEMPT_EXTRA_SOURCES = new Set([
+  '展示会（オンライン含む）',
+]);
+function _isTargetGaiExempt(deal) {
+  if (!deal) return false;
+  if (!_isInCurrentFY(deal.leadCreatedDate)) return false; // 条件2: 当期リードのみ
+  const src = String(deal.leadSource || '').trim();
+  const cat = _SOURCE_TO_CATEGORY[src];
+  if (cat && cat.major === 'SDR') return true;             // 条件1a: SDR大項目
+  return _TARGET_GAI_EXEMPT_EXTRA_SOURCES.has(src);        // 条件1b: 展示会
+}
+
 const TIME_DECAY_STAGES = ['D', 'C', 'C+'];
 // ===== 滞留減衰 =====
 const STALE_STAGES    = ['D', 'C', 'C+', 'B'];
@@ -8867,19 +8886,24 @@ function _getMemberDealsForKind(member, kind, months) {
     // 未商談化理由(R列)による除外なし:
     //   - 「商談してない（リスケ等）」 → 含める
     //   - 「ターゲット外（エントリー数50名等）」 → 含める
+    //     ★ 2026/07 運用変更で「SDR大項目/展示会 × 当期リード のターゲット外もアポとしてカウント」と
+    //       決定したが、アポ取得数はもともと未商談化理由で除外していないため既に条件を満たしている
+    //       （_isTargetGaiExempt 該当分も当然カウント済み）。よってここは変更不要＝現状維持。
     return memDeals.filter(d => dateInMonths(d.apoCreatedDate));
   }
   if (kind === 'jisshi') {
     // FS初回アポ実施日(J列)が期間内、E含む全ステージ
     // 未商談化理由(R列)による除外ルール（ステージ問わず適用）:
     //   - 「商談してない（リスケ等）」 → 常に除外
-    //   - 「ターゲット外（エントリー数50名等）」 → 除外。ただし FS初回アポ実施日が 2026/04 の場合のみカウント
+    //   - 「ターゲット外（エントリー数50名等）」 → 除外。ただし次のいずれかを満たす場合はカウント（OR）
+    //       (a) FS初回アポ実施日が 2026/04（既存特例・維持）
+    //       (b) SDR大項目/展示会 × リード作成日が当期FY（★2026/07 運用変更・_isTargetGaiExempt）
     return memDeals.filter(d => {
       if (!d.appointMonth || !months.includes(d.appointMonth)) return false;
       const reason = (d.mishoshoReason || '').trim();
       if (reason.includes('商談してない') || reason.includes('リスケ')) return false;
       if (reason.includes('ターゲット外') || reason.includes('エントリー数50名')) {
-        if (d.appointMonth !== '2026/04') return false;
+        if (d.appointMonth !== '2026/04' && !_isTargetGaiExempt(d)) return false;
       }
       return true;
     });
