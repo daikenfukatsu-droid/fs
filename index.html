@@ -1657,23 +1657,43 @@ function getLeadCategory(deal) {
   return { major: cat.major, minor: cat.minor, period };
 }
 
-// ★ 2026/07 運用変更: 未商談化理由が「ターゲット外」でもアポイントとしてカウントする例外
-// 条件（AND）:
-//   1. リードソースが SDR大項目（オーガニック/Paid/外部比較サイト/セミナー/SEO）
-//      または 展示会（オンライン含む）← BDR分類だが当期リードなら SDR 相当として扱う運用
-//   2. リードの作成日が当期FY（currentFY に連動＝画面のFY切替で 2025年度/2026年度が切り替わる）
-// 背景: セミナー・展示会・カンファレンス等で当期に獲得したリードは、
-//       エントリー数50名等でターゲット外判定になってもアポ獲得の実績として評価する。
+// ★ 2026/07 運用変更: 未商談化理由が「ターゲット外(エントリー数50名等)」でも
+//   アポ実施数にカウントする例外。以下すべて（AND）を満たす場合に適用する。
+//   1. C列 リードソース_hubspot が SDR大項目 または 展示会（オンライン含む）
+//      SDR大項目 = オーガニック / Paid / 外部比較サイト / セミナー / SEO
+//        ・「セミナー」中項目には セミナー・seminar・カンファレンス（オンライン含む）・
+//          オンライン新卒フォーラム が含まれる
+//        ・展示会（オンライン含む）は分類上 BDR だが、この判定では対象に含める
+//   2. H列 リードの作成日_Hubspot が当期（毎年4月〜3月）
+//   3. J列 FS初回アポ実施日 が当期（毎年4月〜3月）
+//   当期は currentFY に連動（画面のFY切替で 2025年度／2026年度が切り替わる）。
+// 背景: セミナー・展示会・カンファレンス等で当期に獲得し当期に実施したアポは、
+//       エントリー数50名等でターゲット外判定になってもアポ実施の実績として評価する。
 const _TARGET_GAI_EXEMPT_EXTRA_SOURCES = new Set([
-  '展示会（オンライン含む）',
+  '展示会（オンライン含む）', // BDR分類だが対象に含める
 ]);
+
+// 'YYYY/MM' 文字列が当期FY（4月〜翌3月）に入るか
+function _isYmInCurrentFY(ym) {
+  const m = String(ym || '').match(/^(\d{4})\/(\d{1,2})$/);
+  if (!m) return false;
+  const y = parseInt(m[1], 10), mo = parseInt(m[2], 10);
+  const fyStart = currentFY === 'FY2025' ? 2025 : 2026;
+  return (mo >= 4 && y === fyStart) || (mo <= 3 && y === fyStart + 1);
+}
+
 function _isTargetGaiExempt(deal) {
   if (!deal) return false;
-  if (!_isInCurrentFY(deal.leadCreatedDate)) return false; // 条件2: 当期リードのみ
+  // 条件1: リードソース（C列）が SDR大項目 または 展示会
   const src = String(deal.leadSource || '').trim();
   const cat = _SOURCE_TO_CATEGORY[src];
-  if (cat && cat.major === 'SDR') return true;             // 条件1a: SDR大項目
-  return _TARGET_GAI_EXEMPT_EXTRA_SOURCES.has(src);        // 条件1b: 展示会
+  const srcOk = (cat && cat.major === 'SDR') || _TARGET_GAI_EXEMPT_EXTRA_SOURCES.has(src);
+  if (!srcOk) return false;
+  // 条件2: リードの作成日（H列）が当期
+  if (!_isInCurrentFY(deal.leadCreatedDate)) return false;
+  // 条件3: FS初回アポ実施日（J列）が当期。appointMonth は 'YYYY/MM'
+  if (!_isYmInCurrentFY(deal.appointMonth)) return false;
+  return true;
 }
 
 const TIME_DECAY_STAGES = ['D', 'C', 'C+'];
@@ -8897,7 +8917,8 @@ function _getMemberDealsForKind(member, kind, months) {
     //   - 「商談してない（リスケ等）」 → 常に除外
     //   - 「ターゲット外（エントリー数50名等）」 → 除外。ただし次のいずれかを満たす場合はカウント（OR）
     //       (a) FS初回アポ実施日が 2026/04（既存特例・維持）
-    //       (b) SDR大項目/展示会 × リード作成日が当期FY（★2026/07 運用変更・_isTargetGaiExempt）
+    //       (b) リードソースが SDR大項目／展示会（オンライン含む） かつ
+    //           リード作成日が当期 かつ FS初回アポ実施日が当期（★2026/07 運用変更・_isTargetGaiExempt）
     return memDeals.filter(d => {
       if (!d.appointMonth || !months.includes(d.appointMonth)) return false;
       const reason = (d.mishoshoReason || '').trim();
