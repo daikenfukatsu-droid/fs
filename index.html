@@ -7,7 +7,25 @@
 <head>
 <meta charset="UTF-8">
 <title>FS案件管理ダッシュボード</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<!-- ★ 2026-08-12(B3): Tailwind を CDN から「ビルド済みCSSの埋め込み」へ変更。
+     理由: 外部CDNへの依存をなくす（CDN障害・仕様変更で全画面が崩れるリスクの排除）／
+           描画前のスタイル未適用のちらつき（FOUC）をなくす／オフラインでも開ける。
+
+     ⚠ 重要: この方式では「使っているクラス名」だけがCSSに含まれます。
+        新しい Tailwind クラスを追加したら、必ず下記を実行してCSSを作り直してください。
+        作り直さないと、そのクラスは無視され見た目が反映されません。
+
+     再ビルド手順（作業フォルダは任意）:
+       1. index.html を作業フォルダにコピー
+       2. npm i -D tailwindcss@3.4.17
+       3. tailwind.config.js に  module.exports = { content: ["./index.html"] }
+       4. input.css に  @tailwind base; @tailwind components; @tailwind utilities;
+       5. npx tailwindcss -i input.css -o out.css --minify
+       6. out.css の中身を下の <style id="tailwind-build"> の中身と差し替え
+-->
+<style id="tailwind-build">
+*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.\!container{width:100%!important}.container{width:100%}@media (min-width:640px){.\!container{max-width:640px!important}.container{max-width:640px}}@media (min-width:768px){.\!container{max-width:768px!important}.container{max-width:768px}}@media (min-width:1024px){.\!container{max-width:1024px!important}.container{max-width:1024px}}@media (min-width:1280px){.\!container{max-width:1280px!important}.container{max-width:1280px}}@media (min-width:1536px){.\!container{max-width:1536px!important}.container{max-width:1536px}}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0}.left-0{left:0}.right-3{right:.75rem}.top-0{top:0}.top-3{top:.75rem}.z-10{z-index:10}.z-50{z-index:50}.col-span-2{grid-column:span 2/span 2}.mx-0\.5{margin-left:.125rem;margin-right:.125rem}.mx-1{margin-left:.25rem;margin-right:.25rem}.mx-4{margin-left:1rem;margin-right:1rem}.mx-auto{margin-left:auto;margin-right:auto}.mb-0\.5{margin-bottom:.125rem}.mb-1{margin-bottom:.25rem}.mb-1\.5{margin-bottom:.375rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mb-6{margin-bottom:1.5rem}.ml-0\.5{margin-left:.125rem}.ml-1{margin-left:.25rem}.ml-2{margin-left:.5rem}.ml-5{margin-left:1.25rem}.ml-auto{margin-left:auto}.mr-1{margin-right:.25rem}.mr-2{margin-right:.5rem}.mt-0\.5{margin-top:.125rem}.mt-1{margin-top:.25rem}.mt-1\.5{margin-top:.375rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mt-4{margin-top:1rem}.mt-6{margin-top:1.5rem}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.hidden{display:none}.h-1\.5{height:.375rem}.h-2{height:.5rem}.h-2\.5{height:.625rem}.h-3{height:.75rem}.h-3\.5{height:.875rem}.h-4{height:1rem}.h-5{height:1.25rem}.h-7{height:1.75rem}.h-full{height:100%}.max-h-screen{max-height:100vh}.min-h-screen{min-height:100vh}.w-1\.5{width:.375rem}.w-14{width:3.5rem}.w-16{width:4rem}.w-2{width:.5rem}.w-2\.5{width:.625rem}.w-24{width:6rem}.w-28{width:7rem}.w-3{width:.75rem}.w-3\.5{width:.875rem}.w-5{width:1.25rem}.w-8{width:2rem}.w-80{width:20rem}.w-auto{width:auto}.w-full{width:100%}.min-w-0{min-width:0}.min-w-full{min-width:100%}.max-w-2xl{max-width:42rem}.max-w-3xl{max-width:48rem}.max-w-4xl{max-width:56rem}.max-w-5xl{max-width:64rem}.max-w-7xl{max-width:80rem}.max-w-md{max-width:28rem}.max-w-xs{max-width:20rem}.flex-1{flex:1 1 0%}.flex-shrink-0,.shrink-0{flex-shrink:0}.border-collapse{border-collapse:collapse}.transform{transform:translate(var(--tw-translate-x),var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))}.cursor-not-allowed{cursor:not-allowed}.cursor-pointer{cursor:pointer}.select-none{-webkit-user-select:none;-moz-user-select:none;user-select:none}.list-inside{list-style-position:inside}.list-disc{list-style-type:disc}.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-cols-7{grid-template-columns:repeat(7,minmax(0,1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-center{align-items:center}.items-baseline{align-items:baseline}.justify-end{justify-content:flex-end}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-0\.5{gap:.125rem}.gap-1{gap:.25rem}.gap-1\.5{gap:.375rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.space-y-0\.5>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.125rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.125rem*var(--tw-space-y-reverse))}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.space-y-2>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.5rem*var(--tw-space-y-reverse))}.space-y-4>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem*var(--tw-space-y-reverse))}.divide-y>:not([hidden])~:not([hidden]){--tw-divide-y-reverse:0;border-top-width:calc(1px*(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(1px*var(--tw-divide-y-reverse))}.divide-gray-100>:not([hidden])~:not([hidden]){--tw-divide-opacity:1;border-color:rgb(243 244 246/var(--tw-divide-opacity,1))}.divide-slate-100>:not([hidden])~:not([hidden]){--tw-divide-opacity:1;border-color:rgb(241 245 249/var(--tw-divide-opacity,1))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis}.truncate,.whitespace-nowrap{white-space:nowrap}.rounded{border-radius:.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-md{border-radius:.375rem}.rounded-sm{border-radius:.125rem}.rounded-xl{border-radius:.75rem}.rounded-t-xl{border-top-left-radius:.75rem;border-top-right-radius:.75rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-b-2{border-bottom-width:2px}.border-l{border-left-width:1px}.border-l-4{border-left-width:4px}.border-r{border-right-width:1px}.border-t{border-top-width:1px}.border-amber-200{--tw-border-opacity:1;border-color:rgb(253 230 138/var(--tw-border-opacity,1))}.border-amber-500{--tw-border-opacity:1;border-color:rgb(245 158 11/var(--tw-border-opacity,1))}.border-emerald-500{--tw-border-opacity:1;border-color:rgb(16 185 129/var(--tw-border-opacity,1))}.border-green-200{--tw-border-opacity:1;border-color:rgb(187 247 208/var(--tw-border-opacity,1))}.border-sky-200{--tw-border-opacity:1;border-color:rgb(186 230 253/var(--tw-border-opacity,1))}.border-sky-300{--tw-border-opacity:1;border-color:rgb(125 211 252/var(--tw-border-opacity,1))}.border-sky-400{--tw-border-opacity:1;border-color:rgb(56 189 248/var(--tw-border-opacity,1))}.border-sky-500{--tw-border-opacity:1;border-color:rgb(14 165 233/var(--tw-border-opacity,1))}.border-slate-100{--tw-border-opacity:1;border-color:rgb(241 245 249/var(--tw-border-opacity,1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.border-slate-300{--tw-border-opacity:1;border-color:rgb(203 213 225/var(--tw-border-opacity,1))}.border-white\/30{border-color:hsla(0,0%,100%,.3)}.bg-amber-100{--tw-bg-opacity:1;background-color:rgb(254 243 199/var(--tw-bg-opacity,1))}.bg-amber-50{--tw-bg-opacity:1;background-color:rgb(255 251 235/var(--tw-bg-opacity,1))}.bg-black{--tw-bg-opacity:1;background-color:rgb(0 0 0/var(--tw-bg-opacity,1))}.bg-blue-100{--tw-bg-opacity:1;background-color:rgb(219 234 254/var(--tw-bg-opacity,1))}.bg-emerald-100{--tw-bg-opacity:1;background-color:rgb(209 250 229/var(--tw-bg-opacity,1))}.bg-emerald-500{--tw-bg-opacity:1;background-color:rgb(16 185 129/var(--tw-bg-opacity,1))}.bg-gray-100{--tw-bg-opacity:1;background-color:rgb(243 244 246/var(--tw-bg-opacity,1))}.bg-green-100{--tw-bg-opacity:1;background-color:rgb(220 252 231/var(--tw-bg-opacity,1))}.bg-indigo-100{--tw-bg-opacity:1;background-color:rgb(224 231 255/var(--tw-bg-opacity,1))}.bg-orange-100{--tw-bg-opacity:1;background-color:rgb(255 237 213/var(--tw-bg-opacity,1))}.bg-red-100{--tw-bg-opacity:1;background-color:rgb(254 226 226/var(--tw-bg-opacity,1))}.bg-red-500{--tw-bg-opacity:1;background-color:rgb(239 68 68/var(--tw-bg-opacity,1))}.bg-rose-100{--tw-bg-opacity:1;background-color:rgb(255 228 230/var(--tw-bg-opacity,1))}.bg-sky-100{--tw-bg-opacity:1;background-color:rgb(224 242 254/var(--tw-bg-opacity,1))}.bg-sky-200{--tw-bg-opacity:1;background-color:rgb(186 230 253/var(--tw-bg-opacity,1))}.bg-sky-50{--tw-bg-opacity:1;background-color:rgb(240 249 255/var(--tw-bg-opacity,1))}.bg-sky-500{--tw-bg-opacity:1;background-color:rgb(14 165 233/var(--tw-bg-opacity,1))}.bg-sky-600{--tw-bg-opacity:1;background-color:rgb(2 132 199/var(--tw-bg-opacity,1))}.bg-slate-100{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.bg-slate-300{--tw-bg-opacity:1;background-color:rgb(203 213 225/var(--tw-bg-opacity,1))}.bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.bg-teal-100{--tw-bg-opacity:1;background-color:rgb(204 251 241/var(--tw-bg-opacity,1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.bg-yellow-100{--tw-bg-opacity:1;background-color:rgb(254 249 195/var(--tw-bg-opacity,1))}.bg-opacity-40{--tw-bg-opacity:0.4}.bg-opacity-50{--tw-bg-opacity:0.5}.p-1{padding:.25rem}.p-2{padding:.5rem}.p-3{padding:.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.px-1{padding-left:.25rem;padding-right:.25rem}.px-1\.5{padding-left:.375rem;padding-right:.375rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-2\.5{padding-left:.625rem;padding-right:.625rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.px-6{padding-left:1.5rem;padding-right:1.5rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-1\.5{padding-top:.375rem;padding-bottom:.375rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.py-4{padding-top:1rem;padding-bottom:1rem}.py-6{padding-top:1.5rem;padding-bottom:1.5rem}.py-8{padding-top:2rem;padding-bottom:2rem}.pb-2{padding-bottom:.5rem}.pb-3{padding-bottom:.75rem}.pb-5{padding-bottom:1.25rem}.pl-2{padding-left:.5rem}.pr-12{padding-right:3rem}.pr-2{padding-right:.5rem}.pt-2{padding-top:.5rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.align-middle{vertical-align:middle}.font-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[12px\]{font-size:12px}.text-\[13px\]{font-size:13px}.text-\[9px\]{font-size:9px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-normal{font-weight:400}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.tabular-nums{--tw-numeric-spacing:tabular-nums;font-variant-numeric:var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction)}.leading-none{line-height:1}.leading-relaxed{line-height:1.625}.leading-tight{line-height:1.25}.tracking-wider{letter-spacing:.05em}.text-amber-600{--tw-text-opacity:1;color:rgb(217 119 6/var(--tw-text-opacity,1))}.text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9/var(--tw-text-opacity,1))}.text-amber-800{--tw-text-opacity:1;color:rgb(146 64 14/var(--tw-text-opacity,1))}.text-blue-600{--tw-text-opacity:1;color:rgb(37 99 235/var(--tw-text-opacity,1))}.text-blue-700{--tw-text-opacity:1;color:rgb(29 78 216/var(--tw-text-opacity,1))}.text-blue-800{--tw-text-opacity:1;color:rgb(30 64 175/var(--tw-text-opacity,1))}.text-emerald-600{--tw-text-opacity:1;color:rgb(5 150 105/var(--tw-text-opacity,1))}.text-emerald-700{--tw-text-opacity:1;color:rgb(4 120 87/var(--tw-text-opacity,1))}.text-emerald-800{--tw-text-opacity:1;color:rgb(6 95 70/var(--tw-text-opacity,1))}.text-gray-300{--tw-text-opacity:1;color:rgb(209 213 219/var(--tw-text-opacity,1))}.text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175/var(--tw-text-opacity,1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128/var(--tw-text-opacity,1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81/var(--tw-text-opacity,1))}.text-green-800{--tw-text-opacity:1;color:rgb(22 101 52/var(--tw-text-opacity,1))}.text-indigo-200{--tw-text-opacity:1;color:rgb(199 210 254/var(--tw-text-opacity,1))}.text-neutral-700{--tw-text-opacity:1;color:rgb(64 64 64/var(--tw-text-opacity,1))}.text-orange-800{--tw-text-opacity:1;color:rgb(154 52 18/var(--tw-text-opacity,1))}.text-red-500{--tw-text-opacity:1;color:rgb(239 68 68/var(--tw-text-opacity,1))}.text-red-600{--tw-text-opacity:1;color:rgb(220 38 38/var(--tw-text-opacity,1))}.text-red-700{--tw-text-opacity:1;color:rgb(185 28 28/var(--tw-text-opacity,1))}.text-red-800{--tw-text-opacity:1;color:rgb(153 27 27/var(--tw-text-opacity,1))}.text-rose-600{--tw-text-opacity:1;color:rgb(225 29 72/var(--tw-text-opacity,1))}.text-rose-800{--tw-text-opacity:1;color:rgb(159 18 57/var(--tw-text-opacity,1))}.text-sky-600{--tw-text-opacity:1;color:rgb(2 132 199/var(--tw-text-opacity,1))}.text-sky-700{--tw-text-opacity:1;color:rgb(3 105 161/var(--tw-text-opacity,1))}.text-sky-800{--tw-text-opacity:1;color:rgb(7 89 133/var(--tw-text-opacity,1))}.text-sky-900{--tw-text-opacity:1;color:rgb(12 74 110/var(--tw-text-opacity,1))}.text-slate-300{--tw-text-opacity:1;color:rgb(203 213 225/var(--tw-text-opacity,1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184/var(--tw-text-opacity,1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139/var(--tw-text-opacity,1))}.text-slate-600{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59/var(--tw-text-opacity,1))}.text-teal-800{--tw-text-opacity:1;color:rgb(17 94 89/var(--tw-text-opacity,1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.text-yellow-800{--tw-text-opacity:1;color:rgb(133 77 14/var(--tw-text-opacity,1))}.underline{text-decoration-line:underline}.decoration-dotted{text-decoration-style:dotted}.accent-sky-600{accent-color:#0284c7}.opacity-40{opacity:.4}.opacity-60{opacity:.6}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgba(0,0,0,.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color)}.shadow-2xl,.shadow-sm{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgba(0,0,0,.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color)}.shadow-xl{--tw-shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1);--tw-shadow-colored:0 20px 25px -5px var(--tw-shadow-color),0 8px 10px -6px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.outline{outline-style:solid}.ring{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-colors{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.transition-opacity{transition-property:opacity;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.last\:border-0:last-child{border-width:0}.hover\:bg-amber-50:hover{--tw-bg-opacity:1;background-color:rgb(255 251 235/var(--tw-bg-opacity,1))}.hover\:bg-emerald-50:hover{--tw-bg-opacity:1;background-color:rgb(236 253 245/var(--tw-bg-opacity,1))}.hover\:bg-red-600:hover{--tw-bg-opacity:1;background-color:rgb(220 38 38/var(--tw-bg-opacity,1))}.hover\:bg-sky-50:hover{--tw-bg-opacity:1;background-color:rgb(240 249 255/var(--tw-bg-opacity,1))}.hover\:bg-sky-600:hover{--tw-bg-opacity:1;background-color:rgb(2 132 199/var(--tw-bg-opacity,1))}.hover\:bg-slate-100:hover{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.hover\:bg-slate-200:hover{--tw-bg-opacity:1;background-color:rgb(226 232 240/var(--tw-bg-opacity,1))}.hover\:bg-slate-50:hover{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.hover\:text-sky-700:hover{--tw-text-opacity:1;color:rgb(3 105 161/var(--tw-text-opacity,1))}.hover\:text-slate-600:hover{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.hover\:text-slate-700:hover{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.hover\:underline:hover{text-decoration-line:underline}.hover\:opacity-70:hover{opacity:.7}.hover\:opacity-80:hover{opacity:.8}.hover\:opacity-90:hover{opacity:.9}.hover\:shadow-lg:hover{--tw-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color),0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}@media (min-width:768px){.md\:col-span-2{grid-column:span 2/span 2}.md\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.md\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.md\:grid-cols-5{grid-template-columns:repeat(5,minmax(0,1fr))}.md\:grid-cols-7{grid-template-columns:repeat(7,minmax(0,1fr))}}@media (min-width:1024px){.lg\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -112,16 +130,6 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
   #kpi-target{ font-size:1.8rem; line-height:1.15; }
   #kpi-s-amount, #kpi-sekisai-amount{ font-size:1.5rem; }
 
-  /* ダーク：主要モーダル/ドロップダウン（インラインstyleを上書き） */
-  html.dark #alertDropdown,
-  html.dark #globalSearchModal > div{ background:var(--surface) !important; border-color:rgba(255,255,255,.12) !important; color:var(--ink); }
-  html.dark #alertDropdown [style*="#f8fafc"],
-  html.dark #globalSearchModal [style*="#f8fafc"]{ background:rgba(255,255,255,.04) !important; }
-  html.dark #alertDropdown [style*="#e2e8f0"],
-  html.dark #globalSearchModal [style*="#e2e8f0"]{ border-color:rgba(255,255,255,.1) !important; }
-  html.dark #globalSearchInput{ color:var(--ink); }
-  html.dark #globalSearchInput::placeholder{ color:var(--ink-faint); }
-
   /* ===== ダーク：インラインstyle直書きの色を横断的に再マッピング ===== */
   html.dark [style*="background:#fff"], html.dark [style*="background: #fff"],
   html.dark [style*="background:#ffffff"], html.dark [style*="background:white"],
@@ -217,11 +225,6 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
         <button class="iconbtn" onclick="toggleTheme()" title="ライト / ダーク切替"><i id="themeToggleIcon" class="ti ti-moon"></i></button>
-        <button class="iconbtn" onclick="openGlobalSearch()" title="企業検索 (Ctrl+K)"><i class="ti ti-search"></i></button>
-        <button class="iconbtn" id="alertBellBtn" onclick="toggleAlertDropdown(event)" title="停滞案件アラート" style="position:relative;">
-          <i class="ti ti-bell"></i>
-          <span id="alertBadge" class="hidden" style="position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:9999px;min-width:18px;text-align:center;line-height:1.4;">0</span>
-        </button>
       </div>
     </div>
     <!-- ピル型タブ（FS / IS） -->
@@ -230,39 +233,6 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
       <button id="dashTab-is" type="button" onclick="switchDashboard('is')" class="seg2-btn">IS案件</button>
     </div>
   </div><!-- /.mb-6 (header) -->
-
-  <!-- 🔔 停滞案件アラート ドロップダウン -->
-  <div id="alertDropdown" style="display:none;position:fixed;top:80px;right:24px;width:380px;max-height:520px;overflow:hidden;background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.15);z-index:1000;flex-direction:column;">
-    <div style="padding:12px 16px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;background:#f8fafc;">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <span style="font-size:14px;"><i class="ti ti-alert-triangle"></i></span>
-        <span style="font-size:13px;font-weight:700;color:#1e293b;">要対応 <span id="alertCountTotal">0</span>件</span>
-      </div>
-      <button onclick="document.getElementById('alertDropdown').classList.add('hidden')" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:16px;line-height:1;"><i class="ti ti-x"></i></button>
-    </div>
-    <div id="alertDropdownBody" style="overflow-y:auto;flex:1;padding:4px 0;"></div>
-    <div style="padding:8px 16px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;background:#f8fafc;">
-      停滞30日+ / 架電予定超過 / 未商談E案件
-    </div>
-  </div>
-
-  <!-- 🔍 企業名横断検索パレット -->
-  <div id="globalSearchModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9999;align-items:flex-start;justify-content:center;padding-top:80px;">
-    <div style="width:560px;max-width:90vw;background:white;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.3);display:flex;flex-direction:column;max-height:70vh;">
-      <div style="padding:10px 14px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:8px;">
-        <span style="font-size:16px;color:#94a3b8;"><i class="ti ti-search"></i></span>
-        <input id="globalSearchInput" type="text" placeholder="企業名で横断検索…" autocomplete="off"
-          style="flex:1;border:none;outline:none;font-size:14px;background:transparent;">
-        <span style="background:#f1f5f9;color:#64748b;font-size:10px;padding:2px 6px;border-radius:4px;font-family:monospace;">ESC</span>
-      </div>
-      <div id="globalSearchResults" style="overflow-y:auto;flex:1;"></div>
-      <div style="padding:8px 14px;border-top:1px solid #e2e8f0;display:flex;align-items:center;gap:10px;font-size:10px;color:#94a3b8;background:#f8fafc;">
-        <span><span style="background:#fff;border:1px solid #e2e8f0;padding:1px 5px;border-radius:3px;font-family:monospace;">↑↓</span> 移動</span>
-        <span><span style="background:#fff;border:1px solid #e2e8f0;padding:1px 5px;border-radius:3px;font-family:monospace;">Enter</span> 開く</span>
-        <span style="margin-left:auto;">Ctrl+K で再起動</span>
-      </div>
-    </div>
-  </div>
 
   <!-- FS ダッシュボードコンテンツ（ルール + 全FS機能を包む） -->
   <div id="dashboardContent-fs">
@@ -832,11 +802,19 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
             <input type="checkbox" id="eCalReupWarnOnly" onchange="eReupOnlyWarn=this.checked;renderECalReup()" style="accent-color:#dc2626">
             <i class="ti ti-alert-triangle"></i> 戻し忘れのみ
           </label>
+          <!-- ★ 2026-08-10 追加: 未商談化理由=注力 のみ表示 -->
+          <button id="eCalReupFocusBtn" onclick="toggleEReupOnlyFocus()" class="px-2 py-1 text-xs font-semibold rounded border transition-colors" title="未商談化理由が「注力」の案件だけを表示">
+            <i class="ti ti-flame"></i> 注力のみ
+          </button>
+          <!-- ★ 2026-08-12 追加: 再失注したのに次の再アップ時期が未入力＝誰も追えない案件だけを表示 -->
+          <button id="eCalReupDeadBtn" onclick="toggleEReupOnlyDead()" class="px-2 py-1 text-xs font-semibold rounded border transition-colors" title="再アップ後の取引も失注し、次の再アップ時期が未入力の案件だけを表示">
+            <i class="ti ti-alert-octagon"></i> 再失注・次なしのみ
+          </button>
           <button id="eCalReupClearBtn" onclick="eReupMembers.clear();renderECalReup()" class="hidden px-2 py-1 text-xs border rounded text-slate-500 hover:bg-slate-50">担当の選択解除</button>
         </div>
       </div>
       <!-- メンバー別件数サマリ（カードクリックで複数選択フィルタ） -->
-      <p class="text-[10px] text-slate-400 mb-1">担当者カードをクリックで一覧を絞り込み（複数選択可・再クリックで解除）</p>
+      <p class="text-[10px] text-slate-400 mb-1">担当者カードをクリックで一覧を絞り込み（複数選択可・再クリックで解除）／「注力」カードは未商談化理由が注力の案件のみに絞り込み</p>
       <div id="eCalReupSummary" class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4"></div>
       <!-- 時期別 案件一覧 -->
       <div id="eCalReupBody"></div>
@@ -921,6 +899,32 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
       <!-- 3段階アコーディオン: 担当者 → 担当者名(保有数) → 商談化転換元バー -->
       <div id="isCombinedBody"></div>
       <p class="text-[10px] text-slate-400 mt-2">※「担当者」を開くと担当者別の保有数、担当者名を開くとその人の「フェーズ上昇（到達段階別）」バーが表示されます。バーの色をクリックでその段階に上がった企業一覧。データ収集を開始したばかりのため、数日〜数週間は数値が少なく表示されます。</p>
+    </div>
+
+    <!-- ★ 2026-08-10 追加: 担当者別 1か月推移（フェーズ上昇） -->
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-4 border-l-4" style="border-left-color:#7c3aed">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <p class="text-xs text-slate-500"><i class="ti ti-trending-up"></i> 担当者別 1か月推移（フェーズ上昇）</p>
+        <span id="percTrendRangeLabel" class="text-[10px] text-slate-400"></span>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div>
+          <p class="text-[11px] font-semibold text-slate-600 mb-1">直近30日の上昇件数（前30日比）</p>
+          <div style="position:relative;height:320px"><canvas id="percTrendMemberChart"></canvas></div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1 flex-wrap gap-1">
+            <p class="text-[11px] font-semibold text-slate-600">週次推移（直近8週）</p>
+            <select id="percTrendMemberSelect" onchange="setPercTrendMember(this.value)"
+              class="text-[11px] font-semibold rounded-lg px-2 py-1 cursor-pointer"
+              style="background:#f1f5f9;border:1px solid #e2e8f0;color:#334155;outline:none;">
+              <option value="">全体</option>
+            </select>
+          </div>
+          <div style="position:relative;height:320px"><canvas id="percTrendWeeklyChart"></canvas></div>
+        </div>
+      </div>
+      <p class="text-[10px] text-slate-400 mt-2">※ 遷移ログ（直近200日分）から集計。左の横棒は直近30日の上昇件数で、右の括弧内が前30日比。上部の期間切替（デイリー／今週など）とは独立して常に直近30日を表示します。</p>
     </div>
 
     <!-- ★ 2026-06-15 追加: パーセプション遷移ドリルダウンモーダル -->
@@ -1763,16 +1767,81 @@ function closePassModal() {
   document.getElementById('passModal').classList.add('hidden');
   pendingDeleteCallback = null;
 }
-function confirmDelete() {
-  const input = document.getElementById('passInput').value;
-  if (input === getStoredPassword()) {
-    const cb = pendingDeleteCallback; // closePassModal前に退避
-    closePassModal();
-    if (cb) cb();
-  } else {
-    document.getElementById('passError').classList.remove('hidden');
-    document.getElementById('passInput').value = '';
-    document.getElementById('passInput').focus();
+// ============================================================
+// ★ 2026-08-12 変更(B2): 削除パスワードの照合をサーバー側に移す
+// ------------------------------------------------------------
+//  これまではブラウザの localStorage に平文で保存し、照合もブラウザ内だけだった。
+//  つまり localStorage を消せば誰でも自分のパスワードを設定し直して削除できた。
+//  変更後は SHA-256 ハッシュをGASへ送って照合し、実際の削除時にもサーバーが再照合する。
+//  GAS側に未設定（DELETE_PASSWORD_HASH なし）の間は、従来の localStorage 照合で動く。
+// ============================================================
+let _deletePassHash = null;   // 照合が通ったハッシュをこのセッション中だけ保持（削除POSTに添付）
+
+async function _sha256Hex(str) {
+  try {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(str)));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch (e) {
+    console.warn('SHA-256の計算に失敗:', e);
+    return null;
+  }
+}
+
+// GAS にハッシュを送って照合。戻り値 { configured, valid }
+async function _verifyDeletePassOnServer(hash) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 20000);
+  try {
+    const url = GAS_URL + '?token=' + GAS_TOKEN + '&action=verifyDeletePass&h=' + encodeURIComponent(hash || '');
+    const r = await fetch(url, { signal: ctrl.signal });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const j = await r.json();
+    if (!j || !j.ok) throw new Error('照合応答エラー');
+    return { configured: !!j.configured, valid: !!j.valid };
+  } finally { clearTimeout(timer); }
+}
+
+let _confirmDeleteBusy = false;
+async function confirmDelete() {
+  if (_confirmDeleteBusy) return;   // サーバー照合中の二重クリックを防ぐ
+  const inputEl = document.getElementById('passInput');
+  const errEl = document.getElementById('passError');
+  const btn = document.querySelector('#passModal button[onclick="confirmDelete()"]');
+  const input = inputEl.value;
+  const showError = (msg) => {
+    errEl.textContent = msg || 'パスワードが違います';
+    errEl.classList.remove('hidden');
+    inputEl.value = '';
+    inputEl.focus();
+  };
+  const setBusy = (on) => {
+    _confirmDeleteBusy = on;
+    if (btn) { btn.disabled = on; btn.textContent = on ? '確認中…' : '削除する'; btn.classList.toggle('opacity-60', on); }
+  };
+
+  setBusy(true);
+  try {
+  const hash = await _sha256Hex(input);
+  let serverOk = null;
+  if (hash) {
+    try {
+      const res = await _verifyDeletePassOnServer(hash);
+      // GAS側で設定済みならサーバーの判定に従う。未設定なら従来のlocalStorage照合へ。
+      if (res.configured) serverOk = res.valid;
+    } catch (e) {
+      console.warn('[削除パスワード] サーバー照合に失敗。ローカル照合にフォールバックします:', e);
+    }
+  }
+
+  const ok = (serverOk !== null) ? serverOk : (input === getStoredPassword());
+  if (!ok) { showError('パスワードが違います'); return; }
+
+  _deletePassHash = hash;               // 削除POSTに添付する
+  const cb = pendingDeleteCallback;     // closePassModal前に退避
+  closePassModal();
+  if (cb) cb();
+  } finally {
+    setBusy(false);
   }
 }
 
@@ -1783,6 +1852,8 @@ let reupDeals = [];
 let eReupPeriod = '';  // 再アップビュー 時期フィルタ
 let eReupMembers = new Set();  // 再アップビュー 担当フィルタ（カードクリック・複数選択）
 let eReupOnlyWarn = false;     // 再アップビュー ⚠戻し忘れのみ表示
+let eReupOnlyFocus = false;    // ★ 2026-08-10 追加: 再アップビュー 未商談化理由=注力 のみ表示
+let eReupOnlyDead = false;     // ★ 2026-08-12 追加: 再アップビュー 再失注・次なし のみ表示
 // 類似企業マスタ（FS GASから取得した受注済み企業データ）
 let similarCompanies = [];
 
@@ -1856,7 +1927,7 @@ function openSimilarModal(companyEnc, industryEnc, productEnc) {
   if (!body) return;
   title.textContent = `🔍 ${company || '?'} の類似企業（${list.length}件）`;
   const filterTxt = product ? ` / 検討領域: <b class="text-slate-700">${product}</b>のみ` : '';
-  sub.innerHTML = `業界: <b class="text-slate-700">${industry || '不明'}</b>${filterTxt} / 受注済み企業マスタから抽出`;
+  sub.innerHTML = `業界: <b class="text-slate-700">${_escapeHtml(industry || '不明')}</b>${filterTxt} / 受注済み企業マスタから抽出`;
   if (list.length === 0) {
     body.innerHTML = '<p class="text-center text-slate-400 py-8">該当する類似企業はありません</p>';
   } else {
@@ -1961,7 +2032,7 @@ function openSimilarModal(companyEnc, industryEnc, productEnc) {
       <td class="px-2 py-1 text-[12px] font-medium" style="overflow:hidden;text-overflow:ellipsis;">${companyLink(c)}</td>
       <td class="px-2 py-1 text-center whitespace-nowrap">${ryouikiLabel(c)}</td>
       <td class="px-2 py-1 text-[11px] text-slate-600 whitespace-nowrap">${c.location || '-'}</td>
-      <td class="px-2 py-1 text-[11px] text-slate-600" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.industry || '-'}</td>
+      <td class="px-2 py-1 text-[11px] text-slate-600" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_escapeHtml(c.industry || '-')}</td>
       <td class="px-2 py-1 text-[11px] text-right text-slate-600 whitespace-nowrap">${c.employees != null ? c.employees.toLocaleString() + '人' : '-'}</td>
       <td class="px-2 py-1 text-center whitespace-nowrap">${yesNoBadge(c.canPublish)}</td>
       <td class="px-2 py-1 text-left" style="overflow:hidden;">${interviewCell(c)}</td>
@@ -2063,274 +2134,6 @@ function _localStorageGuard() {
 // 起動 3秒後にチェック
 setTimeout(() => _localStorageGuard(), 3000);
 
-// ============================================================
-// 🔔 停滞案件アラート
-// 条件:
-//   ① C/C+/B/A ステージで30日以上同じステージ滞留
-//   ② 次回架電日が3日以上過ぎている (IS保有リスト由来)
-//   ③ アポ実施日(J列)から13日以上経過してまだ E ステージ
-// ============================================================
-function _calcStalledDeals() {
-  const alerts = { stuck: [], overdueCall: [], untouchedE: [] };
-  const today = new Date(); today.setHours(0,0,0,0);
-  const dPast = (s, days) => {
-    if (!s) return false;
-    const d = new Date(String(s).replace(/\//g, '-'));
-    if (isNaN(d)) return false;
-    const diff = Math.floor((today - d) / 86400000);
-    return diff >= days;
-  };
-
-  // ① 停滞30日+ (C以上ステージで appointDateから30日経過)
-  (typeof pipeline !== 'undefined' ? pipeline : []).forEach(d => {
-    if (!['C','C+','B','A'].includes(d.stage)) return;
-    if (dPast(d.appointDate, 30)) {
-      alerts.stuck.push({
-        type: '停滞30日+',
-        company: d.company || '?',
-        sub: `${d.stage} / ${d.name || '-'}`,
-        hubspotId: d.hubspotId,
-        days: Math.floor((today - new Date(String(d.appointDate).replace(/\//g,'-'))) / 86400000)
-      });
-    }
-  });
-
-  // ③ 未商談E案件 (Eステージ + appointDateから13日経過)
-  (typeof pipeline !== 'undefined' ? pipeline : []).forEach(d => {
-    if (d.stage !== 'E') return;
-    if (dPast(d.appointDate, 13)) {
-      alerts.untouchedE.push({
-        type: '未商談E',
-        company: d.company || '?',
-        sub: `E / アポ実施日から${Math.floor((today - new Date(String(d.appointDate).replace(/\//g,'-'))) / 86400000)}日経過`,
-        hubspotId: d.hubspotId
-      });
-    }
-  });
-
-  // ② 架電超過: IS保有リスト で次回架電日が3日以上過去
-  const allIs = [...(typeof isListYes!=='undefined'?isListYes:[]), ...(typeof isListNo!=='undefined'?isListNo:[])];
-  const seenCompanies = new Set();
-  allIs.forEach(r => {
-    const key = r.companyId || r.company;
-    if (!key || seenCompanies.has(key)) return;
-    if (!r.nextCall) return;
-    const d = new Date(String(r.nextCall).replace(/\//g, '-'));
-    if (isNaN(d) || d.getFullYear() < 2000) return;
-    const diff = Math.floor((today - d) / 86400000);
-    if (diff >= 3) {
-      seenCompanies.add(key);
-      alerts.overdueCall.push({
-        type: `${diff}日超過`,
-        company: r.company || '?',
-        sub: `次回架電 ${r.nextCall} / ${r.owner || '-'}`,
-        companyId: r.companyId
-      });
-    }
-  });
-
-  // 重要度順にソート
-  alerts.stuck.sort((a, b) => b.days - a.days);
-  alerts.overdueCall.sort((a, b) => parseInt(b.type) - parseInt(a.type));
-  return alerts;
-}
-
-function _renderAlertDropdown() {
-  const a = _calcStalledDeals();
-  const total = a.stuck.length + a.overdueCall.length + a.untouchedE.length;
-  // バッジ更新
-  const badge = document.getElementById('alertBadge');
-  if (badge) {
-    if (total > 0) {
-      badge.textContent = total > 99 ? '99+' : total;
-      badge.classList.remove('hidden');
-    } else {
-      badge.classList.add('hidden');
-    }
-  }
-  document.getElementById('alertCountTotal').textContent = total;
-  const body = document.getElementById('alertDropdownBody');
-  if (!body) return;
-  if (total === 0) {
-    body.innerHTML = `<p style="text-align:center;color:#94a3b8;padding:24px 16px;font-size:12px;"><i class="ti ti-circle-check"></i> 要対応案件なし</p>`;
-    return;
-  }
-  const itemHtml = (icon, color, bg, item) => {
-    const hubUrl = item.hubspotId
-      ? `https://app.hubspot.com/contacts/23871469/record/0-3/${item.hubspotId}`
-      : (item.companyId ? `https://app.hubspot.com/contacts/23871469/record/0-2/${item.companyId}` : null);
-    const click = hubUrl ? `onclick="window.open('${hubUrl}','_blank')" style="cursor:pointer;"` : '';
-    return `<div ${click} class="alert-row" style="padding:8px 14px;display:flex;align-items:flex-start;gap:8px;border-bottom:1px solid #f1f5f9;transition:background 0.1s;"
-      onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-      <span style="background:${bg};color:${color};font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;flex-shrink:0;">${item.type}</span>
-      <div style="flex:1;min-width:0;">
-        <p style="font-size:12px;font-weight:500;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#1e293b;">${item.company}</p>
-        <p style="font-size:11px;color:#64748b;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${item.sub}</p>
-      </div>
-    </div>`;
-  };
-  let html = '';
-  if (a.stuck.length) {
-    html += `<div style="padding:6px 14px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;background:#fafafa;">停滞30日+ ${a.stuck.length}件</div>`;
-    html += a.stuck.slice(0, 30).map(it => itemHtml('⚠️', '#991b1b', '#fee2e2', it)).join('');
-  }
-  if (a.overdueCall.length) {
-    html += `<div style="padding:6px 14px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;background:#fafafa;">架電予定超過 ${a.overdueCall.length}件</div>`;
-    html += a.overdueCall.slice(0, 30).map(it => itemHtml('📞', '#92400e', '#fef3c7', it)).join('');
-  }
-  if (a.untouchedE.length) {
-    html += `<div style="padding:6px 14px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;background:#fafafa;">未商談E ${a.untouchedE.length}件</div>`;
-    html += a.untouchedE.slice(0, 30).map(it => itemHtml('💬', '#92400e', '#fed7aa', it)).join('');
-  }
-  body.innerHTML = html;
-}
-
-function toggleAlertDropdown(ev) {
-  if (ev) ev.stopPropagation();
-  const dd = document.getElementById('alertDropdown');
-  if (!dd) return;
-  if (dd.style.display === 'none' || dd.style.display === '') {
-    _renderAlertDropdown();
-    dd.style.display = 'flex';
-  } else {
-    dd.style.display = 'none';
-  }
-}
-
-// 外側クリックで閉じる
-document.addEventListener('click', (e) => {
-  const dd = document.getElementById('alertDropdown');
-  const btn = document.getElementById('alertBellBtn');
-  if (!dd || dd.style.display === 'none') return;
-  if (dd.contains(e.target) || (btn && btn.contains(e.target))) return;
-  dd.style.display = 'none';
-});
-
-// データ更新時にバッジカウントを再計算するため、render() の呼び出しを監視
-// 簡易対応: 5秒ごとにバッジを更新
-setInterval(() => {
-  try { _renderAlertDropdown(); } catch(e) {}
-}, 5000);
-
-// ============================================================
-// 🔍 企業名横断検索（Ctrl+K）
-// ============================================================
-let _searchSelectedIdx = 0;
-
-function openGlobalSearch() {
-  const modal = document.getElementById('globalSearchModal');
-  if (!modal) return;
-  modal.style.display = 'flex';
-  const input = document.getElementById('globalSearchInput');
-  if (input) {
-    input.value = '';
-    setTimeout(() => input.focus(), 50);
-  }
-  _searchSelectedIdx = 0;
-  _renderSearchResults('');
-}
-function closeGlobalSearch() {
-  const modal = document.getElementById('globalSearchModal');
-  if (modal) modal.style.display = 'none';
-}
-
-function _renderSearchResults(query) {
-  const body = document.getElementById('globalSearchResults');
-  if (!body) return;
-  const q = String(query || '').trim().toLowerCase();
-  if (!q) {
-    body.innerHTML = `<p style="text-align:center;color:#94a3b8;padding:32px 16px;font-size:12px;">企業名の一部を入力してください</p>`;
-    return;
-  }
-  const matchCompany = (name) => String(name || '').toLowerCase().includes(q);
-  // FS pipeline + lostDeals
-  const fsDeals = [...(typeof pipeline!=='undefined'?pipeline:[]), ...(typeof lostDeals!=='undefined'?lostDeals:[])]
-    .filter(d => matchCompany(d.company))
-    .slice(0, 12);
-  // IS保有リスト
-  const isAll = [...(typeof isListYes!=='undefined'?isListYes:[]), ...(typeof isListNo!=='undefined'?isListNo:[])];
-  const seenIs = new Set();
-  const isHits = isAll.filter(r => {
-    const key = r.companyId || r.company;
-    if (seenIs.has(key)) return false;
-    if (matchCompany(r.company)) { seenIs.add(key); return true; }
-    return false;
-  }).slice(0, 12);
-
-  if (fsDeals.length === 0 && isHits.length === 0) {
-    body.innerHTML = `<p style="text-align:center;color:#94a3b8;padding:32px 16px;font-size:12px;">該当なし</p>`;
-    return;
-  }
-
-  let html = '';
-  if (fsDeals.length) {
-    html += `<div style="padding:6px 14px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;background:#fafafa;">FS案件 ${fsDeals.length}件</div>`;
-    html += fsDeals.map((d, i) => {
-      const stageLabel = d.stage === '失注' ? `失注(${d.lostLabel || ''})` : (d.stage || '-');
-      const stageBg = d.stage === 'S' ? '#dcfce7' : d.stage === 'A' ? '#e0f2fe' : d.stage === 'B' ? '#dbeafe' : d.stage === 'C+' ? '#e0f2fe' : d.stage === 'C' ? '#e0f2fe' : d.stage === 'D' ? '#f1f5f9' : d.stage === 'E' ? '#f1f5f9' : '#fee2e2';
-      const stageColor = d.stage === 'S' ? '#166534' : d.stage === '失注' ? '#991b1b' : '#0369a1';
-      const url = d.hubspotId ? `https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}` : null;
-      const click = url ? `onclick="window.open('${url}','_blank')" style="cursor:pointer;"` : '';
-      return `<div ${click} class="search-row" style="padding:8px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;"
-        onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-        <span style="background:${stageBg};color:${stageColor};font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;min-width:32px;text-align:center;">${stageLabel}</span>
-        <div style="flex:1;min-width:0;">
-          <p style="font-size:13px;font-weight:500;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.company || '?'}</p>
-          <p style="font-size:11px;color:#64748b;margin:0;">${d.name || '-'} ・ ${d.product || '-'} ${d.amount ? ' ・ ¥' + d.amount.toLocaleString() : ''}</p>
-        </div>
-      </div>`;
-    }).join('');
-  }
-  if (isHits.length) {
-    html += `<div style="padding:6px 14px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;background:#fafafa;">IS保有リスト ${isHits.length}件</div>`;
-    html += isHits.map(r => {
-      const url = r.companyId ? `https://app.hubspot.com/contacts/23871469/record/0-2/${r.companyId}` : null;
-      const click = url ? `onclick="window.open('${url}','_blank')" style="cursor:pointer;"` : '';
-      const isYes = String(r.recycle || '').toLowerCase() === 'true';
-      const tagBg = isYes ? '#e0f2fe' : '#d1fae5';
-      const tagColor = isYes ? '#0369a1' : '#065f46';
-      const tagText = isYes ? 'Yes' : 'No';
-      return `<div ${click} class="search-row" style="padding:8px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;"
-        onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-        <span style="background:${tagBg};color:${tagColor};font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;min-width:32px;text-align:center;">${tagText}</span>
-        <div style="flex:1;min-width:0;">
-          <p style="font-size:13px;font-weight:500;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.company || '?'}</p>
-          <p style="font-size:11px;color:#64748b;margin:0;">${r.perceptionFlow || '-'} ・ ${r.owner || '-'}</p>
-        </div>
-      </div>`;
-    }).join('');
-  }
-  body.innerHTML = html;
-}
-
-// 入力ハンドラ
-document.addEventListener('DOMContentLoaded', () => {
-  const input = document.getElementById('globalSearchInput');
-  if (input) {
-    input.addEventListener('input', (e) => _renderSearchResults(e.target.value));
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeGlobalSearch();
-    });
-  }
-  const modal = document.getElementById('globalSearchModal');
-  if (modal) {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeGlobalSearch();
-    });
-  }
-});
-
-// Ctrl+K / Cmd+K ショートカット
-document.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-    e.preventDefault();
-    openGlobalSearch();
-  }
-  if (e.key === 'Escape') {
-    closeGlobalSearch();
-  }
-});
-
 let snapshots = [];
 let currentSnapMember = '';
 let eCalMember = '';
@@ -2378,6 +2181,9 @@ async function applyGasSnapshots(gasSnaps) {
   persistSnapshots();
   // ★ 当日分のスナップショットが未保存なら自動保存（毎日23時運用の代替）
   setTimeout(() => autoSaveTodaySnapshot(), 1500);
+  // ★ 2026-08-12 追加(A4): 今週分の着地予想が未記録なら記録する
+  //   停滞係数はスナップショットが揃ってから確定するので、ここ（合流後）で計算する
+  setTimeout(() => _maybeRecordForecastLog(), 2500);
 }
 
 // ★ v4: スナップショットの後追い取得。本体表示をブロックしないよう await しない。
@@ -2402,6 +2208,64 @@ async function _loadSnapshotsLazy(useFresh) {
 // ★ v3: IS GAS が返す列指向形式 { f:[列名...], r:[[値...] ...] } をオブジェクト配列へ復元。
 //    31,142行 × 18キーのキー名送信をやめることで 19.13MB → 12.44MB（-35%）。
 //    空値は送信側で 0 に寄せているので、ここで '' に戻して従来と同じ形にする。
+// ============================================================
+// ★ 2026-08-10 追加(A3): 再アップ判定インデックス（全セクションの取引）
+//   ddd_githab は section__c='FS' しか同期していないため、
+//   「AIスカウト」「CS」「BPO」等のセクションで受注した取引が見えず、
+//   再アップ成功／受注済みの企業が「戻し忘れ」と誤判定されていた。
+//   GAS の deal_index_all シート（会社ID・取引名・作成日・ステージ・セクション）を
+//   後追いで取得し、再アップ判定にのみ使う。売上・KPIの集計には一切使わない。
+// ============================================================
+let dealIndexAll = [];   // [{ dealId, companyId, company, created:Date, stage, section }]
+
+function unpackDealIndexV2(v2) {
+  if (!v2 || !Array.isArray(v2.r) || !Array.isArray(v2.f)) return [];
+  const fi = {};
+  v2.f.forEach((name, i) => { fi[name] = i; });
+  const out = [];
+  v2.r.forEach(row => {
+    const ymd = String(row[fi.apoCreated] || '').trim();
+    let created = null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+      const p = ymd.split('-').map(Number);
+      created = new Date(p[0], p[1] - 1, p[2]);   // 'YYYY-MM-DD' はローカル日付として扱う
+    }
+    // 再アップ時期は 'YYYY-MM-DD' → 'YYYY/MM'（月単位で扱う）
+    const reupYmd = String((fi.reup !== undefined ? row[fi.reup] : '') || '').trim();
+    const reupM = reupYmd.match(/^(\d{4})-(\d{2})/);
+    out.push({
+      dealId:    String(row[fi.dealId] || '').trim(),
+      companyId: String(row[fi.companyId] || '').trim(),
+      company:   String(row[fi.dealname] || '').trim(),
+      created:   created,
+      stage:     String(row[fi.stage] || '').trim(),
+      section:   String(row[fi.section] || '').trim(),
+      reupTiming: reupM ? `${reupM[1]}/${reupM[2]}` : '',
+    });
+  });
+  return out;
+}
+
+async function _loadDealIndexLazy(useFresh) {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 180000);
+    const url = GAS_URL + '?token=' + GAS_TOKEN + '&only=dealIndex' + (useFresh ? '&fresh=1' : '');
+    const r = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const j = await r.json();
+    if (!j || !j.ok) throw new Error((j && j.error) || 'dealIndex応答エラー');
+    dealIndexAll = unpackDealIndexV2(j.dealIndexV2);
+    if (dealIndexAll.length > 0) {
+      // 再アップ判定に依存するビューだけ再描画（重い render() は呼ばない）
+      try { renderECalReup(); } catch (e) {}
+    }
+  } catch (e) {
+    console.warn('[dealIndex lazy] 取得失敗（取引名照合にフォールバック）:', e);
+  }
+}
+
 function unpackIsRowsV2(v2) {
   if (!v2 || !Array.isArray(v2.f) || !Array.isArray(v2.r)) return [];
   const fields = v2.f, fn = fields.length, rows = v2.r;
@@ -2466,7 +2330,10 @@ async function gasPost(action, data) {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-      body: JSON.stringify({ action, ...data }),
+      // ★ 2026-08-12 追加(B1): 書き込みにもトークンを付ける。
+      //   GAS側は doPost でトークンを照合するようになったため、これが無いと拒否される。
+      //   旧GASは token を無視するだけなので、index.html を先に反映しても壊れない。
+      body: JSON.stringify({ action, token: GAS_TOKEN, ...data }),
     });
     return { ok: true };
   } catch (e) {
@@ -2542,6 +2409,14 @@ async function fetchFromSheets(silent = false, useFresh = !silent) {
       _loadSnapshotsLazy(useFresh);
     }
 
+    // ★ 2026-08-10 追加(A3): 再アップ判定インデックス（全セクション）も後追い取得。
+    //   旧GAS（このフラグを返さない）でも動くよう、フラグがある時だけ取得する。
+    if (json.dealIndexV2) {
+      dealIndexAll = unpackDealIndexV2(json.dealIndexV2);
+    } else if (json.dealIndexLazy) {
+      _loadDealIndexLazy(useFresh);
+    }
+
     // 受注率
     if (json.winRates) {
       customWinRates = json.winRates.customWinRates || {};
@@ -2576,6 +2451,9 @@ async function fetchFromSheets(silent = false, useFresh = !silent) {
     }
 
     // 週次スナップショット（売上着地予想トレンド用）
+    // ★ 2026-08-12 追加(A4): 毎週の着地予想の記録（無い旧GASでも動くよう存在チェック）
+    if (Array.isArray(json.forecastLog)) forecastLog = json.forecastLog;
+
     if (Array.isArray(json.weeklySnapshots)) {
       weeklySnapshots = json.weeklySnapshots;
       console.log('[週次スナップショット] 取得件数:', weeklySnapshots.length);
@@ -2723,6 +2601,21 @@ function getDealMgmtCategory(deal) {
   return 'unknown';
 }
 
+// ★ 2026-08-10 追加: GAS がシートの日付を返すときは UTC の ISO 文字列になる。
+//   JST の 2026-09-01 00:00 は "2026-08-31T15:00:00.000Z" として届くため、
+//   文字列に正規表現をかけると「2026-08」＝前月を拾ってしまう（月初1日の入力が全部1か月前にズレる）。
+//   ISO 形式は必ず Date 経由でローカル(JST)に戻してから年月日を取り出す。
+//   ※ parseApptDate は元々この分岐を持っており、それを他の日付列にも揃えたもの。
+const _ISO_DATETIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+function _isoToLocalDate(raw) {
+  if (raw instanceof Date && !isNaN(raw)) return raw;
+  if (raw === null || raw === undefined) return null;
+  const s = String(raw).trim();
+  if (!s || !_ISO_DATETIME_RE.test(s)) return null;
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+
 // 日付パース共通関数（トップレベル）
 function parseApptDate(raw) {
   if (!raw) return { date: null, month: null, day: null };
@@ -2770,6 +2663,9 @@ function normalizeRow(row, hubspotId = null) {
     if (idVal) hubspotId = String(idVal).trim() || null;
   }
   const company = String(find('取引名','案件名','会社名') || '').trim();
+  // ★ 2026-08-10 追加(A3): 会社ID（HubSpotの会社レコードID）。取引名の文字列照合より確実な結合キー。
+  //   GAS未更新のシートには列が無いので空になる。その場合は従来の取引名照合にフォールバックする。
+  const companyId = String(find('会社ID','companyId','associatedcompanyid') || '').trim();
   // ★ 旧字体→新字体 正規化（惠→恵 など。HubSpot側で旧字体が使われていても揺れ吸収）
   const _normalizeKanjiVariant = (s) => String(s || '')
     .replace(/惠/g, '恵')   // 旧「惠」→新「恵」
@@ -2802,17 +2698,22 @@ function normalizeRow(row, hubspotId = null) {
   // ★ 再アップ時期（HubSpot同期・年月形式）→ 'YYYY/MM' に正規化。パース不能はraw文字列を保持
   const reupTimingRaw = find('再アップ時期');
   let reupTiming = null;
-  if (reupTimingRaw instanceof Date && !isNaN(reupTimingRaw)) {
-    reupTiming = `${reupTimingRaw.getFullYear()}/${String(reupTimingRaw.getMonth()+1).padStart(2,'0')}`;
+  // ★ 2026-08-12 追加: 月グループ用の reupTiming('YYYY/MM') とは別に、
+  //   「その日を過ぎたら超過」を日単位で判定するため元の日付も保持する。
+  let reupDate = null;
+  // ★ 2026-08-10 修正: ISO文字列(UTC)は _isoToLocalDate で日本時間に戻してから年月を取る
+  const _reupLocalD = _isoToLocalDate(reupTimingRaw);
+  if (_reupLocalD) {
+    reupTiming = `${_reupLocalD.getFullYear()}/${String(_reupLocalD.getMonth()+1).padStart(2,'0')}`;
+    reupDate = new Date(_reupLocalD.getFullYear(), _reupLocalD.getMonth(), _reupLocalD.getDate());
   } else if (reupTimingRaw !== null && reupTimingRaw !== undefined && String(reupTimingRaw).trim() !== '') {
     const tm = String(reupTimingRaw).match(/(\d{4})[\/\-年]\s*(\d{1,2})/);
     reupTiming = tm ? `${tm[1]}/${String(tm[2]).padStart(2,'0')}` : String(reupTimingRaw).trim();
   }
   const leadCreatedRaw = find('リードの作成日_Hubspot','リード作成日','created_day_hubspot');
-  let leadCreatedDate = null;
-  if (leadCreatedRaw instanceof Date && !isNaN(leadCreatedRaw)) {
-    leadCreatedDate = leadCreatedRaw;
-  } else if (leadCreatedRaw) {
+  // ★ 2026-08-10 修正: 同上（ISO優先）
+  let leadCreatedDate = _isoToLocalDate(leadCreatedRaw);
+  if (!leadCreatedDate && leadCreatedRaw) {
     const m = String(leadCreatedRaw).match(/(\d{4})[\/\-年]?\s*(\d{1,2})(?:[\/\-月]\s*(\d{1,2}))?/);
     if (m) leadCreatedDate = new Date(parseInt(m[1]), parseInt(m[2])-1, m[3] ? parseInt(m[3]) : 1);
   }
@@ -2823,7 +2724,9 @@ function normalizeRow(row, hubspotId = null) {
   const yomiDecidedRaw = find('ヨミ/未ヨミ決着日','ヨミ決着日','yomikadate__c');
   const apoCreatedRaw  = find('アポ作成日','sakuseibi');
   function _toDateOrNull(raw) {
-    if (raw instanceof Date && !isNaN(raw)) return raw;
+    // ★ 2026-08-10 修正: ISO文字列(UTC)は日本時間に戻してから使う
+    const iso = _isoToLocalDate(raw);
+    if (iso) return iso;
     if (!raw) return null;
     const m = String(raw).match(/(\d{4})[\/\-年]?\s*(\d{1,2})(?:[\/\-月]\s*(\d{1,2}))?/);
     return m ? new Date(parseInt(m[1]), parseInt(m[2])-1, m[3] ? parseInt(m[3]) : 1) : null;
@@ -2844,17 +2747,19 @@ function normalizeRow(row, hubspotId = null) {
   //    reupDeals に退避する（既存の pipeline/lostDeals 集計には一切影響させない）
   const _pushReup = () => {
     if (reupTiming && company) {
-      reupDeals.push({ company, name: name || recordCreator || '不明', reupTiming,
-                       prevStage: stageRaw || '不明', lostReason, nyusaki, hubspotId: hubspotId || null,
+      reupDeals.push({ company, companyId, name: name || recordCreator || '不明', reupTiming, reupDate,
+                       prevStage: stageRaw || '不明', lostReason, mishoshoReason, nyusaki, hubspotId: hubspotId || null,
                        closeMonth: month, closeDay, apoCreatedDate });
     }
   };
 
   let month = null;
   let closeDay = null;
-  if (dateRaw instanceof Date && !isNaN(dateRaw)) {
-    month = `${dateRaw.getFullYear()}/${String(dateRaw.getMonth()+1).padStart(2,'0')}`;
-    closeDay = dateRaw.getDate();
+  // ★ 2026-08-10 修正: ISO文字列(UTC)は日本時間に戻してから年月日を取る（月末深夜の案件が前月に落ちるのを防止）
+  const _closeLocalD = _isoToLocalDate(dateRaw);
+  if (_closeLocalD) {
+    month = `${_closeLocalD.getFullYear()}/${String(_closeLocalD.getMonth()+1).padStart(2,'0')}`;
+    closeDay = _closeLocalD.getDate();
   } else {
     const match = String(dateRaw).match(/(\d{4})[\/\-年]?\s*(\d{1,2})(?:[\/\-月]\s*(\d{1,2}))?/);
     if (!match) { _pushReup(); return null; }
@@ -2882,11 +2787,11 @@ function normalizeRow(row, hubspotId = null) {
     let lostEst = false;
     if (lostAmt === 0 && lostProduct) { lostAmt = PRODUCT_ESTIMATES[lostProduct] || DEFAULT_ESTIMATE; lostEst = true; }
     else if (lostAmt === 0) { lostAmt = DEFAULT_ESTIMATE; lostEst = true; }
-    return { company, name, month, closeDay, amount: lostAmt, estimated: lostEst, stage: '失注',
+    return { company, companyId, name, month, closeDay, amount: lostAmt, estimated: lostEst, stage: '失注',
              lostLabel, lostReason, mishoshoReason, hubspotId: hubspotId||null,
              product: lostProduct, shinStatus, chuStatus, replaceNew, replaceChu, nyusaki,
              leadSource: leadSourceRaw, industry: industryRaw,
-             reupload: reuploadFlag, reupTiming, stageRaw, leadCreatedDate,
+             reupload: reuploadFlag, reupTiming, reupDate, stageRaw, leadCreatedDate,
              recordCreator, yomiDecidedDate, apoCreatedDate,
              appointDate:  lostAppt1.date,
              appointMonth: lostAppt1.month,  // ★追加: 実施数フィルタ用
@@ -2930,7 +2835,7 @@ function normalizeRow(row, hubspotId = null) {
   const appt4 = parseApptDate(appoint4Raw);
   const appt5 = parseApptDate(appoint5Raw);
 
-  return { company, name, month, closeDay, appointDate, appointMonth, appointDay,
+  return { company, companyId, name, month, closeDay, appointDate, appointMonth, appointDay,
            appt2Date: appt2.date, appt2Month: appt2.month, appt2Day: appt2.day,
            appt3Date: appt3.date, appt3Month: appt3.month, appt3Day: appt3.day,
            appt4Date: appt4.date, appt4Month: appt4.month, appt4Day: appt4.day,
@@ -2939,7 +2844,7 @@ function normalizeRow(row, hubspotId = null) {
            mishoshoReason,  // ★追加: 未商談化理由（実施数フィルタ用）
            shinStatus, chuStatus, replaceNew, replaceChu, nyusaki,
            leadSource: leadSourceRaw, industry: industryRaw,
-           reupload: reuploadFlag, reupTiming, stageRaw, leadCreatedDate,
+           reupload: reuploadFlag, reupTiming, reupDate, stageRaw, leadCreatedDate,
            recordCreator, yomiDecidedDate, apoCreatedDate };
 }
 
@@ -3278,9 +3183,6 @@ function render() {
     if (snapshotView) { saveBtn.disabled = true; saveBtn.classList.add('opacity-40', 'cursor-not-allowed'); }
     else { saveBtn.disabled = false; saveBtn.classList.remove('opacity-40', 'cursor-not-allowed'); }
   }
-  // 🔔 アラートバッジを再計算（render毎に最新化）
-  try { _renderAlertDropdown(); } catch(e) {}
-
   document.getElementById('periodLabel').textContent = '（' + getPeriodLabel() + '）';
   const months = getMonthsForPeriod();
   const activePipeline = getActivePipeline();
@@ -3845,7 +3747,8 @@ function _escHtmlPerc(s) { return _escapeHtml(String(s == null ? '' : s)); }
 
 // ★ 2026-06-16 統合: 3段階アコーディオンの開閉状態
 //   段階1=「担当者」見出し / 段階3=商談化転換元バーを開いている担当者（1人ずつ）
-let _isAccTier1Open = true;
+// ★ 2026-08-10 変更: 段階1の初期状態を「閉じる」に（開きっぱなしで縦に長くなるため）
+let _isAccTier1Open = false;
 let _isAccOpenOwner = null;
 
 function toggleIsAccTier1() {
@@ -4006,6 +3909,176 @@ function closePercTransModal() {
   const modal = document.getElementById('percTransModal');
   if (modal) modal.classList.add('hidden');
 }
+
+// ============================================================
+// ★ 2026-08-10 追加: 担当者別 1か月推移（フェーズ上昇）
+//   データ元: isTransitions（IS GAS の「パーセプション_遷移ログ」直近200日）
+//   左: 直近30日の担当者別上昇件数（右ラベルに前30日比デルタ）
+//   右: 週次推移（全体 or 担当者1名）
+//   ※ 上部の期間セレクト(_percActivityPeriod)とは独立。常に直近30日/8週を見る。
+// ============================================================
+const PERC_TREND_COLOR = '#7c3aed'; // 商談化（ゴール）と同系の独自色
+const PERC_TREND_DAYS  = 30;
+const PERC_TREND_WEEKS = 8;
+let percTrendMemberChart = null, percTrendWeeklyChart = null;
+let percTrendMember = '';
+
+function setPercTrendMember(v) { percTrendMember = v || ''; renderPercMonthlyTrend(); }
+
+// 今日0時から offsetDays 日前の0時
+function _percTrendDayStart(offsetDays) {
+  const d = new Date(); d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - offsetDays);
+  return d;
+}
+function _percTrendDate(t) {
+  const d = new Date(t.date);
+  return isNaN(d.getTime()) ? null : d;
+}
+function _percTrendMd(d) { return `${d.getMonth() + 1}/${d.getDate()}`; }
+
+function renderPercMonthlyTrend() {
+  const memberEl = document.getElementById('percTrendMemberChart');
+  const weeklyEl = document.getElementById('percTrendWeeklyChart');
+  if (!memberEl && !weeklyEl) return;
+
+  const trans = Array.isArray(isTransitions) ? isTransitions : [];
+  const todayEnd  = _endOfDay(new Date());
+  const curStart  = _percTrendDayStart(PERC_TREND_DAYS - 1);   // 直近30日（当日含む）
+  const prevStart = _percTrendDayStart(PERC_TREND_DAYS * 2 - 1);
+  const prevEnd   = _endOfDay(_percTrendDayStart(PERC_TREND_DAYS));
+
+  // 期間ラベル
+  const rangeLabel = document.getElementById('percTrendRangeLabel');
+  if (rangeLabel) rangeLabel.textContent = `直近30日 ${_percTrendMd(curStart)} → ${_percTrendMd(new Date())}`;
+
+  // ===== 左: 担当者別 直近30日件数 + 前30日比 =====
+  const cur = new Map(), prev = new Map();
+  trans.forEach(t => {
+    const d = _percTrendDate(t);
+    if (!d) return;
+    const owner = String(t.owner || '').trim() || '不明';
+    if (d >= curStart && d <= todayEnd)      cur.set(owner,  (cur.get(owner)  || 0) + 1);
+    else if (d >= prevStart && d <= prevEnd) prev.set(owner, (prev.get(owner) || 0) + 1);
+  });
+  const owners = [...new Set([...cur.keys(), ...prev.keys()])];
+  const items = owners.map(o => ({ owner: o, cur: cur.get(o) || 0, prev: prev.get(o) || 0 }))
+                      .sort((a, b) => b.cur - a.cur || a.owner.localeCompare(b.owner, 'ja'));
+  _drawPercTrendMemberChart(items);
+
+  // ===== 担当者セレクト（選択状態は維持） =====
+  const sel = document.getElementById('percTrendMemberSelect');
+  if (sel) {
+    const names = items.map(i => i.owner);
+    if (percTrendMember && !names.includes(percTrendMember)) percTrendMember = '';
+    sel.innerHTML = '<option value="">全体</option>' +
+      names.map(n => `<option value="${_escAttrPerc(n)}" ${n === percTrendMember ? 'selected' : ''}>${_escHtmlPerc(n)}</option>`).join('');
+  }
+
+  // ===== 右: 週次推移（直近8週・月曜起点） =====
+  //    最終週は進行中（週の途中）なので、急落と誤読されないようラベルで明示する
+  const thisWeekStart = _startOfWeekMon(new Date());
+  const buckets = [];
+  for (let i = PERC_TREND_WEEKS - 1; i >= 0; i--) {
+    const s = new Date(thisWeekStart); s.setDate(s.getDate() - i * 7);
+    const e = _endOfDay(new Date(s.getFullYear(), s.getMonth(), s.getDate() + 6));
+    buckets.push({ start: s, end: e, label: i === 0 ? `${_percTrendMd(s)}週(進行中)` : `${_percTrendMd(s)}週`, count: 0, ongoing: i === 0 });
+  }
+  trans.forEach(t => {
+    if (percTrendMember && String(t.owner || '').trim() !== percTrendMember) return;
+    const d = _percTrendDate(t);
+    if (!d) return;
+    for (const b of buckets) { if (d >= b.start && d <= b.end) { b.count++; break; } }
+  });
+  _drawPercTrendWeeklyChart(buckets);
+}
+
+function _drawPercTrendMemberChart(items) {
+  const el = document.getElementById('percTrendMemberChart');
+  if (!el) return;
+  if (percTrendMemberChart) { percTrendMemberChart.destroy(); percTrendMemberChart = null; }
+  if (items.length === 0) return;
+  // 人数に応じて高さ可変（潰れ防止）
+  const dynH = Math.max(320, items.length * 24 + 30);
+  if (el.parentElement) el.parentElement.style.height = dynH + 'px';
+
+  const labels = items.map(i => i.owner);
+  const data   = items.map(i => i.cur);
+  const deltas = items.map(i => i.cur - i.prev);
+  const ctx = el.getContext('2d');
+  percTrendMemberChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: data.map(v => v > 0 ? PERC_TREND_COLOR : '#e2e8f0'), borderRadius: 4 }] },
+    options: {
+      responsive: true, indexAxis: 'y', maintainAspectRatio: false,
+      layout: { padding: { right: 96 } },
+      scales: {
+        x: { beginAtZero: true, ticks: { font: { size: 10 }, color: '#94a3b8', precision: 0 }, grid: { color: 'rgba(148,163,184,0.12)' } },
+        y: { ticks: { font: { size: 11 }, color: '#475569' }, grid: { display: false } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (c) => {
+          const it = items[c.dataIndex];
+          return `${it.owner}: 直近30日 ${it.cur}件 / 前30日 ${it.prev}件`;
+        } } }
+      }
+    },
+    plugins: [{
+      id: 'percTrendDelta',
+      afterDatasetsDraw: (c) => {
+        const cx = c.ctx;
+        c.getDatasetMeta(0).data.forEach((bar, i) => {
+          cx.save();
+          cx.textBaseline = 'middle';
+          cx.font = 'bold 11px sans-serif';
+          cx.fillStyle = '#0f172a';
+          const main = `${data[i]}件`;
+          cx.fillText(main, bar.x + 6, bar.y);
+          const w = cx.measureText(main).width;
+          const dv = deltas[i];
+          cx.fillStyle = dv > 0 ? '#16a34a' : (dv < 0 ? '#dc2626' : '#94a3b8');
+          cx.fillText(dv === 0 ? '(±0)' : `(${dv > 0 ? '+' : ''}${dv})`, bar.x + 6 + w + 4, bar.y);
+          cx.restore();
+        });
+      }
+    }]
+  });
+}
+
+function _drawPercTrendWeeklyChart(buckets) {
+  const el = document.getElementById('percTrendWeeklyChart');
+  if (!el) return;
+  if (percTrendWeeklyChart) { percTrendWeeklyChart.destroy(); percTrendWeeklyChart = null; }
+  const ctx = el.getContext('2d');
+  percTrendWeeklyChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: buckets.map(b => b.label),
+      datasets: [{
+        label: percTrendMember || '全体',
+        data: buckets.map(b => b.count),
+        borderColor: PERC_TREND_COLOR,
+        backgroundColor: 'rgba(124,58,237,0.10)',
+        pointBackgroundColor: buckets.map(b => b.ongoing ? '#c4b5fd' : PERC_TREND_COLOR),
+        pointRadius: 4, borderWidth: 2, fill: true, tension: 0.3,
+        segment: { borderDash: (c) => (buckets[c.p1DataIndex] && buckets[c.p1DataIndex].ongoing) ? [5, 4] : undefined }
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { font: { size: 10 }, color: '#94a3b8' }, grid: { display: false } },
+        y: { beginAtZero: true, ticks: { font: { size: 10 }, color: '#94a3b8', precision: 0 }, grid: { color: 'rgba(148,163,184,0.12)' } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (c) => `${percTrendMember || '全体'}: ${c.parsed.y}件${buckets[c.dataIndex] && buckets[c.dataIndex].ongoing ? '（進行中）' : ''}` } }
+      }
+    }
+  });
+}
+
 // 担当者ごとのパーセプションフロー内訳（_byOwnerStats と同じ重複統合ロジック）
 function _byOwnerPercStats(rows) {
   const groups = {};
@@ -4877,8 +4950,8 @@ function _renderIsListLevel3(kind, owner, opts) {
       ? `https://app.hubspot.com/contacts/${HUBSPOT_PORTAL_ID}/record/0-2/${r.companyId}`
       : '';
     const companyCell = hubCompanyUrl
-      ? `<a href="${hubCompanyUrl}" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:none;cursor:pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" title="HubSpotで開く: ${r.company}">${r.company || '-'}</a>`
-      : `<span style="color:#1e40af;" title="${r.company}">${r.company || '-'}</span>`;
+      ? `<a href="${hubCompanyUrl}" target="_blank" rel="noopener" style="color:#1e40af;text-decoration:none;cursor:pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'" title="HubSpotで開く: ${_escapeHtml(r.company)}">${_escapeHtml(r.company || '-')}</a>`
+      : `<span style="color:#1e40af;" title="${_escapeHtml(r.company)}">${_escapeHtml(r.company || '-')}</span>`;
 
     // 担当者の一覧（トグル展開行）
     const contacts = Array.isArray(r.contacts) && r.contacts.length ? r.contacts : [r];
@@ -5180,6 +5253,9 @@ function renderIsKpis() {
 
   // ⑥ パーセプションフロー活動（上昇数・アポ転換元）（期間に依存しないので毎回更新）
   renderPerceptionActivity();
+
+  // ⑦ ★ 2026-08-10 追加: 担当者別 1か月推移（上部の期間切替に依存せず常に直近30日）
+  try { renderPercMonthlyTrend(); } catch (e) { console.error('renderPercMonthlyTrend error:', e); }
 }
 
 // ===== IS KPI 詳細（管理方法別カード + モーダル） =====
@@ -6084,12 +6160,12 @@ function _buildLostListHtml(deals, gDef) {
           const reupHtml = d.reupload ? 'TRUE' : 'FALSE';
           const rowBg    = i % 2 === 0 ? 'background:#fff;' : 'background:#f8fafc;';
           return `<tr style="${rowBg}border-bottom:1px solid #f1f5f9;">
-            <td style="${tdBase('left','#334155', ellipsis)}" title="${d.company||''}">
+            <td style="${tdBase('left','#334155', ellipsis)}" title="${_escapeHtml(d.company||'')}">
               ${hubUrl
                 ? `<a ${hubUrl} style="color:#0284c7;font-weight:500;text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
                      onmouseover="this.style.textDecoration='underline'"
-                     onmouseout="this.style.textDecoration='none'">${d.company||'—'}</a>`
-                : `<span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.company||'—'}</span>`}
+                     onmouseout="this.style.textDecoration='none'">${_escapeHtml(d.company||'—')}</a>`
+                : `<span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_escapeHtml(d.company||'—')}</span>`}
             </td>
             <td style="${tdBase('right','#475569')}">${amt}</td>
             <td style="${tdBase('right','#0369a1')}">${lt}</td>
@@ -6558,9 +6634,9 @@ function renderDealList(activePipe) {
   tbody.innerHTML = filtered.length === 0
     ? `<tr><td colspan="6" class="px-2 py-4 text-center text-slate-400">該当案件なし</td></tr>`
     : filtered.map(d => `<tr class="border-b hover:bg-slate-50">
-        <td class="px-2 py-1.5 truncate max-w-xs" title="${d.company||''}">
+        <td class="px-2 py-1.5 truncate max-w-xs" title="${_escapeHtml(d.company||'')}">
           ${d.hubspotId
-            ? `<a href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener" class="hover:underline" style="color:#0284c7">${d.company||'-'}</a>`
+            ? `<a href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener" class="hover:underline" style="color:#0284c7">${_escapeHtml(d.company||'-')}</a>`
             : (d.company||'-')}
         </td>
         <td class="px-2 py-1.5">${d.name}</td>
@@ -7109,6 +7185,8 @@ function toggleChartMemberDeals(memberName, type) {
     });
 
   const STAGE_CLR = { S:'#10b981', A:'#ef4444', B:'#f97316', 'C+':'#eab308', C:'#22c55e', D:'#94a3b8', E:'#cbd5e1' };
+  // 次回商談日の回次カラー（1=初回/J列 … 5=5回目/N列）。表下の凡例と対応させる。
+  const APPT_SEQ_CLR = { 1:'#64748b', 2:'#f97316', 3:'#0284c7', 4:'#7c3aed', 5:'#059669' };
 
   const dealRows = deals.map((d, i) => {
     const bg = i % 2 === 0 ? '#ffffff' : '#f1f5f9';
@@ -7125,19 +7203,28 @@ function toggleChartMemberDeals(memberName, type) {
     const ltDays = (d.apoCreatedDate instanceof Date && !isNaN(d.apoCreatedDate))
       ? Math.floor((Date.now() - d.apoCreatedDate.getTime()) / 86400000) + '日'
       : '—';
-    // 次回商談日: 3回目優先 → 2回目（date形式: YYYY/MM/DD）
+    // 次回商談日: スプレッドシートの J列＜K列＜L列＜M列＜N列 の順に「最も進んだ回次の実施日」を表示。
+    //   N列 FS5回目 → M列 FS4回目 → L列 FS3回目 → K列 FS2回目 → J列 FS初回 の優先順で最初に見つかった日付。
+    //   ★ 従来は L列（3回目）までしか見ておらず、4回目・5回目まで進んだ案件や
+    //     初回のみの案件が「—」表示になっていた。色で回次が判別できる（凡例は表下）。
+    //   date形式は parseApptDate により 'YYYY/MM/DD'（ゼロ埋め）で統一されている。
     const fmtAppt = (dateStr, color) => {
       if (!dateStr) return null;
-      const p = dateStr.match(/\d{4}[\/\-](\d{2})[\/\-](\d{2})/);
+      const p = String(dateStr).match(/\d{4}[\/\-](\d{1,2})[\/\-](\d{1,2})/);
       return p ? `<span style="color:${color};">${parseInt(p[1])}/${parseInt(p[2])}</span>` : null;
     };
-    let nxtDate = fmtAppt(d.appt3Date, '#0284c7') || fmtAppt(d.appt2Date, '#f97316') || '—';
+    let nxtDate = fmtAppt(d.appt5Date,   APPT_SEQ_CLR[5])    // N列 FS5回目
+               || fmtAppt(d.appt4Date,   APPT_SEQ_CLR[4])    // M列 FS4回目
+               || fmtAppt(d.appt3Date,   APPT_SEQ_CLR[3])    // L列 FS3回目
+               || fmtAppt(d.appt2Date,   APPT_SEQ_CLR[2])    // K列 FS2回目
+               || fmtAppt(d.appointDate, APPT_SEQ_CLR[1])    // J列 FS初回アポ実施日
+               || '—';
     const companyCell = hubAttr
       ? `<a ${hubAttr} style="color:#0284c7;text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
-           onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${d.company||'—'}</a>`
-      : `<span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.company||'—'}</span>`;
+           onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${_escapeHtml(d.company||'—')}</a>`
+      : `<span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${_escapeHtml(d.company||'—')}</span>`;
     return `<tr style="background:${bg};border-bottom:1px solid #e8eef4;">
-      <td style="padding:3px 6px;font-size:11px;max-width:0;overflow:hidden;" title="${(d.company||'').replace(/"/g,'')}">${companyCell}</td>
+      <td style="padding:3px 6px;font-size:11px;max-width:0;overflow:hidden;" title="${_escapeHtml(d.company||'')}">${companyCell}</td>
       <td style="padding:3px 6px;font-size:11px;text-align:center;">
         <span style="background:${stgCol}22;color:${stgCol};font-weight:700;padding:1px 6px;border-radius:4px;font-size:10px;white-space:nowrap;">${d.stage}</span>
       </td>
@@ -7176,7 +7263,13 @@ function toggleChartMemberDeals(memberName, type) {
           </thead>
           <tbody>${dealRows}</tbody>
         </table>
-        <p style="font-size:10px;color:#94a3b8;margin-top:4px;">次回商談日: <span style="color:#f97316;">橙=2回目</span> / <span style="color:#0284c7;">紫=3回目</span>　リードタイム: アポ作成日〜今日</p>`;
+        <p style="font-size:10px;color:#94a3b8;margin-top:4px;">次回商談日（最も進んだ回次を表示）:
+          <span style="color:${APPT_SEQ_CLR[1]};font-weight:600;">灰=初回</span> /
+          <span style="color:${APPT_SEQ_CLR[2]};font-weight:600;">橙=2回目</span> /
+          <span style="color:${APPT_SEQ_CLR[3]};font-weight:600;">青=3回目</span> /
+          <span style="color:${APPT_SEQ_CLR[4]};font-weight:600;">紫=4回目</span> /
+          <span style="color:${APPT_SEQ_CLR[5]};font-weight:600;">緑=5回目</span>
+          　リードタイム: アポ作成日〜今日</p>`;
   }
 
   subRow.style.display = '';
@@ -7581,8 +7674,8 @@ function _renderLandingHierarchy(col) {
               const memo = _landingMemoMap[key] || '';
               const hubUrl = d.hubspotId ? `https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}` : null;
               const companyHtml = hubUrl
-                ? `<a href="${hubUrl}" target="_blank" rel="noopener" style="color:#0284c7;text-decoration:none;font-weight:500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${d.company || '-'}</a>`
-                : `<span style="color:#334155;font-weight:500;">${d.company || '-'}</span>`;
+                ? `<a href="${hubUrl}" target="_blank" rel="noopener" style="color:#0284c7;text-decoration:none;font-weight:500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${_escapeHtml(d.company || '-')}</a>`
+                : `<span style="color:#334155;font-weight:500;">${_escapeHtml(d.company || '-')}</span>`;
               const sel = `<select onchange="setLandingDealClass('${key.replace(/'/g,"\\'")}', this.value)"
                             style="font-size:10px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;background:white;cursor:pointer;width:70px;">
                 <option value=""    ${cls===''   ?'selected':''}>該当なし</option>
@@ -7616,7 +7709,7 @@ function _renderLandingHierarchy(col) {
                 <td></td>
                 <td colspan="6" style="padding:4px 6px 4px 28px;">
                   <div style="display:flex;gap:4px;align-items:center;font-size:11px;color:#475569;">
-                    <span style="flex:1.4;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d.company || ''}">${companyHtml}</span>
+                    <span style="flex:1.4;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_escapeHtml(d.company || '')}">${companyHtml}</span>
                     <span class="${stClass}" style="width:42px;text-align:center;font-weight:700;font-size:10px;flex-shrink:0;">${stageLabel}</span>
                     <span style="width:62px;text-align:center;color:#64748b;white-space:nowrap;font-size:10px;flex-shrink:0;">${closeStr}</span>
                     <span style="width:70px;text-align:center;color:#0369a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;flex-shrink:0;" title="${d.product || ''}">${d.product || '-'}</span>
@@ -7684,8 +7777,8 @@ function _renderLandingHierarchy(col) {
               const memo = _landingMemoMap[key] || '';
               const hubUrl = d.hubspotId ? `https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}` : null;
               const companyHtml = hubUrl
-                ? `<a href="${hubUrl}" target="_blank" rel="noopener" style="color:#0284c7;text-decoration:none;font-weight:500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${d.company || '-'}</a>`
-                : `<span style="color:#334155;font-weight:500;">${d.company || '-'}</span>`;
+                ? `<a href="${hubUrl}" target="_blank" rel="noopener" style="color:#0284c7;text-decoration:none;font-weight:500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${_escapeHtml(d.company || '-')}</a>`
+                : `<span style="color:#334155;font-weight:500;">${_escapeHtml(d.company || '-')}</span>`;
               const sel = `<select onchange="setLandingDealClass('${key.replace(/'/g,"\\'")}', this.value)"
                             style="font-size:10px;padding:2px 4px;border:1px solid #cbd5e1;border-radius:4px;background:white;cursor:pointer;width:70px;">
                 <option value=""    ${cls===''   ?'selected':''}>該当なし</option>
@@ -7712,7 +7805,7 @@ function _renderLandingHierarchy(col) {
                 <td></td>
                 <td colspan="6" style="padding:4px 6px 4px 28px;">
                   <div style="display:flex;gap:4px;align-items:center;font-size:11px;color:#475569;">
-                    <span style="flex:1.4;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${d.company || ''}">${companyHtml}</span>
+                    <span style="flex:1.4;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_escapeHtml(d.company || '')}">${companyHtml}</span>
                     <span class="${stClass}" style="width:42px;text-align:center;font-weight:700;font-size:10px;flex-shrink:0;">${stageLabel}</span>
                     <span style="width:62px;text-align:center;color:#64748b;white-space:nowrap;font-size:10px;flex-shrink:0;">${closeStr}</span>
                     <span style="width:70px;text-align:center;color:#0369a1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;flex-shrink:0;" title="${d.product || ''}">${d.product || '-'}</span>
@@ -7813,25 +7906,423 @@ function _renderLandingHierarchy(col) {
       <div style="display:inline-flex;gap:2px;padding:2px;background:#f1f5f9;border-radius:7px;">${_scopeBtn('all','全体')}${_scopeBtn('unit','ユニット')}${_scopeBtn('member','メンバー')}</div>
       ${_trendExtraSel}
     </div>` : '';
+  // ★ 2026-08-12 追加: 表示単位に応じて絞った週数と対象期間ラベル
+  const _trendWeekCount = _filteredWeeklySnapshots().length;
+  const _trendRangeLbl  = _landingTrendRangeLabel();
   const trendBlock = `
     <div style="margin-top:18px;padding:12px;border:1px solid #bae6fd;border-radius:8px;background:#fafafa;">
       <div onclick="toggleLandingTrend()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
         <h4 style="font-size:12px;font-weight:700;color:${purple};margin:0;"><span style="display:inline-block;width:14px;color:#64748b;margin-right:4px;">${_trendArrow}</span>📈 週次トレンド（毎週金曜23時時点の合計）</h4>
-        <span style="font-size:10px;color:#94a3b8;">${weeklySnapshots.length}週分の記録</span>
+        <span style="font-size:10px;color:#94a3b8;">${_trendWeekCount}週分の記録${_trendRangeLbl ? ` <span style="color:#cbd5e1">/</span> ${_trendRangeLbl}` : ''}</span>
       </div>
       ${_landingTrendOpen ? `${_scopeControls}
-        <div style="position:relative;height:260px;">
+        ${_trendWeekCount === 0 ? `<p style="font-size:11px;color:#94a3b8;text-align:center;padding:28px 0;">この期間の週次記録がまだありません（${_trendRangeLbl}）</p>` : `<div style="position:relative;height:260px;">
           <canvas id="landingTrendChart"></canvas>
-        </div>
+        </div>`}
         <p style="font-size:10px;color:#94a3b8;margin-top:6px;">
-          💡 受注済み・Min・Mid・Max は各週の取引データに今日の分類設定を適用して算出。目標は紫の点線。
-        </p>` : ''}
+          💡 受注済み・Min・Mid・Max は各週の取引データに今日の分類設定を適用して算出。目標は紫の点線。<br>
+          💡 対象週は表示単位に連動：月別は前月の3週目〜当月末、四半期・半期・年間はその期間のみ。
+        </p>`: ''}
     </div>`;
+
+  // ★ 2026-08-12 追加: 予実誤差モニター（週次トレンドの下）
+  const errBlock = _renderForecastErrorBlock(purple);
 
   // 描画は次フレームで（DOM挿入後、open時のみ）
   if (_landingTrendOpen) setTimeout(() => _renderLandingTrendChart(), 50);
+  if (_forecastErrOpen)  setTimeout(() => _renderForecastErrChart(), 60);
 
-  return `${headerBar}<table class="w-full text-xs border-collapse">${head}<tbody>${body}</tbody><tfoot>${footRow}</tfoot></table>${note}${trendBlock}`;
+  return `${headerBar}<table class="w-full text-xs border-collapse">${head}<tbody>${body}</tbody><tfoot>${footRow}</tfoot></table>${note}${trendBlock}${errBlock}`;
+}
+
+// ============================================================
+// ★ 2026-08-12 追加: 週次トレンドの対象週を「表示単位」に合わせて絞り込む
+//   月別   … 前月の3週目 〜 当月末（立ち上がりが見えるよう前月分を少し含める）
+//   四半期 … その四半期の月だけ
+//   半期   … その半期の月だけ
+//   年間   … その年度の月だけ
+//   ※ 週次スナップショットは毎週金曜23時に記録される（dateStr = 'YYYY-MM-DD'）。
+//     「前月の3週目」は前月15日以降とする（1〜7日を1週目と数える方式。第3金曜がここに入る）。
+// ============================================================
+function _landingTrendRange(months) {
+  if (!months || months.length === 0) return null;
+  const f = String(months[0]).split('/').map(Number);
+  const l = String(months[months.length - 1]).split('/').map(Number);
+  if (!f[0] || !f[1] || !l[0] || !l[1]) return null;
+  const start = (currentMode === 'month')
+    ? new Date(f[0], f[1] - 2, 15)   // 前月15日（前月の3週目の頭）
+    : new Date(f[0], f[1] - 1, 1);   // 期間最初の月の1日
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(l[0], l[1], 0, 23, 59, 59, 999); // 期間最終月の末日
+  return { start, end };
+}
+
+function _weeklySnapDate(snap) {
+  const m = String((snap && snap.dateStr) || '').match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (!m) return null;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
+function _filteredWeeklySnapshots() {
+  const list = Array.isArray(weeklySnapshots) ? weeklySnapshots : [];
+  const range = _landingTrendRange(getMonthsForPeriod());
+  if (!range) return list;
+  return list.filter(s => {
+    const d = _weeklySnapDate(s);
+    return d && d >= range.start && d <= range.end;
+  });
+}
+
+// トレンド見出しに出す対象期間のラベル（例: 「6/15〜7/31」）
+function _landingTrendRangeLabel() {
+  const range = _landingTrendRange(getMonthsForPeriod());
+  if (!range) return '';
+  const fmt = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
+  return `${fmt(range.start)}〜${fmt(range.end)}`;
+}
+
+// ============================================================
+// ★ 2026-08-12 追加: 予実誤差モニター
+// ------------------------------------------------------------
+//  決着済みの月について「その週の時点で着地予想はいくらだったか」を
+//  週次スナップショット（毎週金曜23時・取引ID/取引名/担当/金額/ステージ/対象サービス/クローズ月）
+//  から再計算し、最終実績と突き合わせる。
+//
+//  【再現できるもの】勝率（ステージ×商材） / 時間減衰（基準日をその週にして計算）
+//  【再現できないもの】停滞係数
+//    → 「同じステージに何回滞留したか」は当時のスナップショット履歴が要るため遡れない。
+//      停滞係数は予想を下げる方向に働くので、ここに出る誤差は実際よりやや大きめに出る。
+//  そのため forecastLog（毎週その場で記録した実測値）があればそちらを優先して使う。
+// ============================================================
+
+// 週次スナップショットの生ステージ文字列（'C+' '失注（未商談）' 'S' 等）を内部ステージへ
+function _snapStageOf(rawStage) {
+  const su = String(rawStage || '').toUpperCase().replace(/\s/g, '');
+  if (String(rawStage).includes('失注') || String(rawStage).trim() === 'チャーン') return '失注';
+  if (su.startsWith('S')) return 'S';
+  if (su.startsWith('A')) return 'A';
+  if (su.startsWith('B')) return 'B';
+  if (su.startsWith('C+') || su.startsWith('C＋')) return 'C+';
+  if (su.startsWith('C')) return 'C';
+  if (su.startsWith('D')) return 'D';
+  if (su.startsWith('E')) return 'E';
+  return null;
+}
+// 対象サービス文字列から商材を推定（normalizeRow と同じ寄せ方。管理方法列はスナップショットに無い）
+function _snapProductOf(rawSvc) {
+  const s = String(rawSvc || '');
+  if (s.includes('セット') || s.includes('新卒・中途')) return '新卒・中途';
+  const hasShin = s.includes('新卒'), hasChu = s.includes('中途');
+  if (hasShin && hasChu) return '新卒・中途';
+  if (hasShin) return '新卒';
+  if (hasChu) return '中途';
+  return null;
+}
+// getBizDaysRatio の「今日」を任意の基準日に差し替えた版
+function _bizDaysRatioAt(monthStr, refDate) {
+  const ref = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate());
+  const [y, m] = String(monthStr).split('/').map(Number);
+  if (!y || !m) return 0;
+  const firstDay = new Date(y, m - 1, 1);
+  const lastDay  = new Date(y, m, 0);
+  if (firstDay > ref) return 1.0;
+  if (lastDay < ref)  return 0.0;
+  let total = 0, remaining = 0;
+  for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+    if (d.getDay() !== 0 && d.getDay() !== 6) { total++; if (d >= ref) remaining++; }
+  }
+  return total > 0 ? remaining / total : 0;
+}
+
+// あるスナップショット時点の、対象月の着地予想（停滞係数は除く近似）
+function _forecastFromSnapshot(snap, monthStr) {
+  const d0 = _weeklySnapDate(snap);
+  if (!d0) return null;
+  const soft = softenedBizRatio(_bizDaysRatioAt(monthStr, d0));
+  let total = 0, wonAmt = 0, count = 0;
+  (snap.deals || []).forEach(x => {
+    if (String(x.m || '') !== monthStr) return;
+    const st = _snapStageOf(x.s);
+    if (!st || st === '失注' || st === 'E') return;   // 失注・E は着地予想に入れない
+    const amt = Number(x.a || 0);
+    if (!amt) return;
+    let rate = getWinRate(st, _snapProductOf(x.p));
+    if (TIME_DECAY_STAGES.includes(st)) rate *= soft;
+    total += amt * rate;
+    if (st === 'S') wonAmt += amt;
+    count++;
+  });
+  return { date: d0, dateStr: snap.dateStr, forecast: total, won: wonAmt, count };
+}
+
+// 対象月の最終実績（最新スナップショット時点の受注(S)合計）。現在のpipelineがあればそちらを優先。
+function _actualOfMonth(monthStr) {
+  const cur = (pipeline || []).filter(d => d.month === monthStr && d.stage === 'S');
+  if (cur.length) return cur.reduce((s, d) => s + (d.amount || 0), 0);
+  const list = Array.isArray(weeklySnapshots) ? weeklySnapshots : [];
+  for (let i = list.length - 1; i >= 0; i--) {
+    const hit = (list[i].deals || []).filter(x => String(x.m || '') === monthStr && _snapStageOf(x.s) === 'S');
+    if (hit.length) return hit.reduce((s, x) => s + Number(x.a || 0), 0);
+  }
+  return 0;
+}
+
+// 決着済み（今月より前）の月について、週ごとの予想推移と実績をまとめる
+function _buildForecastErrorRows() {
+  const list = Array.isArray(weeklySnapshots) ? weeklySnapshots : [];
+  if (list.length === 0) return [];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const thisMonth = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, '0')}`;
+
+  // スナップショットに登場する対象月のうち、すでに終わった月だけ
+  const months = new Set();
+  list.forEach(s => (s.deals || []).forEach(x => { if (x.m) months.add(String(x.m)); }));
+  const target = [...months].filter(m => m < thisMonth).sort();
+
+  const rows = [];
+  target.forEach(m => {
+    // その月の月末までに撮られたスナップショットだけを使う（月が終わった後の週は予想ではない）
+    const lastDay = new Date(Number(m.split('/')[0]), Number(m.split('/')[1]), 0);
+
+    // ★ その月の週次記録（forecastLog）があれば、近似ではなく実測値を使う
+    const logged = (forecastLog || [])
+      .filter(x => x.month === m && x.week)
+      .map(x => {
+        const wk = _normWeekKey(x.week);          // ★ Date形式で返ってきても揃える
+        const p = wk.split('-').map(Number);
+        if (!p[0] || !p[1] || !p[2]) return null;
+        return { date: new Date(p[0], p[1] - 1, p[2]), dateStr: wk, forecast: x.std, won: x.won, count: 1, exact: true };
+      })
+      .filter(p => p && !isNaN(p.date) && p.date <= lastDay)
+      .sort((a, b) => a.date - b.date);
+
+    const points = logged.length
+      ? logged
+      : list.map(s => _forecastFromSnapshot(s, m))
+            .filter(p => p && p.count > 0 && p.date <= lastDay)
+            .sort((a, b) => a.date - b.date);
+    if (points.length === 0) return;
+    const actual = _actualOfMonth(m);
+    const last = points[points.length - 1];
+    const errAmt = last.forecast - actual;
+    const errPct = actual > 0 ? (errAmt / actual) * 100 : null;
+    rows.push({ month: m, points, actual, finalForecast: last.forecast, errAmt, errPct, exact: !!logged.length });
+  });
+  return rows;
+}
+
+// ============================================================
+// ★ 2026-08-12 追加(A4): 毎週の着地予想を「その場の実測値」として記録する
+//   週次スナップショットからの再計算は停滞係数を遡れず近似になるため、
+//   今この瞬間に画面が出している予想値を週1回だけGASへ送って残しておく。
+//   その週で最初にダッシュボードを開いた人が1度だけ送る（forecastLog に無ければ送る）。
+// ============================================================
+let forecastLog = [];   // GASから取得した記録
+
+function _forecastWeekKey(d) {
+  const mon = _startOfWeekMon(d || new Date());
+  return `${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}-${String(mon.getDate()).padStart(2,'0')}`;
+}
+
+// ★ 2026-08-12 修正: 週キーの正規化。
+//  スプレッドシートは '2026-08-10' を日付として保存するため、GASから返る値が
+//  'Mon Aug 10 2026 00:00:00 GMT+0900 ...' になることがある。
+//  そのまま比較すると「今週分は記録済み」が常に false になり、
+//  5分ごとの自動更新でも記録POSTが飛んで行が増え続けてしまう（実際に発生した）。
+function _normWeekKey(v) {
+  if (!v) return '';
+  const s = String(v);
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return s;
+}
+
+function _maybeRecordForecastLog() {
+  try {
+    if (!Array.isArray(pipeline) || pipeline.length === 0) return;
+    const wk = _forecastWeekKey(new Date());
+    if (forecastLog.some(x => _normWeekKey(x.week) === wk)) return;   // 今週分は記録済み
+    const fy = getFyData();
+    const members = getFyMembers();
+    if (!fy || !fy.months || members.length === 0) return;
+    const entries = fy.months.map(m => {
+      const months = [m];
+      return {
+        month: m,
+        std:   members.reduce((s, x) => s + calcLanding(x, pipeline, months), 0),
+        withE: members.reduce((s, x) => s + calcLandingE(x, pipeline, months), 0),
+        timed: members.reduce((s, x) => s + calcLandingTimed(x, pipeline, months), 0),
+        won:   pipeline.filter(d => d.month === m && d.stage === 'S').reduce((s, d) => s + (d.amount || 0), 0),
+        target: members.reduce((s, x) => s + getTargetFor(x, months), 0),
+      };
+    });
+    gasPost('saveForecastLog', { week: wk, entries });
+    forecastLog.push({ week: wk, month: '', std: 0, withE: 0, timed: 0, won: 0, target: 0 }); // 同一セッションでの二重送信を防ぐ
+    console.log('[予実ログ] 今週分を記録しました:', wk);
+  } catch (e) {
+    console.warn('[予実ログ] 記録に失敗（表示には影響しません）:', e);
+  }
+}
+
+// 予実誤差モニターの開閉
+let _forecastErrOpen = false;
+let _forecastErrChart = null;
+let _forecastErrMonth = '';   // 折れ線で見る対象月（空なら最新）
+function toggleForecastErr() {
+  _forecastErrOpen = !_forecastErrOpen;
+  renderChartDetailTable('landing', 'chartDetailModal-body');
+}
+function setForecastErrMonth(m) {
+  _forecastErrMonth = m || '';
+  renderChartDetailTable('landing', 'chartDetailModal-body');
+}
+
+// 予実誤差モニターのHTML
+function _renderForecastErrorBlock(purple) {
+  const rows = _buildForecastErrorRows();
+  const arrow = _forecastErrOpen ? '▼' : '▶';
+  const fmtM = (n) => '¥' + (Math.round(n / 100000) / 10).toFixed(1) + 'M';
+
+  // サマリー: 月末時点予想の平均誤差率
+  const withPct = rows.filter(r => r.errPct !== null);
+  const avgPct = withPct.length ? withPct.reduce((s, r) => s + r.errPct, 0) / withPct.length : null;
+  const tendency = avgPct === null ? '—' : (avgPct > 3 ? '過大予測' : avgPct < -3 ? '過小予測' : 'ほぼ一致');
+  const avgColor = avgPct === null ? '#94a3b8' : (Math.abs(avgPct) <= 3 ? '#16a34a' : '#dc2626');
+
+  if (!_forecastErrOpen) {
+    return `
+    <div style="margin-top:14px;padding:12px;border:1px solid #ddd6fe;border-radius:8px;background:#fafafa;">
+      <div onclick="toggleForecastErr()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
+        <h4 style="font-size:12px;font-weight:700;color:${purple};margin:0;"><span style="display:inline-block;width:14px;color:#64748b;margin-right:4px;">${arrow}</span>🎯 予実誤差モニター（予想 vs 実績）</h4>
+        <span style="font-size:10px;color:#94a3b8;">${rows.length ? `決着済み ${rows.length}か月 / 平均誤差 ${avgPct >= 0 ? '+' : ''}${avgPct.toFixed(1)}%` : '週次記録が足りません'}</span>
+      </div>
+    </div>`;
+  }
+
+  if (rows.length === 0) {
+    return `
+    <div style="margin-top:14px;padding:12px;border:1px solid #ddd6fe;border-radius:8px;background:#fafafa;">
+      <div onclick="toggleForecastErr()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
+        <h4 style="font-size:12px;font-weight:700;color:${purple};margin:0;"><span style="display:inline-block;width:14px;color:#64748b;margin-right:4px;">${arrow}</span>🎯 予実誤差モニター（予想 vs 実績）</h4>
+      </div>
+      <p style="font-size:11px;color:#94a3b8;text-align:center;padding:20px 0;">決着済みの月の週次記録がまだありません。週次スナップショットが溜まると自動で表示されます。</p>
+    </div>`;
+  }
+
+  // 折れ線の対象月（既定は最新の決着月）
+  const selMonth = rows.some(r => r.month === _forecastErrMonth) ? _forecastErrMonth : rows[rows.length - 1].month;
+  const monthBtns = rows.map(r => {
+    const on = r.month === selMonth;
+    return `<button onclick="setForecastErrMonth('${r.month}')" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:9999px;border:1px solid ${on ? purple : '#e2e8f0'};background:${on ? '#ede9fe' : '#ffffff'};color:${on ? purple : '#64748b'};cursor:pointer;">${_reupYmLabel(r.month)}</button>`;
+  }).join('');
+
+  // 週の見出しは「月末までの何週前か」で揃える（月ごとに週数が違うため最大列に合わせる）
+  const maxPts = Math.max(...rows.map(r => r.points.length));
+  const headCells = [];
+  for (let i = maxPts; i >= 1; i--) headCells.push(i === 1 ? '月末時点' : `${i - 1}週前`);
+
+  const tableRows = rows.map(r => {
+    const pad = maxPts - r.points.length;
+    const cells = [];
+    for (let i = 0; i < pad; i++) cells.push('<td style="text-align:right;padding:6px 8px;color:#cbd5e1;">－</td>');
+    r.points.forEach((p, i) => {
+      const isLast = i === r.points.length - 1;
+      cells.push(`<td style="text-align:right;padding:6px 8px;color:${isLast ? '#1e293b' : '#64748b'};${isLast ? 'font-weight:700;' : ''}" title="${p.dateStr} 時点">${fmtM(p.forecast)}</td>`);
+    });
+    const pctColor = r.errPct === null ? '#94a3b8' : (Math.abs(r.errPct) <= 3 ? '#16a34a' : r.errPct > 0 ? '#dc2626' : '#2563eb');
+    // 実測（毎週記録した値）か、週次スナップショットからの近似かを明示する
+    const srcBadge = r.exact
+      ? `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:9999px;background:#dcfce7;color:#166534;margin-left:4px;" title="その週に記録した実測値">実測</span>`
+      : `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:9999px;background:#f1f5f9;color:#64748b;margin-left:4px;" title="週次スナップショットからの再計算（停滞係数を除く近似）">近似</span>`;
+    return `<tr style="border-bottom:1px solid #f1f5f9;">
+      <td style="padding:6px 8px;font-weight:700;color:#1e293b;white-space:nowrap;">${_reupYmLabel(r.month)}${srcBadge}</td>
+      ${cells.join('')}
+      <td style="text-align:right;padding:6px 8px;font-weight:700;color:#1e293b;">${fmtM(r.actual)}</td>
+      <td style="text-align:right;padding:6px 8px;font-weight:700;color:${pctColor};">${r.errPct === null ? '—' : `${r.errPct >= 0 ? '+' : ''}${r.errPct.toFixed(1)}%`}</td>
+    </tr>`;
+  }).join('');
+
+  return `
+  <div style="margin-top:14px;padding:12px;border:1px solid #ddd6fe;border-radius:8px;background:#fafafa;">
+    <div onclick="toggleForecastErr()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;">
+      <h4 style="font-size:12px;font-weight:700;color:${purple};margin:0;"><span style="display:inline-block;width:14px;color:#64748b;margin-right:4px;">${arrow}</span>🎯 予実誤差モニター（予想 vs 実績）</h4>
+      <span style="font-size:10px;color:#94a3b8;">決着済み ${rows.length}か月</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin:10px 0 12px;">
+      <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;">
+        <div style="font-size:10px;color:#64748b;">平均誤差（月末時点）</div>
+        <div style="font-size:20px;font-weight:700;color:${avgColor};">${avgPct === null ? '—' : `${avgPct >= 0 ? '+' : ''}${avgPct.toFixed(1)}%`}</div>
+      </div>
+      <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;">
+        <div style="font-size:10px;color:#64748b;">傾向</div>
+        <div style="font-size:20px;font-weight:700;color:#1e293b;">${tendency}</div>
+      </div>
+      <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;">
+        <div style="font-size:10px;color:#64748b;">対象月数</div>
+        <div style="font-size:20px;font-weight:700;color:#1e293b;">${rows.length}</div>
+      </div>
+    </div>
+
+    <div style="overflow-x:auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:${260 + maxPts * 80}px;">
+        <thead><tr style="color:#94a3b8;border-bottom:1px solid #e2e8f0;">
+          <th style="text-align:left;padding:6px 8px;font-weight:600;">対象月</th>
+          ${headCells.map(h => `<th style="text-align:right;padding:6px 8px;font-weight:600;">${h}</th>`).join('')}
+          <th style="text-align:right;padding:6px 8px;font-weight:600;">実績</th>
+          <th style="text-align:right;padding:6px 8px;font-weight:600;">誤差</th>
+        </tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:12px 0 6px;">
+      <span style="font-size:10px;font-weight:700;color:#64748b;">推移を見る月:</span>${monthBtns}
+    </div>
+    <div style="position:relative;height:220px;background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;padding:6px;">
+      <canvas id="forecastErrChart"></canvas>
+    </div>
+
+    <p style="font-size:10px;color:#94a3b8;margin-top:8px;line-height:1.6;">
+      💡 各週の取引データに、その週を基準日とした勝率×時間減衰を適用して予想を再計算しています。<br>
+      ⚠ 停滞係数だけは当時の滞留回数を遡れないため除外しています。停滞係数は予想を下げる方向に働くので、実際の誤差はここに出る数字よりやや小さくなります。
+    </p>
+  </div>`;
+}
+
+// 予実誤差の折れ線（選択中の月の予想推移 vs 実績）
+function _renderForecastErrChart() {
+  const el = document.getElementById('forecastErrChart');
+  if (!el || typeof Chart === 'undefined') return;
+  if (_forecastErrChart) { try { _forecastErrChart.destroy(); } catch(e) {} _forecastErrChart = null; }
+  const rows = _buildForecastErrorRows();
+  if (!rows.length) return;
+  const r = rows.find(x => x.month === _forecastErrMonth) || rows[rows.length - 1];
+  const labels = r.points.map(p => p.dateStr);
+  _forecastErrChart = new Chart(el.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: '着地予想', data: r.points.map(p => p.forecast), borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.08)', pointBackgroundColor: '#7c3aed', pointRadius: 4, borderWidth: 2, fill: true, tension: 0.25 },
+        { label: '実績', data: labels.map(() => r.actual), borderColor: '#dc2626', borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0, fill: false },
+        { label: '受注済み', data: r.points.map(p => p.won), borderColor: '#10b981', pointBackgroundColor: '#10b981', pointRadius: 3, borderWidth: 2, fill: false, tension: 0.25 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { ticks: { font: { size: 10 }, color: '#94a3b8' }, grid: { display: false } },
+        y: { beginAtZero: true, ticks: { font: { size: 10 }, color: '#94a3b8', callback: (v) => '¥' + (v / 1000000).toFixed(0) + 'M' }, grid: { color: 'rgba(148,163,184,0.12)' } }
+      },
+      plugins: {
+        legend: { display: true, labels: { font: { size: 10 }, boxWidth: 10, color: '#64748b' } },
+        tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ¥${Math.round(c.parsed.y).toLocaleString()}` } }
+      }
+    }
+  });
 }
 
 // 週次トレンド折れ線描画（Chart.js）
@@ -7871,7 +8362,8 @@ function _renderLandingTrendChart() {
     _cur.forEach(d => { if (d && d.hubspotId) idOwnerMap[String(d.hubspotId)] = d.name; });
   } catch(e){}
 
-  weeklySnapshots.forEach(snap => {
+  // ★ 2026-08-12 変更: 表示単位に応じた期間の週だけを対象にする
+  _filteredWeeklySnapshots().forEach(snap => {
     labels.push(snap.dateStr);
     const deals = snap.deals || [];
     // E除外、選択中の期間月にcloseDateが含まれる案件のみ集計
@@ -8278,7 +8770,7 @@ function renderECalendar() {
       simBadge = `<span class="rounded-full px-1" style="background:#f1f5f9;color:#94a3b8" title="業種「${indDisp}」に該当する企業がマスタ${masterCount}件中にありません">該当なし(${indDisp}/マスタ${masterCount})</span>`;
     }
     return `<div class="rounded p-1 mb-0.5 text-[10px] leading-tight" style="background:${cardBg};border-left:3px solid ${cardBorder}">
-      <a ${hubUrl} class="font-medium block truncate hover:underline" style="${nameStyle}" title="${d.company}${d.stage ? ' / ステージ:' + d.stage : ''}">${d.company || '-'}</a>
+      <a ${hubUrl} class="font-medium block truncate hover:underline" style="${nameStyle}" title="${_escapeHtml(d.company)}${d.stage ? ' / ステージ:' + d.stage : ''}">${_escapeHtml(d.company || '-')}</a>
       <div class="flex items-center justify-between mt-0.5 flex-wrap gap-0.5">
         <span class="font-semibold" style="color:${lost ? '#94a3b8' : c.main}">${shortName}</span>
         <div class="flex items-center gap-0.5 flex-wrap">
@@ -8362,7 +8854,7 @@ function renderECalendar() {
         const shortName = d.name ? d.name.split(' ')[0] : '';  // 苗字（姓）を表示
         const hubUrl = d.hubspotId ? `href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener"` : '';
         return `<div class="rounded-lg p-2 text-[10px] border" style="background:${c.bg};border-color:${c.main};min-width:120px">
-          <a ${hubUrl} class="font-medium block truncate hover:underline" style="color:#1e293b" title="${d.company}">${d.company || '-'}</a>
+          <a ${hubUrl} class="font-medium block truncate hover:underline" style="color:#1e293b" title="${_escapeHtml(d.company)}">${_escapeHtml(d.company || '-')}</a>
           <div class="flex items-center gap-1 mt-0.5">
             <span class="font-semibold" style="color:${c.main}">${shortName}</span>
             ${d.product ? `<span class="rounded-full px-1" style="background:${pb.bg};color:${pb.text}">${d.product}</span>` : ''}
@@ -8560,11 +9052,13 @@ function _buildReupIsMap() {
     return (isNaN(d.getTime()) || d.getFullYear() < 2000) ? null : d;
   };
   const map = new Map();
-  (isListYes || []).forEach(r => {
-    const key = _reupNormCompanyKey(r.company);
+  // ★ 2026-08-10 追加(A4): 会社IDキーのマップも同時に構築する。
+  //   IS保有リストは元々「会社ID」を持っているので、取引名の文字列照合をやめて完全一致にできる。
+  const byId = new Map();
+  const accumulate = (m, key, r) => {
     if (!key) return;
-    if (!map.has(key)) map.set(key, { owner: '', lastContact: null, nextCall: null, _ownerD: null });
-    const o = map.get(key);
+    if (!m.has(key)) m.set(key, { owner: '', lastContact: null, nextCall: null, _ownerD: null });
+    const o = m.get(key);
     const lc = parseD(r.lastContact);
     const nc = parseD(r.nextCall);
     if (lc && (!o.lastContact || lc > o.lastContact)) o.lastContact = lc;
@@ -8574,15 +9068,21 @@ function _buildReupIsMap() {
       o.owner = r.owner;
       if (lc) o._ownerD = lc;
     }
+  };
+  (isListYes || []).forEach(r => {
+    accumulate(map, _reupNormCompanyKey(r.company), r);
+    accumulate(byId, String(r.companyId || '').trim(), r);
   });
-  return map;
+  return { byName: map, byId: byId };
 }
 
 function _collectReupRows() {
-  const isMap = _buildReupIsMap();
+  const isMaps = _buildReupIsMap();
   const fmtD = (d) => d ? `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}` : '';
   const attachIs = (row) => {
-    const hit = _reupFuzzyGet(isMap, _reupNormCompanyKey(row.company));
+    // ★ 2026-08-10 変更(A4): 会社IDの完全一致を優先し、無い場合だけ取引名照合にフォールバック
+    const hit = (row.companyId && isMaps.byId.get(row.companyId))
+             || _reupFuzzyGet(isMaps.byName, _reupNormCompanyKey(row.company));
     row.isOwner     = hit ? (hit.owner || '') : '';
     row.lastContact = hit ? fmtD(hit.lastContact) : '';
     row.nextCall    = hit ? fmtD(hit.nextCall) : '';
@@ -8592,15 +9092,53 @@ function _collectReupRows() {
 
   // ★ 再アップ判定用: 正規化企業名 → 全取引の作成日(アポ作成日≒HubSpot取引作成日)一覧
   const dealIdx = new Map();
+  // ★ 2026-08-10 追加(A3): 会社IDキーの索引。取引名のゆらぎに一切影響されない。
+  const dealIdxById = new Map();
+  const _pushIdx = (map, key, entry) => {
+    if (!key) return;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(entry);
+  };
   const addIdx = (d) => {
     if (!d.apoCreatedDate || !d.company) return;
-    const k = _reupNormCompanyKey(d.company);
-    if (!k) return;
-    if (!dealIdx.has(k)) dealIdx.set(k, []);
-    dealIdx.get(k).push({ created: d.apoCreatedDate, id: d.hubspotId || null });
+    // ★ 2026-08-10 追加: stage も持たせる（新取引が受注(S)なら「受注」判定に使う）
+    const entry = { created: d.apoCreatedDate, id: d.hubspotId || null, stage: d.stage || null, company: d.company, section: 'FS', reupTiming: d.reupTiming || '' };
+    _pushIdx(dealIdx, _reupNormCompanyKey(d.company), entry);
+    _pushIdx(dealIdxById, String(d.companyId || '').trim(), entry);
   };
   [...pipeline, ...lostDeals].forEach(addIdx);
   (reupDeals || []).forEach(addIdx);
+
+  // ★ 2026-08-10 追加(A3): 全セクションのインデックス（deal_index_all）も索引に合流させる。
+  //   これで section が FS 以外（AIスカウト・CS・BPO 等）の受注取引も判定できる。
+  //   FSセクションの行は上の pipeline/lostDeals と重複するため、取引IDで除外する。
+  const _fsDealIds = new Set();
+  [...pipeline, ...lostDeals, ...(reupDeals || [])].forEach(d => { if (d.hubspotId) _fsDealIds.add(String(d.hubspotId)); });
+  (dealIndexAll || []).forEach(x => {
+    if (!x.created || !x.company) return;
+    if (x.dealId && _fsDealIds.has(x.dealId)) return; // 既に上で登録済み
+    const entry = { created: x.created, id: x.dealId || null, stage: x.stage || null, company: x.company, section: x.section || '', reupTiming: x.reupTiming || '' };
+    _pushIdx(dealIdx, _reupNormCompanyKey(x.company), entry);
+    _pushIdx(dealIdxById, x.companyId, entry);
+  });
+
+  // ★ 2026-08-10 追加: 同一企業の取引をまとめて集める。
+  //   取引名は「株式会社◯◯-AIスカウト」「株式会社◯◯ -自力獲得」のように区切り＋枝番が付くことがあり、
+  //   完全一致だけを見ると枝番付きの新取引を取りこぼす（＝受注済みでも戻し忘れと誤判定する）。
+  //   ただし単純な前方一致は「トヨタ自動車」→「トヨタ自動車九州」のような別法人を誤結合するため、
+  //   続きが「区切り文字で始まる」場合だけ同一企業とみなす。
+  const _SUFFIX_SEP_RE = /^[-‐‑–—－_＿\/／・:：]/;
+  const _collectCompanyDeals = (baseKey) => {
+    if (!baseKey) return [];
+    const acc = [];
+    for (const [k, list] of dealIdx) {
+      if (k === baseKey) { acc.push(...list); continue; }
+      if (k.length < 5 || baseKey.length < 5) continue;
+      if (k.startsWith(baseKey) && _SUFFIX_SEP_RE.test(k.slice(baseKey.length))) { acc.push(...list); continue; }
+      if (baseKey.startsWith(k) && _SUFFIX_SEP_RE.test(baseKey.slice(k.length))) acc.push(...list);
+    }
+    return acc;
+  };
 
   // 前回取引のクローズ日境界（日不明なら月末＝判定が甘くならない側に倒す）
   const _closeBoundary = (monthStr, day) => {
@@ -8610,18 +9148,41 @@ function _collectReupRows() {
     return day ? new Date(p[0], p[1]-1, day) : new Date(p[0], p[1], 0);
   };
 
-  // 判定: 同一企業の別取引の作成日 > 前回クローズ日 → success / 所有者あり → is / それ以外 → forgot
+  // 判定: 同一企業の別取引の作成日 > 前回クローズ日 → その取引が受注(S)なら won / それ以外は success
+  //       新取引なし → 所有者あり → is / それ以外 → forgot
   const judgeRow = (row, boundary) => {
     let newest = null;
     if (boundary) {
-      (_reupFuzzyGet(dealIdx, _reupNormCompanyKey(row.company)) || []).forEach(e => {
+      // ★ 2026-08-10 変更(A3): 会社IDが取れていれば完全一致で引く。
+      //   会社IDが無い行（GAS未更新・会社未紐付け）だけ従来の取引名照合にフォールバック。
+      const candidates = (row.companyId && dealIdxById.get(row.companyId))
+                      || _collectCompanyDeals(_reupNormCompanyKey(row.company));
+      candidates.forEach(e => {
         if (row.hubspotId && e.id === row.hubspotId) return; // 自分自身は除外
-        if (e.created > boundary && (!newest || e.created > newest)) newest = e.created;
+        if (e.created > boundary && (!newest || e.created > newest.created)) newest = e;
       });
     }
     if (newest) {
-      row.judge = 'success';
-      row.judgeDate = `${newest.getMonth()+1}/${newest.getDate()}新取引`;
+      const md = `${newest.created.getMonth()+1}/${newest.created.getDate()}`;
+      const st = String(newest.stage || '').trim();
+      // ★ 2026-08-12 変更: 新取引が「あるか」ではなく、その取引の現在の結果まで見て4分岐する。
+      //   従来は再失注していても「再アップ成功」と出ており、実態と違った（405件中311件が再失注）。
+      const _isLost = st.includes('失注') || st === 'チャーン';
+      if (st === 'S') {
+        row.judge = 'won';         row.judgeDate = `${md}受注`;
+      } else if (_isLost) {
+        // 再失注。その新取引に次の再アップ時期が入っているかで分ける
+        const nextReup = String(newest.reupTiming || '').trim();
+        if (nextReup) { row.judge = 'relost';      row.judgeNext = nextReup; }
+        else          { row.judge = 'relost_dead'; }
+        row.judgeDate = `${md}新取引→失注`;
+      } else if (st) {
+        row.judge = 'active';      row.judgeDate = `${md}新取引`;   // E〜A で進行中
+      } else {
+        row.judge = 'success';     row.judgeDate = `${md}新取引`;   // ステージ不明（保険）
+      }
+      row.judgeCompany = newest.company || '';
+      row.judgeSection = newest.section || '';
     } else if (row.isOwner) {
       row.judge = 'is';
     } else {
@@ -8630,23 +9191,120 @@ function _collectReupRows() {
     return row;
   };
 
+  // ★ 2026-08-10 追加: 未商談化理由（HubSpot field8__c／「注力」等）を専用列で出すため行に載せる。
+  //    normalizeRow の lostReason は「失注理由1 || 未商談化理由」のフォールバック合成なので、
+  //    未商談化理由と同値なら失注理由1は空＝「前回失注理由」列には出さない（列の意味を重複させない）。
+  const _splitLostReason = (d) => {
+    const lr = String(d.lostReason || '').trim();
+    const mr = String(d.mishoshoReason || '').trim();
+    return (lr && lr !== mr) ? lr : '';
+  };
+
   const rows = [];
   [...pipeline, ...lostDeals].forEach(d => {
     if (!d.reupTiming) return;
     const isLost = d.stage === '失注';
     const prevStage = isLost ? (d.stageRaw || `失注（${d.lostLabel || 'その他'}）`) : (d.stageRaw || d.stage);
-    rows.push(judgeRow(attachIs({ company: d.company, name: d.name || '不明', reupTiming: d.reupTiming,
-                prevStage, isLost, lostReason: d.lostReason || d.mishoshoReason || '',
+    rows.push(judgeRow(attachIs({ company: d.company, companyId: String(d.companyId || '').trim(),
+                name: d.name || '不明', reupTiming: d.reupTiming, reupDate: d.reupDate || null,
+                prevStage, isLost, lostReason: _splitLostReason(d),
+                mishoshoReason: String(d.mishoshoReason || '').trim(),
                 nyusaki: d.nyusaki || '', hubspotId: d.hubspotId || null }),
                 _closeBoundary(d.month, d.closeDay)));
   });
   (reupDeals || []).forEach(d => {
-    rows.push(judgeRow(attachIs({ company: d.company, name: d.name || '不明', reupTiming: d.reupTiming,
+    rows.push(judgeRow(attachIs({ company: d.company, companyId: String(d.companyId || '').trim(),
+                name: d.name || '不明', reupTiming: d.reupTiming, reupDate: d.reupDate || null,
                 prevStage: d.prevStage || '不明', isLost: String(d.prevStage||'').includes('失注') || String(d.prevStage||'').includes('チャーン'),
-                lostReason: d.lostReason || '', nyusaki: d.nyusaki || '', hubspotId: d.hubspotId || null }),
+                lostReason: _splitLostReason(d), mishoshoReason: String(d.mishoshoReason || '').trim(),
+                nyusaki: d.nyusaki || '', hubspotId: d.hubspotId || null }),
                 _closeBoundary(d.closeMonth, d.closeDay)));
   });
   return rows;
+}
+
+// ★ 2026-08-10 追加: 「注力」判定（HubSpot 未商談化理由 field8__c の選択肢）
+const REUP_FOCUS_VALUE = '注力';
+function _isReupFocus(row) { return String(row && row.mishoshoReason || '').trim() === REUP_FOCUS_VALUE; }
+
+// 「注力のみ」トグル
+function toggleEReupOnlyFocus() {
+  eReupOnlyFocus = !eReupOnlyFocus;
+  renderECalReup();
+}
+
+// ★ 2026-08-12 追加: 「再失注・次なしのみ」トグル
+function toggleEReupOnlyDead() {
+  eReupOnlyDead = !eReupOnlyDead;
+  renderECalReup();
+}
+
+// ============================================================
+// ★ 2026-08-12 追加: 再アップ時期ビューを「状態別4ブロック」で並べる
+// ------------------------------------------------------------
+//  月グループ（53個・当月は10番目）だと「いま何をすべきか」が読み取れなかったため、
+//  行動の主体と緊急度で並べ替える。主体は IS（会社所有者）。
+//  超過の基準は「再アップ日（日単位）を過ぎた翌日から」。
+//
+//  now   : 今すぐ架電（IS） … 架電日が過去 / 架電日なし＋再アップ日超過
+//  input : 入力・返却が必要（FS） … 再失注・次なし / 戻し忘れ
+//  wait  : 待機中 … 架電予定が未来 / 再アップ日が未来
+//  done  : 完了・進行中 … 受注 / 商談中 / 再失注→次あり
+// ============================================================
+let eReupGroupMode = 'status';   // 'status'（状態別・既定） | 'month'（従来の月グループ）
+const REUP_BLOCK_DEFS = [
+  { key:'now',   label:'今すぐ架電（IS）',            bg:'#fee2e2', fg:'#991b1b', hint:'再アップ日を過ぎている / 架電日が過去' },
+  { key:'input', label:'入力・返却が必要（FS）',      bg:'#fef3c7', fg:'#92400e', hint:'再アップ時期の入力 / コンタクト所有者の返却' },
+  { key:'wait',  label:'待機中（再アップ日が未来）',  bg:'#f1f5f9', fg:'#475569', hint:'まだ動かなくてよい' },
+  { key:'done',  label:'完了・進行中',                bg:'#f1f5f9', fg:'#475569', hint:'受注 / 商談中 / 次の再アップ待ち' },
+];
+let eReupBlockOpen = { now:true, input:true, wait:false, done:false };
+
+function toggleEReupGroupMode() {
+  eReupGroupMode = (eReupGroupMode === 'status') ? 'month' : 'status';
+  renderECalReup();
+}
+function toggleEReupBlock(key) {
+  eReupBlockOpen[key] = !eReupBlockOpen[key];
+  renderECalReup();
+}
+
+function _reupDaysBetween(from, to) {
+  return Math.round((to.getTime() - from.getTime()) / 86400000);
+}
+
+// 'YYYY/MM' → 'YYYY年M月'（renderECalReup 内の ymLabel と同じ表記。関数外からも使えるよう独立定義）
+function _reupYmLabel(s) {
+  const m = String(s || '').match(/^(\d{4})\/(\d{2})$/);
+  return m ? `${m[1]}年${parseInt(m[2], 10)}月` : String(s || '');
+}
+
+// 1行を「どのブロックか」「次アクションは何か」に分類する
+function _classifyReupRow(row, today) {
+  const rd = row.reupDate instanceof Date ? row.reupDate : null;
+  const nc = row.nextCallD instanceof Date ? new Date(row.nextCallD.getFullYear(), row.nextCallD.getMonth(), row.nextCallD.getDate()) : null;
+
+  // ① 完了・進行中（もう追わなくてよい）
+  if (row.judge === 'won')    return { block:'done', action:'—', tone:'muted', note:'受注済み',   over:0 };
+  if (row.judge === 'active') return { block:'done', action:'—', tone:'muted', note:'FSが商談中', over:0 };
+  if (row.judge === 'relost') return { block:'done', action:'—', tone:'muted', note:`次は ${_reupYmLabel(row.judgeNext)}`, over:0 };
+
+  // ② FS側で入力・返却が必要
+  if (row.judge === 'relost_dead') return { block:'input', action:'再アップ時期を入力', who:row.name, tone:'warn', note:'再失注済み', over: rd ? Math.max(0,_reupDaysBetween(rd,today)) : 0 };
+  if (row.judge === 'forgot')      return { block:'input', action:'所有者を戻す',       who:row.name, tone:'warn', note:'IS保有リスト未登録', over: rd ? Math.max(0,_reupDaysBetween(rd,today)) : 0 };
+
+  // ③ IS保有中：架電日の状態で分ける
+  if (nc && nc.getTime() >= today.getTime()) {
+    return { block:'wait', action:'架電待ち', who:row.isOwner, tone:'muted', note:row.nextCall, over:0 };
+  }
+  if (nc && nc.getTime() < today.getTime()) {
+    return { block:'now', action:'架電が遅延', who:row.isOwner, tone:'warn', note:`架電日 ${row.nextCall}`, over:_reupDaysBetween(nc,today) };
+  }
+  // 架電日なし → 再アップ日を過ぎているかで分ける
+  if (rd && rd.getTime() < today.getTime()) {
+    return { block:'now', action:'架電日を設定', who:row.isOwner, tone:'danger', note:'架電日が未設定', over:_reupDaysBetween(rd,today) };
+  }
+  return { block:'wait', action:'待機', who:row.isOwner, tone:'muted', note: rd ? `${rd.getMonth()+1}/${rd.getDate()}から` : '再アップ日が未設定', over:0 };
 }
 
 // 担当者カードのクリック（複数選択トグル）
@@ -8676,26 +9334,60 @@ function renderECalReup() {
     if (eReupPeriod && !periods.includes(eReupPeriod)) eReupPeriod = '';
   }
 
-  // 時期フィルタ + ⚠戻し忘れフィルタを適用した行（担当カードの件数はここから算出）
+  // ★ 2026-08-10 追加: 「注力のみ」ボタンの見た目を状態に同期
+  const focusBtn = document.getElementById('eCalReupFocusBtn');
+  if (focusBtn) {
+    focusBtn.style.background  = eReupOnlyFocus ? '#7c3aed' : '#ffffff';
+    focusBtn.style.color       = eReupOnlyFocus ? '#ffffff' : '#6d28d9';
+    focusBtn.style.borderColor = eReupOnlyFocus ? '#7c3aed' : '#ddd6fe';
+  }
+
+  // ★ 2026-08-12 追加: 「再失注・次なしのみ」ボタンの見た目を状態に同期
+  const deadBtn = document.getElementById('eCalReupDeadBtn');
+  if (deadBtn) {
+    deadBtn.style.background  = eReupOnlyDead ? '#dc2626' : '#ffffff';
+    deadBtn.style.color       = eReupOnlyDead ? '#ffffff' : '#b91c1c';
+    deadBtn.style.borderColor = eReupOnlyDead ? '#dc2626' : '#fecaca';
+  }
+
+  // 時期フィルタ + ⚠戻し忘れ + 注力 + 再失注・次なし を適用した行（担当カードの件数はここから算出）
   const periodRows = allRows.filter(r =>
     (!eReupPeriod || r.reupTiming === eReupPeriod) &&
-    (!eReupOnlyWarn || r.judge === 'forgot'));
+    (!eReupOnlyWarn || r.judge === 'forgot') &&
+    (!eReupOnlyFocus || _isReupFocus(r)) &&
+    (!eReupOnlyDead || r.judge === 'relost_dead'));
   // 存在しなくなった担当の選択を掃除
   const memberSet = new Set(periodRows.map(r => r.name));
   eReupMembers.forEach(m => { if (!memberSet.has(m)) eReupMembers.delete(m); });
   // 担当カード選択（複数）を適用した行（一覧表示用）
   const rows = periodRows.filter(r => eReupMembers.size === 0 || eReupMembers.has(r.name));
 
+  // ★ 2026-08-12 追加: 各行を「状態ブロック＋次アクション」に分類（本日基準・日単位）
+  const _clsToday = new Date(); _clsToday.setHours(0, 0, 0, 0);
+  rows.forEach(r => { r._cls = _classifyReupRow(r, _clsToday); });
+
   const warnTotal = rows.filter(r => r.judge === 'forgot').length;
-  if (label) label.textContent = `再アップ対象 ${rows.length}件${warnTotal > 0 ? `（⚠戻し忘れ ${warnTotal}件）` : ''}${eReupPeriod ? ` / ${ymLabel(eReupPeriod)}` : ''}${eReupMembers.size > 0 ? ` / 担当${eReupMembers.size}名選択中` : ''}`;
+  const focusTotal = rows.filter(_isReupFocus).length;
+  const wonTotal = rows.filter(r => r.judge === 'won').length;  // ★ 2026-08-10 追加
+  const deadTotal = rows.filter(r => r.judge === 'relost_dead').length; // ★ 2026-08-12 追加
+  if (label) label.textContent = `再アップ対象 ${rows.length}件${wonTotal > 0 ? `（🏆受注 ${wonTotal}件）` : ''}${deadTotal > 0 ? `（⚠再失注・次なし ${deadTotal}件）` : ''}${warnTotal > 0 ? `（⚠戻し忘れ ${warnTotal}件）` : ''}${focusTotal > 0 ? `（注力 ${focusTotal}件）` : ''}${eReupPeriod ? ` / ${ymLabel(eReupPeriod)}` : ''}${eReupOnlyFocus ? ' / 注力のみ' : ''}${eReupOnlyDead ? ' / 再失注・次なしのみ' : ''}${eReupMembers.size > 0 ? ` / 担当${eReupMembers.size}名選択中` : ''}`;
   if (clearBtn) clearBtn.classList.toggle('hidden', eReupMembers.size === 0);
 
   // ① メンバー別件数カード（クリックで複数選択トグル）
+  //    ★ 2026-08-10 追加: 先頭に「注力」件数カード（クリックで注力フィルタON/OFF）
   const memberCount = new Map();
   periodRows.forEach(r => memberCount.set(r.name, (memberCount.get(r.name)||0) + 1));
   const memberRows = Array.from(memberCount.entries()).sort((a,b) => b[1] - a[1]);
   if (summary) {
-    summary.innerHTML = memberRows.map(([n,c]) => {
+    const focusInPeriod = eReupOnlyFocus ? periodRows.length : periodRows.filter(_isReupFocus).length;
+    const focusCard = `
+      <div class="rounded-lg p-3 cursor-pointer select-none transition-colors" onclick="toggleEReupOnlyFocus()"
+           style="background:${eReupOnlyFocus ? '#7c3aed' : '#f5f3ff'};border:2px solid ${eReupOnlyFocus ? '#7c3aed' : '#ddd6fe'}"
+           title="クリックで注力案件のみ${eReupOnlyFocus ? 'の絞り込みを解除' : 'に絞り込み'}">
+        <div class="text-xs truncate font-semibold" style="color:${eReupOnlyFocus ? '#ffffff' : '#6d28d9'}"><i class="ti ti-flame"></i> 注力${eReupOnlyFocus ? ' ✓' : ''}</div>
+        <div class="text-xl font-bold" style="color:${eReupOnlyFocus ? '#ffffff' : '#7c3aed'}">${focusInPeriod}<span class="text-xs ml-1 font-semibold">件</span></div>
+      </div>`;
+    summary.innerHTML = focusCard + memberRows.map(([n,c]) => {
       const sel = eReupMembers.has(n);
       return `
       <div class="rounded-lg p-3 cursor-pointer select-none transition-colors" onclick="eReupToggleMember('${encodeURIComponent(n)}')"
@@ -8708,7 +9400,7 @@ function renderECalReup() {
   }
 
   if (rows.length === 0) {
-    body.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">再アップ時期が入力されている案件はありません</div>';
+    body.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">${eReupOnlyDead ? '再失注して次の再アップ時期が未入力の案件はありません' : eReupOnlyFocus ? '未商談化理由が「注力」の再アップ案件はありません' : '再アップ時期が入力されている案件はありません'}</div>`;
     return;
   }
 
@@ -8743,36 +9435,78 @@ function renderECalReup() {
     }
     return `<span class="font-semibold whitespace-nowrap" style="color:${color}">${esc(r.nextCall)}</span>`;
   };
-  // 再アップ判定: success=新取引あり / forgot=所有者戻し忘れ疑い / is=IS保有中
+  // ★ 2026-08-10 追加: 未商談化理由セル（「注力」は独自色バッジで強調）
+  const mishoshoCell = (r) => {
+    const v = String(r.mishoshoReason || '').trim();
+    if (!v) return '<span class="text-slate-300">－</span>';
+    if (_isReupFocus(r)) {
+      return `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap" style="background:#ede9fe;color:#5b21b6" title="未商談化理由: 注力"><i class="ti ti-flame"></i> ${esc(v)}</span>`;
+    }
+    return `<span class="text-slate-500">${esc(v)}</span>`;
+  };
+  // 再アップ判定: won=新取引が受注(S) / success=新取引あり / forgot=所有者戻し忘れ疑い / is=IS保有中
   const judgePill = (r) => {
-    if (r.judge === 'success') return `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap" style="background:#dcfce7;color:#166534" title="前回クローズ日より後に新しい取引が作成されています">✅ 再アップ成功${r.judgeDate ? `(${r.judgeDate})` : ''}</span>`;
+    // ★ 2026-08-10 追加: 作成日が最新の取引が受注(S)なら「受注」
+    // 判定根拠（どの取引で判定したか）をツールチップに出す。FS以外のセクションならそれも併記。
+    // ★ 2026-08-12: via は title 属性に埋め込むため、取引名（自由入力）をエスケープしておく
+    const via = r.judgeCompany ? `：${_escapeHtml(r.judgeCompany)}${r.judgeSection && r.judgeSection !== 'FS' ? `（${_escapeHtml(r.judgeSection)}）` : ''}` : '';
+    if (r.judge === 'won') return `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap" style="background:#10b981;color:#ffffff" title="前回クローズ日より後に作成された取引が受注(S)になっています${via}">🏆 受注${r.judgeDate ? `(${r.judgeDate})` : ''}</span>`;
+    // ★ 2026-08-12 追加: 新取引が進行中／再失注（次あり）／再失注（次なし）を区別する
+    if (r.judge === 'active') return `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap" style="background:#dcfce7;color:#166534" title="前回クローズ日より後に作成された取引が商談中です${via}">✅ 商談中${r.judgeDate ? `(${r.judgeDate})` : ''}</span>`;
+    if (r.judge === 'relost') return `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap" style="background:#fef3c7;color:#92400e" title="再アップ後の取引も失注しています。次の再アップ時期が入力済み${via}">🔁 再失注 → 次 ${ymLabel(r.judgeNext)}</span>`;
+    if (r.judge === 'relost_dead') return `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap" style="background:#dc2626;color:#ffffff" title="再アップ後の取引も失注し、次の再アップ時期が未入力です。このままだと誰も追えません${via}">⚠ 再失注・次なし</span>`;
+    if (r.judge === 'success') return `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap" style="background:#dcfce7;color:#166534" title="前回クローズ日より後に新しい取引が作成されています${via}">✅ 再アップ成功${r.judgeDate ? `(${r.judgeDate})` : ''}</span>`;
     if (r.judge === 'forgot')  return `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap" style="background:#fee2e2;color:#991b1b" title="新取引がなく、IS保有リストにも未登録。コンタクト所有者の戻し忘れの可能性">⚠ 戻し忘れ</span>`;
     return `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap" style="background:#f1f5f9;color:#64748b" title="IS保有リストに登録済み（待機中）">IS保有中</span>`;
   };
 
-  body.innerHTML = `<div class="border rounded-lg overflow-hidden" style="border-color:#e2e8f0">${sortedKeys.map(key => {
-    const list = groups.get(key).slice().sort((a,b) => String(a.name).localeCompare(String(b.name),'ja'));
-    return `
-    <div class="px-3 py-1.5 text-xs font-bold" style="background:#fef3c7;color:#92400e">🔁 ${ymLabel(key)}（${list.length}件）</div>
-    <div class="overflow-x-auto"><table class="w-full text-xs" style="border-collapse:collapse;min-width:880px">
+  // ★ 2026-08-12 追加: 再アップ日セル（超過は赤・当日は橙・未来は緑）
+  const reupDateCell = (r) => {
+    const rd = r.reupDate instanceof Date ? r.reupDate : null;
+    if (!rd) return '<span class="text-slate-300">－</span>';
+    const color = rd < _todayD ? '#dc2626' : (rd.getTime() === _todayD.getTime() ? '#ea580c' : '#16a34a');
+    return `<span class="font-semibold whitespace-nowrap" style="color:${color}">${rd.getFullYear()}/${String(rd.getMonth()+1).padStart(2,'0')}/${String(rd.getDate()).padStart(2,'0')}</span>`;
+  };
+  // ★ 2026-08-12 追加: 次アクションセル（誰が何をするかを1つだけ書く）
+  const actionCell = (r) => {
+    const c = r._cls;
+    if (!c) return '<span class="text-slate-300">－</span>';
+    if (c.action === '—') return `<span class="text-slate-400 text-[11px]">— <span class="text-slate-300">${esc(c.note||'')}</span></span>`;
+    const style = c.tone === 'danger' ? 'background:#dc2626;color:#ffffff'
+                : c.tone === 'warn'   ? 'background:#fef3c7;color:#92400e'
+                :                       'background:#f1f5f9;color:#475569';
+    const days = c.over > 0 ? `<span class="text-[10px] font-bold ml-1" style="color:#dc2626">${c.over}日超過</span>` : '';
+    const who = c.who ? `<span class="text-[10px] text-slate-400 ml-1">${esc(c.who)}</span>` : '';
+    return `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap" style="${style}" title="${esc(c.note||'')}">${esc(c.action)}</span>${days}${who}`;
+  };
+
+  // 共通のテーブル（ヘッダー＋行）。★ 2026-08-12: 再アップ日・次アクション列を追加
+  const tableHtml = (list) => `
+    <div class="overflow-x-auto"><table class="w-full text-xs" style="border-collapse:collapse;min-width:1180px">
       <thead><tr class="text-slate-400 border-b" style="border-color:#e2e8f0">
-        <th class="text-left px-3 py-1.5 font-semibold" style="width:17%">企業名</th>
-        <th class="text-left px-2 py-1.5 font-semibold" style="width:9%">FS担当者</th>
-        <th class="text-left px-2 py-1.5 font-semibold" style="width:10%">会社所有者</th>
-        <th class="text-left px-2 py-1.5 font-semibold" style="width:14%">再アップ判定</th>
-        <th class="text-left px-2 py-1.5 font-semibold" style="width:12%">前回ステージ</th>
-        <th class="text-left px-2 py-1.5 font-semibold" style="width:15%">前回失注理由</th>
-        <th class="text-left px-2 py-1.5 font-semibold" style="width:8%">導入先</th>
-        <th class="text-left px-2 py-1.5 font-semibold" style="width:8%">前回の連絡</th>
-        <th class="text-left px-2 py-1.5 font-semibold" style="width:7%">次回架電日</th>
+        <th class="text-left px-3 py-1.5 font-semibold" style="width:15%">企業名</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:8%">FS担当者</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:8%">会社所有者</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:9%">再アップ日</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:15%">次アクション</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:12%">再アップ判定</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:9%">前回ステージ</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:10%">未商談化理由</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:8%">前回失注理由</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:6%">導入先</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:6%">前回の連絡</th>
+        <th class="text-left px-2 py-1.5 font-semibold" style="width:6%">次回架電日</th>
       </tr></thead>
       <tbody>${list.map(r => `
         <tr class="border-b hover:bg-slate-50" style="border-color:#f1f5f9">
           <td class="px-3 py-1.5 font-semibold text-slate-700">${companyCell(r)}</td>
           <td class="px-2 py-1.5 text-slate-600">${esc(r.name)}</td>
           <td class="px-2 py-1.5 text-slate-600">${esc(r.isOwner) || '<span class="text-slate-300">－</span>'}</td>
+          <td class="px-2 py-1.5">${reupDateCell(r)}</td>
+          <td class="px-2 py-1.5">${actionCell(r)}</td>
           <td class="px-2 py-1.5">${judgePill(r)}</td>
           <td class="px-2 py-1.5">${stagePill(r)}</td>
+          <td class="px-2 py-1.5">${mishoshoCell(r)}</td>
           <td class="px-2 py-1.5 text-slate-500">${esc(r.lostReason) || '<span class="text-slate-300">－</span>'}</td>
           <td class="px-2 py-1.5 text-slate-600">${esc(r.nyusaki) || '<span class="text-slate-300">－</span>'}</td>
           <td class="px-2 py-1.5 text-slate-600 whitespace-nowrap">${esc(r.lastContact) || '<span class="text-slate-300">－</span>'}</td>
@@ -8780,7 +9514,58 @@ function renderECalReup() {
         </tr>`).join('')}
       </tbody>
     </table></div>`;
-  }).join('')}</div>`;
+
+  // ===== 従来の月グループ表示 =====
+  if (eReupGroupMode === 'month') {
+    body.innerHTML = `<div class="border rounded-lg overflow-hidden" style="border-color:#e2e8f0">${sortedKeys.map(key => {
+      const list = groups.get(key).slice().sort((a,b) => String(a.name).localeCompare(String(b.name),'ja'));
+      return `<div class="px-3 py-1.5 text-xs font-bold" style="background:#fef3c7;color:#92400e">🔁 ${ymLabel(key)}（${list.length}件）</div>${tableHtml(list)}`;
+    }).join('')}</div>
+    <div class="text-center mt-2">
+      <button onclick="toggleEReupGroupMode()" class="px-3 py-1.5 text-xs border rounded text-slate-500 hover:bg-slate-50">
+        <i class="ti ti-list-check"></i> 状態別表示に戻す
+      </button>
+    </div>`;
+    return;
+  }
+
+  // ===== 状態別4ブロック表示（既定） =====
+  const blocks = { now:[], input:[], wait:[], done:[] };
+  rows.forEach(r => { blocks[r._cls.block].push(r); });
+  // 「今すぐ」「入力・返却」は超過日数が大きい順（長く放置されたものを先頭に）
+  blocks.now.sort((a,b) => b._cls.over - a._cls.over);
+  blocks.input.sort((a,b) => b._cls.over - a._cls.over);
+  // 「待機中」は再アップ日/架電日が近い順
+  const _waitKey = (r) => {
+    const nc = r.nextCallD instanceof Date ? r.nextCallD.getTime() : null;
+    const rd = r.reupDate instanceof Date ? r.reupDate.getTime() : null;
+    return nc || rd || Infinity;
+  };
+  blocks.wait.sort((a,b) => _waitKey(a) - _waitKey(b));
+  blocks.done.sort((a,b) => (b.reupDate ? b.reupDate.getTime() : 0) - (a.reupDate ? a.reupDate.getTime() : 0));
+
+  body.innerHTML = REUP_BLOCK_DEFS.map(def => {
+    const list = blocks[def.key];
+    const open = !!eReupBlockOpen[def.key];
+    const arrow = open ? '▾' : '▸';
+    return `
+    <div class="border rounded-lg overflow-hidden mb-3" style="border-color:#e2e8f0">
+      <div onclick="toggleEReupBlock('${def.key}')" class="px-3 py-2 text-xs font-bold cursor-pointer select-none flex items-center gap-2"
+           style="background:${def.bg};color:${def.fg}" title="クリックで開閉">
+        <span style="width:12px;display:inline-block">${arrow}</span>
+        <span>${def.label}</span>
+        <span class="font-bold">${list.length}件</span>
+        <span class="ml-auto text-[10px] font-normal" style="opacity:.75">${def.hint}</span>
+      </div>
+      ${open ? (list.length ? tableHtml(list)
+        : '<div class="text-center py-6 text-slate-400 text-xs">該当する案件はありません</div>') : ''}
+    </div>`;
+  }).join('') + `
+    <div class="text-center mt-1">
+      <button onclick="toggleEReupGroupMode()" class="px-3 py-1.5 text-xs border rounded text-slate-500 hover:bg-slate-50">
+        <i class="ti ti-calendar"></i> 月グループ表示に切替（従来の並び・${sortedKeys.length}グループ）
+      </button>
+    </div>`;
 }
 
 // ============================================================
@@ -9351,8 +10136,8 @@ function openIsMetricDetail(memberArg, kind, label) {
     const product = d.product || '-';
     const hubUrl = d.hubspotId ? `https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}` : null;
     const companyHtml = hubUrl
-      ? `<a href="${hubUrl}" target="_blank" rel="noopener" class="font-semibold hover:underline" style="color:${meta.color}">${company}</a>`
-      : `<span class="font-semibold" style="color:${meta.color}">${company}</span>`;
+      ? `<a href="${hubUrl}" target="_blank" rel="noopener" class="font-semibold hover:underline" style="color:${meta.color}">${_escapeHtml(company)}</a>`
+      : `<span class="font-semibold" style="color:${meta.color}">${_escapeHtml(company)}</span>`;
 
     if (kind === 'apo') {
       // 企業名｜リスケ状態
@@ -9369,7 +10154,7 @@ function openIsMetricDetail(memberArg, kind, label) {
         const close = _closeDateOf(d);
         const lt = _calcLeadTimeDays(d.appointDate, close);
         const ltStr = lt === 0 ? '実施後直後' : (lt != null ? `${_fmtMd(d.appointDate)}〜${_fmtMd(close)} (${lt}日)` : '-');
-        return `<li class="py-1">${companyHtml} <span class="text-slate-400">｜</span> <span class="text-slate-600">${product}</span> <span class="text-slate-400">｜</span> <span class="text-slate-500">${ltStr}</span> <span class="text-slate-400">｜</span> <span class="text-rose-600">導入先: ${d.nyusaki || '-'}</span></li>`;
+        return `<li class="py-1">${companyHtml} <span class="text-slate-400">｜</span> <span class="text-slate-600">${product}</span> <span class="text-slate-400">｜</span> <span class="text-slate-500">${ltStr}</span> <span class="text-slate-400">｜</span> <span class="text-rose-600">導入先: ${_escapeHtml(d.nyusaki || '-')}</span></li>`;
       }
       // D以上（パイプライン中）: 企業名｜検討サービス
       return `<li class="py-1">${companyHtml} <span class="text-slate-400">｜</span> <span class="text-slate-600">${product}</span></li>`;
@@ -9380,7 +10165,7 @@ function openIsMetricDetail(memberArg, kind, label) {
         const close = _closeDateOf(d);
         const lt = _calcLeadTimeDays(apo, close);
         const ltStr = lt === 0 ? '実施後直後' : (lt != null ? `${_fmtMd(apo)}〜${_fmtMd(close)} (${lt}日)` : '-');
-        return `<li class="py-1">${companyHtml} <span class="text-slate-400">｜</span> <span class="text-slate-600">${product}</span> <span class="text-slate-400">｜</span> <span class="text-slate-500">${ltStr}</span> <span class="text-slate-400">｜</span> <span class="text-rose-600">導入先: ${d.nyusaki || '-'}</span></li>`;
+        return `<li class="py-1">${companyHtml} <span class="text-slate-400">｜</span> <span class="text-slate-600">${product}</span> <span class="text-slate-400">｜</span> <span class="text-slate-500">${ltStr}</span> <span class="text-slate-400">｜</span> <span class="text-rose-600">導入先: ${_escapeHtml(d.nyusaki || '-')}</span></li>`;
       } else {
         const lt = _calcLeadTimeDays(apo, d.yomiDecidedDate);
         const ltStr = lt === 0 ? '実施後直後' : (lt != null ? `${_fmtMd(apo)}〜${_fmtMd(d.yomiDecidedDate)} (${lt}日)` : '-');
@@ -9588,15 +10373,15 @@ function _renderPastWonBody() {
     const c = _pastWonClassify(d);
     const hubUrl = d.hubspotId ? `https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}` : null;
     const companyHtml = hubUrl
-      ? `<a href="${hubUrl}" target="_blank" rel="noopener" class="font-semibold hover:underline" style="color:#10b981">${d.company || '?'}</a>`
-      : `<span class="font-semibold" style="color:#10b981">${d.company || '?'}</span>`;
+      ? `<a href="${hubUrl}" target="_blank" rel="noopener" class="font-semibold hover:underline" style="color:#10b981">${_escapeHtml(d.company || '?')}</a>`
+      : `<span class="font-semibold" style="color:#10b981">${_escapeHtml(d.company || '?')}</span>`;
     const badgeLabel = c.fy ? `${c.label}(${c.fy})` : c.label;
     const badge = `<span class="rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap" style="background:${c.bg};color:${c.color}">${badgeLabel}</span>`;
     const closeMonth = d.month || '-';
     return `<tr class="border-b" style="border-color:#f1f5f9">
       <td style="padding:6px 8px;font-size:12px;">${companyHtml}</td>
       <td style="padding:6px 8px;font-size:11px;color:#475569;white-space:nowrap;">${closeMonth}</td>
-      <td style="padding:6px 8px;font-size:11px;color:#475569;white-space:nowrap;">${d.leadSource || '-'}</td>
+      <td style="padding:6px 8px;font-size:11px;color:#475569;white-space:nowrap;">${_escapeHtml(d.leadSource || '-')}</td>
       <td style="padding:6px 8px;font-size:11px;color:#475569;white-space:nowrap;">${d.product || '-'}</td>
       <td style="padding:6px 8px;text-align:center;">${badge}</td>
       <td style="padding:6px 8px;font-size:11px;color:#475569;">${mgmtFor(d)}</td>
@@ -9829,11 +10614,11 @@ function _renderReschedBody() {
     const appStr = fmtJpDate(d.appointDate)    || '<span style="color:#94a3b8;">—</span>';
     const hubUrl = d.hubspotId ? `https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}` : null;
     const companyHtml = hubUrl
-      ? `<a href="${hubUrl}" target="_blank" rel="noopener" class="font-semibold hover:underline" style="color:#dc2626">${d.company || '?'}</a>`
-      : `<span class="font-semibold" style="color:#dc2626">${d.company || '?'}</span>`;
+      ? `<a href="${hubUrl}" target="_blank" rel="noopener" class="font-semibold hover:underline" style="color:#dc2626">${_escapeHtml(d.company || '?')}</a>`
+      : `<span class="font-semibold" style="color:#dc2626">${_escapeHtml(d.company || '?')}</span>`;
     return `<tr style="border-bottom:1px solid #f1f5f9;">
       <td style="padding:6px 8px;font-size:12px;">${companyHtml}</td>
-      <td style="padding:6px 8px;font-size:11px;color:#475569;white-space:nowrap;">${d.leadSource || '-'}</td>
+      <td style="padding:6px 8px;font-size:11px;color:#475569;white-space:nowrap;">${_escapeHtml(d.leadSource || '-')}</td>
       <td style="padding:6px 8px;font-size:11px;color:#475569;white-space:nowrap;">${d.product || '-'}</td>
       <td style="padding:6px 8px;font-size:11px;text-align:right;">${ltStr}</td>
       <td style="padding:6px 8px;font-size:11px;color:#475569;text-align:center;white-space:nowrap;">${apoStr}</td>
@@ -10051,7 +10836,7 @@ function renderIsCalendar() {
       simBadge = `<span class="rounded-full px-1" style="background:#f1f5f9;color:#94a3b8" title="業種「${indDisp}」に該当する企業がマスタ${masterCount}件中にありません">該当なし(${indDisp}/マスタ${masterCount})</span>`;
     }
     return `<div class="rounded p-1 mb-0.5 text-[10px] leading-tight" style="background:${cardBg};border-left:3px solid ${cardBorder}">
-      <a ${hubUrl} class="font-medium block truncate hover:underline" style="${nameStyle}" title="${d.company}${d.stage ? ' / ステージ:' + d.stage : ''}">${d.company || '-'}</a>
+      <a ${hubUrl} class="font-medium block truncate hover:underline" style="${nameStyle}" title="${_escapeHtml(d.company)}${d.stage ? ' / ステージ:' + d.stage : ''}">${_escapeHtml(d.company || '-')}</a>
       <div class="flex items-center justify-between mt-0.5 flex-wrap gap-0.5">
         <span class="font-semibold" style="color:${lost ? '#94a3b8' : c.main}">${creatorShort || '?'}</span>
         <div class="flex items-center gap-0.5 flex-wrap">
@@ -10134,7 +10919,7 @@ function renderIsCalendar() {
         const creatorShort = d.recordCreator ? d.recordCreator.split(' ')[0] : '';
         const hubUrl = d.hubspotId ? `href="https://app.hubspot.com/contacts/23871469/record/0-3/${d.hubspotId}" target="_blank" rel="noopener"` : '';
         return `<div class="rounded-lg p-2 text-[10px] border" style="background:${c.bg};border-color:${c.main};min-width:120px">
-          <a ${hubUrl} class="font-medium block truncate hover:underline" style="color:#1e293b" title="${d.company}">${d.company || '-'}</a>
+          <a ${hubUrl} class="font-medium block truncate hover:underline" style="color:#1e293b" title="${_escapeHtml(d.company)}">${_escapeHtml(d.company || '-')}</a>
           <div class="flex items-center gap-1 mt-0.5">
             <span class="font-semibold" style="color:${c.main}">${creatorShort || '?'}</span>
             ${d.product ? `<span class="rounded-full px-1" style="background:${pb.bg};color:${pb.text}">${d.product}</span>` : ''}
@@ -10286,7 +11071,8 @@ function deleteSnapshot(id) {
     if (snapshotView && snapshotView.id === id) snapshotView = null;
     persistSnapshots(); // localStorageにも反映
     render();
-    await gasPost('deleteSnapshot', { id });
+    // ★ 2026-08-12(B2): サーバー側でも再照合させるためハッシュを添付
+    await gasPost('deleteSnapshot', { id, passHash: _deletePassHash });
   });
 }
 function clearAllSnapshots() {
@@ -10297,7 +11083,7 @@ function clearAllSnapshots() {
     snapshots = []; snapshotView = null;
     persistSnapshots(); // localStorageからも削除
     render();
-    for (const id of ids) { await gasPost('deleteSnapshot', { id }); }
+    for (const id of ids) { await gasPost('deleteSnapshot', { id, passHash: _deletePassHash }); }
   });
 }
 
@@ -10659,7 +11445,7 @@ function showCompareModal(snaps) {
     const nameShort = (d.name || '').split(' ')[0] || '?';
     return `<div class="flex items-center gap-2 px-2 py-1.5 rounded text-[11px]" style="background:${bg}">
       <div class="flex items-center gap-0.5 shrink-0">${trajectoryBadges(traj)}</div>
-      <a ${hub} class="flex-1 truncate font-medium hover:underline" style="color:#1e293b" title="${d.company||''}">${d.company||'?'}</a>
+      <a ${hub} class="flex-1 truncate font-medium hover:underline" style="color:#1e293b" title="${_escapeHtml(d.company||'')}">${_escapeHtml(d.company||'?')}</a>
       ${dateChangeHtml}
       <span class="text-[10px] font-semibold shrink-0 px-1.5 py-0.5 rounded-full" style="background:${mColor}20;color:${mColor}">${nameShort}</span>
     </div>`;
