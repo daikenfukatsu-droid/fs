@@ -901,9 +901,9 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
 
       <!-- ★ 2026-08-20 変更: 「担当者別 1か月推移（フェーズ上昇）」は独立カードをやめ、
            「担当者」トグルを開いた時だけ中に展開する（閉じている間は縦に長くならない） -->
-      <div id="percTrendPanel" class="hidden ml-5 mr-1 mt-1 px-3 py-3 rounded-lg" style="background:#faf5ff;border:1px solid #ddd6fe;">
+      <div id="percTrendPanel" class="hidden ml-5 mr-1 mt-1 px-3 py-3 rounded-lg" style="background:#f5f9fe;border:1px solid #c3d9f2;">
         <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
-          <p class="text-[11px] font-bold" style="color:#6d28d9;"><i class="ti ti-trending-up"></i> 担当者別 1か月推移（フェーズ上昇）</p>
+          <p class="text-[11px] font-bold" style="color:#1961B5;"><i class="ti ti-trending-up"></i> 担当者別 1か月推移（フェーズ上昇）</p>
           <span id="percTrendRangeLabel" class="text-[10px] text-slate-400"></span>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -916,7 +916,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
               <p class="text-[11px] font-semibold text-slate-600">週次推移（直近8週）</p>
               <select id="percTrendMemberSelect" onchange="setPercTrendMember(this.value)"
                 class="text-[11px] font-semibold rounded-lg px-2 py-1 cursor-pointer"
-                style="background:#ffffff;border:1px solid #ddd6fe;color:#334155;outline:none;">
+                style="background:#ffffff;border:1px solid #c3d9f2;color:#334155;outline:none;">
                 <option value="">全体</option>
               </select>
             </div>
@@ -3822,7 +3822,7 @@ function renderPerceptionActivity() {
     <div onclick="toggleIsAccTier1()" class="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer" style="background:#e0f2fe;">
       <span class="text-[13px] font-bold" style="color:#075985;">${tier1Icon} 担当者</span>
       <span class="text-[10px] text-right" style="color:#0891b2;">${owners.length}名 ・ ${periodLabel}のフェーズ上昇 ${goalCount}件<br>
-        <span style="color:#7c3aed;">${_isAccTier1Open ? '1か月推移＋担当者別を表示中' : '開くと 1か月推移＋担当者別'}</span></span>
+        <span style="color:#1961B5;">${_isAccTier1Open ? '1か月推移＋担当者別を表示中' : '開くと 1か月推移＋担当者別'}</span></span>
     </div>`;
   const headerEl = document.getElementById('isCombinedHeader');
   if (headerEl) headerEl.innerHTML = headerHtml;
@@ -3951,7 +3951,7 @@ function closePercTransModal() {
 //   右: 週次推移（全体 or 担当者1名）
 //   ※ 上部の期間セレクト(_percActivityPeriod)とは独立。常に直近30日/8週を見る。
 // ============================================================
-const PERC_TREND_COLOR = '#7c3aed'; // 商談化（ゴール）と同系の独自色
+const PERC_TREND_COLOR = '#1961B5'; // ★ 2026-08-20 変更: 指定の青（旧: 紫 #7c3aed）
 const PERC_TREND_DAYS  = 30;
 const PERC_TREND_WEEKS = 8;
 let percTrendMemberChart = null, percTrendWeeklyChart = null;
@@ -4097,8 +4097,8 @@ function _drawPercTrendWeeklyChart(buckets) {
         label: percTrendMember || '全体',
         data: buckets.map(b => b.count),
         borderColor: PERC_TREND_COLOR,
-        backgroundColor: 'rgba(124,58,237,0.10)',
-        pointBackgroundColor: buckets.map(b => b.ongoing ? '#c4b5fd' : PERC_TREND_COLOR),
+        backgroundColor: 'rgba(25,97,181,0.10)',
+        pointBackgroundColor: buckets.map(b => b.ongoing ? '#9dc0e8' : PERC_TREND_COLOR),
         pointRadius: 4, borderWidth: 2, fill: true, tension: 0.3,
         segment: { borderDash: (c) => (buckets[c.p1DataIndex] && buckets[c.p1DataIndex].ongoing) ? [5, 4] : undefined }
       }]
