@@ -865,7 +865,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
     <!-- 期間表示 -->
     <p class="text-[11px] text-slate-400 mb-3">期間: <span id="isPeriodLabel" class="font-semibold text-slate-600">—</span> ／ <span class="text-emerald-600">独立</span>: FSタブとは別に切替可能</p>
 
-    <!-- ★ 2026-06-16 統合: IS保有リスト ＆ 商談化転換元（3段階アコーディオン） -->
+    <!-- ★ 2026-06-16 統合 / 2026-08-20 拡張: IS保有リスト ＆ フェーズ上昇（担当者トグル内に 1か月推移も格納） -->
     <div class="bg-white rounded-xl shadow-sm p-4 mb-4 border-l-4 relative" style="border-left-color:#0ea5e9">
       <button onclick="openIsListModal()"
         class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-500 text-sky-600 hover:bg-sky-50">詳細</button>
@@ -896,35 +896,38 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
         </div>
         <p class="text-[10px] text-slate-400 mt-1">担当者ごとの保有数を可視化（会社IDで重複統合）</p>
       </div>
-      <!-- 3段階アコーディオン: 担当者 → 担当者名(保有数) → 商談化転換元バー -->
-      <div id="isCombinedBody"></div>
-      <p class="text-[10px] text-slate-400 mt-2">※「担当者」を開くと担当者別の保有数、担当者名を開くとその人の「フェーズ上昇（到達段階別）」バーが表示されます。バーの色をクリックでその段階に上がった企業一覧。データ収集を開始したばかりのため、数日〜数週間は数値が少なく表示されます。</p>
-    </div>
+      <!-- 4段階アコーディオン: 担当者 → 1か月推移 → 担当者名(保有数) → フェーズ上昇バー -->
+      <div id="isCombinedHeader"></div>
 
-    <!-- ★ 2026-08-10 追加: 担当者別 1か月推移（フェーズ上昇） -->
-    <div class="bg-white rounded-xl shadow-sm p-4 mb-4 border-l-4" style="border-left-color:#7c3aed">
-      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <p class="text-xs text-slate-500"><i class="ti ti-trending-up"></i> 担当者別 1か月推移（フェーズ上昇）</p>
-        <span id="percTrendRangeLabel" class="text-[10px] text-slate-400"></span>
-      </div>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div>
-          <p class="text-[11px] font-semibold text-slate-600 mb-1">直近30日の上昇件数（前30日比）</p>
-          <div style="position:relative;height:320px"><canvas id="percTrendMemberChart"></canvas></div>
+      <!-- ★ 2026-08-20 変更: 「担当者別 1か月推移（フェーズ上昇）」は独立カードをやめ、
+           「担当者」トグルを開いた時だけ中に展開する（閉じている間は縦に長くならない） -->
+      <div id="percTrendPanel" class="hidden ml-5 mr-1 mt-1 px-3 py-3 rounded-lg" style="background:#faf5ff;border:1px solid #ddd6fe;">
+        <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+          <p class="text-[11px] font-bold" style="color:#6d28d9;"><i class="ti ti-trending-up"></i> 担当者別 1か月推移（フェーズ上昇）</p>
+          <span id="percTrendRangeLabel" class="text-[10px] text-slate-400"></span>
         </div>
-        <div>
-          <div class="flex items-center justify-between mb-1 flex-wrap gap-1">
-            <p class="text-[11px] font-semibold text-slate-600">週次推移（直近8週）</p>
-            <select id="percTrendMemberSelect" onchange="setPercTrendMember(this.value)"
-              class="text-[11px] font-semibold rounded-lg px-2 py-1 cursor-pointer"
-              style="background:#f1f5f9;border:1px solid #e2e8f0;color:#334155;outline:none;">
-              <option value="">全体</option>
-            </select>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div>
+            <p class="text-[11px] font-semibold text-slate-600 mb-1">直近30日の上昇件数（前30日比）</p>
+            <div style="position:relative;height:320px"><canvas id="percTrendMemberChart"></canvas></div>
           </div>
-          <div style="position:relative;height:320px"><canvas id="percTrendWeeklyChart"></canvas></div>
+          <div>
+            <div class="flex items-center justify-between mb-1 flex-wrap gap-1">
+              <p class="text-[11px] font-semibold text-slate-600">週次推移（直近8週）</p>
+              <select id="percTrendMemberSelect" onchange="setPercTrendMember(this.value)"
+                class="text-[11px] font-semibold rounded-lg px-2 py-1 cursor-pointer"
+                style="background:#ffffff;border:1px solid #ddd6fe;color:#334155;outline:none;">
+                <option value="">全体</option>
+              </select>
+            </div>
+            <div style="position:relative;height:320px"><canvas id="percTrendWeeklyChart"></canvas></div>
+          </div>
         </div>
+        <p class="text-[10px] text-slate-400 mt-2">※ 遷移ログ（直近200日分）から集計。左の横棒は直近30日の上昇件数で、右の括弧内が前30日比。上部の期間切替（デイリー／今週など）とは独立して常に直近30日を表示します。</p>
       </div>
-      <p class="text-[10px] text-slate-400 mt-2">※ 遷移ログ（直近200日分）から集計。左の横棒は直近30日の上昇件数で、右の括弧内が前30日比。上部の期間切替（デイリー／今週など）とは独立して常に直近30日を表示します。</p>
+
+      <div id="isCombinedBody"></div>
+      <p class="text-[10px] text-slate-400 mt-2">※「担当者」を開くと〈担当者別 1か月推移（フェーズ上昇）〉と担当者別の保有数、担当者名を開くとその人の「フェーズ上昇（到達段階別）」バーが表示されます。バーの色をクリックでその段階に上がった企業一覧。データ収集を開始したばかりのため、数日〜数週間は数値が少なく表示されます。</p>
     </div>
 
     <!-- ★ 2026-06-15 追加: パーセプション遷移ドリルダウンモーダル -->
@@ -3748,6 +3751,7 @@ function _escHtmlPerc(s) { return _escapeHtml(String(s == null ? '' : s)); }
 // ★ 2026-06-16 統合: 3段階アコーディオンの開閉状態
 //   段階1=「担当者」見出し / 段階3=商談化転換元バーを開いている担当者（1人ずつ）
 // ★ 2026-08-10 変更: 段階1の初期状態を「閉じる」に（開きっぱなしで縦に長くなるため）
+// ★ 2026-08-20 変更: 段階1を開くと「担当者別 1か月推移（フェーズ上昇）」パネルも一緒に展開
 let _isAccTier1Open = false;
 let _isAccOpenOwner = null;
 
@@ -3759,6 +3763,28 @@ function toggleIsAccTier1() {
 function toggleIsAccOwner(owner) {
   _isAccOpenOwner = (_isAccOpenOwner === owner) ? null : owner; // 1人ずつ（他を閉じる）
   renderPerceptionActivity();
+}
+
+// ★ 2026-08-20 追加: 「担当者」トグルの開閉に合わせて 1か月推移パネルを出し入れする
+//   Chart.js は display:none の中では幅0で描かれてしまうため、
+//   「表示にしてから描画」「閉じるときは破棄」の順を守る。
+function _syncPercTrendPanel() {
+  const panel = document.getElementById('percTrendPanel');
+  if (!panel) return;
+  if (_isAccTier1Open) {
+    const wasHidden = panel.classList.contains('hidden');
+    panel.classList.remove('hidden');
+    // 開いた瞬間（または未描画）だけ描画。表示直後はレイアウト未確定なので次フレームで（幅0対策）
+    if (wasHidden || !percTrendMemberChart) {
+      requestAnimationFrame(() => {
+        try { renderPercMonthlyTrend(); } catch (e) { console.error('renderPercMonthlyTrend error:', e); }
+      });
+    }
+  } else {
+    panel.classList.add('hidden');
+    if (percTrendMemberChart) { percTrendMemberChart.destroy(); percTrendMemberChart = null; }
+    if (percTrendWeeklyChart) { percTrendWeeklyChart.destroy(); percTrendWeeklyChart = null; }
+  }
 }
 
 // 統合カード本体（KPI補足＋3段階アコーディオン）を描画
@@ -3790,13 +3816,21 @@ function renderPerceptionActivity() {
   trans.forEach(t => { if (t.owner) ownerSet.add(t.owner); });
   const owners = [...ownerSet].sort((a, b) => a.localeCompare(b, 'ja'));
 
-  // ===== 段階1: 「担当者」見出し =====
+  // ===== 段階1: 「担当者」見出し =====（トグル内に 1か月推移 → 担当者別リストを展開）
   const tier1Icon = _isAccTier1Open ? '▾' : '▸';
-  let html = `
+  const headerHtml = `
     <div onclick="toggleIsAccTier1()" class="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer" style="background:#e0f2fe;">
       <span class="text-[13px] font-bold" style="color:#075985;">${tier1Icon} 担当者</span>
-      <span class="text-[10px]" style="color:#0891b2;">${owners.length}名 ・ ${periodLabel}のフェーズ上昇 ${goalCount}件</span>
+      <span class="text-[10px] text-right" style="color:#0891b2;">${owners.length}名 ・ ${periodLabel}のフェーズ上昇 ${goalCount}件<br>
+        <span style="color:#7c3aed;">${_isAccTier1Open ? '1か月推移＋担当者別を表示中' : '開くと 1か月推移＋担当者別'}</span></span>
     </div>`;
+  const headerEl = document.getElementById('isCombinedHeader');
+  if (headerEl) headerEl.innerHTML = headerHtml;
+
+  // 担当者トグル内の「担当者別 1か月推移」パネルを開閉（閉じている間はチャートを破棄）
+  _syncPercTrendPanel();
+
+  let html = headerEl ? '' : headerHtml; // 旧構成（ヘッダ用コンテナ無し）へのフォールバック
 
   if (_isAccTier1Open) {
     if (owners.length === 0) {
@@ -3938,6 +3972,10 @@ function _percTrendDate(t) {
 function _percTrendMd(d) { return `${d.getMonth() + 1}/${d.getDate()}`; }
 
 function renderPercMonthlyTrend() {
+  // 「担当者」トグルが閉じている間、および IS タブ自体が非表示の間は描画しない
+  //   （display:none の中で描くと幅0のチャートになるため。表示された時に再度呼ばれる）
+  const panel = document.getElementById('percTrendPanel');
+  if (panel && (panel.classList.contains('hidden') || panel.offsetParent === null)) return;
   const memberEl = document.getElementById('percTrendMemberChart');
   const weeklyEl = document.getElementById('percTrendWeeklyChart');
   if (!memberEl && !weeklyEl) return;
@@ -5254,7 +5292,8 @@ function renderIsKpis() {
   // ⑥ パーセプションフロー活動（上昇数・アポ転換元）（期間に依存しないので毎回更新）
   renderPerceptionActivity();
 
-  // ⑦ ★ 2026-08-10 追加: 担当者別 1か月推移（上部の期間切替に依存せず常に直近30日）
+  // ⑦ ★ 2026-08-10 追加 / 2026-08-20 変更: 担当者別 1か月推移
+  //    「担当者」トグルを開いている時だけ描画（上部の期間切替に依存せず常に直近30日）
   try { renderPercMonthlyTrend(); } catch (e) { console.error('renderPercMonthlyTrend error:', e); }
 }
 
