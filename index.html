@@ -865,7 +865,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
     <!-- 期間表示 -->
     <p class="text-[11px] text-slate-400 mb-3">期間: <span id="isPeriodLabel" class="font-semibold text-slate-600">—</span> ／ <span class="text-emerald-600">独立</span>: FSタブとは別に切替可能</p>
 
-    <!-- ★ 2026-06-16 統合 / 2026-08-20 拡張: IS保有リスト ＆ フェーズ上昇（担当者トグル内に 1か月推移も格納） -->
+    <!-- ★ 2026-06-16 統合: IS保有リスト ＆ 商談化転換元（3段階アコーディオン） -->
     <div class="bg-white rounded-xl shadow-sm p-4 mb-4 border-l-4 relative" style="border-left-color:#0ea5e9">
       <button onclick="openIsListModal()"
         class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-500 text-sky-600 hover:bg-sky-50">詳細</button>
@@ -896,38 +896,35 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
         </div>
         <p class="text-[10px] text-slate-400 mt-1">担当者ごとの保有数を可視化（会社IDで重複統合）</p>
       </div>
-      <!-- 4段階アコーディオン: 担当者 → 1か月推移 → 担当者名(保有数) → フェーズ上昇バー -->
-      <div id="isCombinedHeader"></div>
-
-      <!-- ★ 2026-08-20 変更: 「担当者別 1か月推移（フェーズ上昇）」は独立カードをやめ、
-           「担当者」トグルを開いた時だけ中に展開する（閉じている間は縦に長くならない） -->
-      <div id="percTrendPanel" class="hidden ml-5 mr-1 mt-1 px-3 py-3 rounded-lg" style="background:#f5f9fe;border:1px solid #c3d9f2;">
-        <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
-          <p class="text-[11px] font-bold" style="color:#1961B5;"><i class="ti ti-trending-up"></i> 担当者別 1か月推移（フェーズ上昇）</p>
-          <span id="percTrendRangeLabel" class="text-[10px] text-slate-400"></span>
-        </div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div>
-            <p class="text-[11px] font-semibold text-slate-600 mb-1">直近30日の上昇件数（前30日比）</p>
-            <div style="position:relative;height:320px"><canvas id="percTrendMemberChart"></canvas></div>
-          </div>
-          <div>
-            <div class="flex items-center justify-between mb-1 flex-wrap gap-1">
-              <p class="text-[11px] font-semibold text-slate-600">週次推移（直近8週）</p>
-              <select id="percTrendMemberSelect" onchange="setPercTrendMember(this.value)"
-                class="text-[11px] font-semibold rounded-lg px-2 py-1 cursor-pointer"
-                style="background:#ffffff;border:1px solid #c3d9f2;color:#334155;outline:none;">
-                <option value="">全体</option>
-              </select>
-            </div>
-            <div style="position:relative;height:320px"><canvas id="percTrendWeeklyChart"></canvas></div>
-          </div>
-        </div>
-        <p class="text-[10px] text-slate-400 mt-2">※ 遷移ログ（直近200日分）から集計。左の横棒は直近30日の上昇件数で、右の括弧内が前30日比。上部の期間切替（デイリー／今週など）とは独立して常に直近30日を表示します。</p>
-      </div>
-
+      <!-- 3段階アコーディオン: 担当者 → 担当者名(保有数) → 商談化転換元バー -->
       <div id="isCombinedBody"></div>
-      <p class="text-[10px] text-slate-400 mt-2">※「担当者」を開くと〈担当者別 1か月推移（フェーズ上昇）〉と担当者別の保有数、担当者名を開くとその人の「フェーズ上昇（到達段階別）」バーが表示されます。バーの色をクリックでその段階に上がった企業一覧。データ収集を開始したばかりのため、数日〜数週間は数値が少なく表示されます。</p>
+      <p class="text-[10px] text-slate-400 mt-2">※「担当者」を開くと担当者別の保有数、担当者名を開くとその人の「フェーズ上昇（到達段階別）」バーが表示されます。バーの色をクリックでその段階に上がった企業一覧。データ収集を開始したばかりのため、数日〜数週間は数値が少なく表示されます。</p>
+    </div>
+
+    <!-- ★ 2026-08-10 追加: 担当者別 1か月推移（フェーズ上昇） -->
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-4 border-l-4" style="border-left-color:#7c3aed">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <p class="text-xs text-slate-500"><i class="ti ti-trending-up"></i> 担当者別 1か月推移（フェーズ上昇）</p>
+        <span id="percTrendRangeLabel" class="text-[10px] text-slate-400"></span>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div>
+          <p class="text-[11px] font-semibold text-slate-600 mb-1">直近30日の上昇件数（前30日比）</p>
+          <div style="position:relative;height:320px"><canvas id="percTrendMemberChart"></canvas></div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1 flex-wrap gap-1">
+            <p class="text-[11px] font-semibold text-slate-600">週次推移（直近8週）</p>
+            <select id="percTrendMemberSelect" onchange="setPercTrendMember(this.value)"
+              class="text-[11px] font-semibold rounded-lg px-2 py-1 cursor-pointer"
+              style="background:#f1f5f9;border:1px solid #e2e8f0;color:#334155;outline:none;">
+              <option value="">全体</option>
+            </select>
+          </div>
+          <div style="position:relative;height:320px"><canvas id="percTrendWeeklyChart"></canvas></div>
+        </div>
+      </div>
+      <p class="text-[10px] text-slate-400 mt-2">※ 遷移ログ（直近200日分）から集計。左の横棒は直近30日の上昇件数で、右の括弧内が前30日比。上部の期間切替（デイリー／今週など）とは独立して常に直近30日を表示します。</p>
     </div>
 
     <!-- ★ 2026-06-15 追加: パーセプション遷移ドリルダウンモーダル -->
@@ -2193,14 +2190,7 @@ async function applyGasSnapshots(gasSnaps) {
 //   取得できたらマージして再描画。失敗しても本体表示には影響させない。
 async function _loadSnapshotsLazy(useFresh) {
   try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 180000);
-    const url = GAS_URL + '?token=' + GAS_TOKEN + '&only=snapshots' + (useFresh ? '&fresh=1' : '');
-    const r = await fetch(url, { signal: ctrl.signal });
-    clearTimeout(timer);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const j = await r.json();
-    if (!j || !j.ok) throw new Error((j && j.error) || 'snapshots応答エラー');
+    const j = await _fetchGasOnly('snapshots', useFresh, 180000, 'スナップショット');
     await applyGasSnapshots(unpackSnapshotsV2(j.snapshotsV2));
     render(); // スナップショット依存のビュー（滞留・推移など）をここで反映
   } catch (e) {
@@ -2249,16 +2239,72 @@ function unpackDealIndexV2(v2) {
   return out;
 }
 
+// ★ 2026-08-13 追加: 後追い取得を「直列」に流すためのキュー。
+// ------------------------------------------------------------
+//  これまではページを開いた瞬間に
+//    FS本体(14MB) / IS本体 / snapshots(巨大) / dealIndex / weekly / landing(30秒ポーリング)
+//  を一斉に投げていた。GAS は同一スクリプトの同時実行数に上限があり、
+//  あふれた分が script.googleusercontent.com 側で 404 を返す。
+//  これが「取得エラー: HTTP 404」の根本原因だったため、
+//  後追い取得は1本ずつ順番に実行して同時実行数を抑える。
+let _lazyQueue = Promise.resolve();
+function _enqueueLazy(fn) {
+  _lazyQueue = _lazyQueue
+    .then(() => new Promise(r => setTimeout(r, 400)))   // 直前の実行が終わってから少し間を置く
+    .then(fn)
+    .catch(() => {});                                   // 1本失敗しても後続は流す
+  return _lazyQueue;
+}
+
+// ★ 2026-08-13 追加: 後追い取得（?only=...）共通のリトライ付きフェッチ。
+//   これらは本体と同じく script.googleusercontent.com への転送で一時的に404を返すことがある。
+//   本体だけリトライしても、スナップショット・判定インデックス・週次が欠けたままになるため共通化した。
+//   タイムアウト(AbortError)はリトライしない。
+async function _fetchGasOnly(onlyKey, useFresh, timeoutMs, label) {
+  const url = GAS_URL + '?token=' + GAS_TOKEN + '&only=' + onlyKey + (useFresh ? '&fresh=1' : '');
+  const WAITS = [0, 1500, 4000];
+  let lastErr = null;
+  for (let i = 0; i < WAITS.length; i++) {
+    if (WAITS[i] > 0) await new Promise(r => setTimeout(r, WAITS[i]));
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const r = await fetch(url, { signal: ctrl.signal });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const j = await r.json();
+      if (!j || !j.ok) throw new Error((j && j.error) || '応答エラー');
+      return j;
+    } catch (e) {
+      lastErr = e;
+      if (e.name === 'AbortError') break;
+      console.warn(`[${label}] ${i + 1}回目が失敗:`, e.message);
+    } finally { clearTimeout(timer); }
+  }
+  throw lastErr;
+}
+
+// ★ 2026-08-13 追加: 週次スナップショットの後追い取得。
+//   本体に含めると4.3MB超（週ごとに増加）で、本体が大きいほど
+//   GASの転送先が一時的に404を返しやすくなるため分離した。
+//   これを使うのは「週次トレンド」と「予実誤差モニター」だけなので、後から届いても支障がない。
+async function _loadWeeklyLazy(useFresh) {
+  try {
+    const j = await _fetchGasOnly('weekly', useFresh, 180000, '週次スナップショット');
+    weeklySnapshots = Array.isArray(j.weeklySnapshots) ? j.weeklySnapshots : [];
+    console.log('[週次スナップショット] 後追い取得:', weeklySnapshots.length);
+    // 週次トレンド／予実誤差を開いていれば、その場で描き直す
+    const modal = document.getElementById('chartDetailModal');
+    if (modal && !modal.classList.contains('hidden')) {
+      try { renderChartDetailTable('landing', 'chartDetailModal-body'); } catch (e) {}
+    }
+  } catch (e) {
+    console.warn('[週次スナップショット] 後追い取得に失敗（週次トレンドと予実誤差のみ影響）:', e);
+  }
+}
+
 async function _loadDealIndexLazy(useFresh) {
   try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 180000);
-    const url = GAS_URL + '?token=' + GAS_TOKEN + '&only=dealIndex' + (useFresh ? '&fresh=1' : '');
-    const r = await fetch(url, { signal: ctrl.signal });
-    clearTimeout(timer);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const j = await r.json();
-    if (!j || !j.ok) throw new Error((j && j.error) || 'dealIndex応答エラー');
+    const j = await _fetchGasOnly('dealIndex', useFresh, 180000, '判定インデックス');
     dealIndexAll = unpackDealIndexV2(j.dealIndexV2);
     if (dealIndexAll.length > 0) {
       // 再アップ判定に依存するビューだけ再描画（重い render() は呼ばない）
@@ -2368,17 +2414,40 @@ async function fetchFromSheets(silent = false, useFresh = !silent) {
 
   try {
     // FS GAS取得ヘルパー（180秒タイムアウト・トークン付き）。useFresh=true でキャッシュ無視の最新取得
+    // ★ 2026-08-13 修正: リトライを追加。
+    //   GASのWeb Appは /exec が script.googleusercontent.com へリダイレクトする2段構えで、
+    //   応答が大きいと転送先が単発で 404 を返すことがある（＝一時的な失敗）。
+    //   従来は初回ロードで1回失敗したら即エラー表示で諦めていたため、
+    //   ページを開くたびに「取得エラー: HTTP 404」が出ることがあった。
+    //   タイムアウト(AbortError)はリトライしない（180秒×回数で待たせないため）。
     const _fetchFsJson = async (useFresh) => {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 180000);
-      try {
-        const url = GAS_URL + '?token=' + GAS_TOKEN + (useFresh ? '&fresh=1' : '');
-        const r = await fetch(url, { signal: ctrl.signal });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const j = await r.json();
-        if (!j.ok) throw new Error(j.error || '取得失敗');
-        return j;
-      } finally { clearTimeout(timer); }
+      const url = GAS_URL + '?token=' + GAS_TOKEN + (useFresh ? '&fresh=1' : '');
+      const WAITS = [0, 1200, 3500];   // 1回目は即時、以降は1.2秒→3.5秒待って再試行
+      let lastErr = null;
+      for (let i = 0; i < WAITS.length; i++) {
+        if (WAITS[i] > 0) {
+          // FS欄だけに出す（setStatus はIS欄も書き換えてしまい、IS取得中の表示を消すため使わない）
+          if (!silent && status) {
+            status.textContent = `FSデータを再試行しています…(${i + 1}/${WAITS.length})`;
+            status.style.color = '#d97706';
+          }
+          await new Promise(r => setTimeout(r, WAITS[i]));
+        }
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 180000);
+        try {
+          const r = await fetch(url, { signal: ctrl.signal });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          const j = await r.json();
+          if (!j.ok) throw new Error(j.error || '取得失敗');
+          return j;
+        } catch (e) {
+          lastErr = e;
+          if (e.name === 'AbortError') break;                 // タイムアウトは再試行しない
+          console.warn(`[FS fetch] ${i + 1}回目が失敗:`, e.message);
+        } finally { clearTimeout(timer); }
+      }
+      throw lastErr;
     };
     // データ更新ボタン(useFresh=true)は fresh=1 で最新取得。GASが重く失敗した場合はキャッシュ版(fresh無し)へ
     // フォールバックし、直近データだけでも表示する（耐障害化）。初回オープン・自動ポーリングは常にキャッシュ版＝高速。
@@ -2409,7 +2478,7 @@ async function fetchFromSheets(silent = false, useFresh = !silent) {
     } else if (json.snapshotsLazy) {
       // ★ v4: 本体レスポンスには snapshots を含めない（本体を約7.5MBに収めてキャッシュを有効化）。
       //   画面を先に描画し、スナップショットは裏で取得してから該当ビューだけ再描画する。
-      _loadSnapshotsLazy(useFresh);
+      _enqueueLazy(() => _loadSnapshotsLazy(useFresh));
     }
 
     // ★ 2026-08-10 追加(A3): 再アップ判定インデックス（全セクション）も後追い取得。
@@ -2417,7 +2486,7 @@ async function fetchFromSheets(silent = false, useFresh = !silent) {
     if (json.dealIndexV2) {
       dealIndexAll = unpackDealIndexV2(json.dealIndexV2);
     } else if (json.dealIndexLazy) {
-      _loadDealIndexLazy(useFresh);
+      _enqueueLazy(() => _loadDealIndexLazy(useFresh));
     }
 
     // 受注率
@@ -2460,6 +2529,9 @@ async function fetchFromSheets(silent = false, useFresh = !silent) {
     if (Array.isArray(json.weeklySnapshots)) {
       weeklySnapshots = json.weeklySnapshots;
       console.log('[週次スナップショット] 取得件数:', weeklySnapshots.length);
+    } else if (json.weeklyLazy) {
+      // ★ 2026-08-13: 本体から分離したので後追いで取得する（旧GASはこのフラグを返さない）
+      _enqueueLazy(() => _loadWeeklyLazy(useFresh));
     } else {
       weeklySnapshots = [];
     }
@@ -2486,14 +2558,26 @@ async function fetchFromSheets(silent = false, useFresh = !silent) {
     if (IS_GAS_URL) {
       (async () => {
         try {
-          const ctrl = new AbortController();
-          // ★ 大量データ対応: 60秒タイムアウト（旧:20秒）
-          const timer = setTimeout(() => ctrl.abort(), 60000);
           const isUrl = IS_GAS_URL + '?token=' + IS_GAS_TOKEN + (useFresh ? '&fresh=1' : '');
-          const isRes  = await fetch(isUrl, { signal: ctrl.signal });
-          clearTimeout(timer);
-          if (!isRes.ok) throw new Error(`HTTP ${isRes.status}`);
-          const isJson = await isRes.json();
+          // ★ 2026-08-13 修正: FS側と同様にリトライを入れる（一時的な404で諦めない）
+          const IS_WAITS = [0, 1200, 3500];
+          let isJson = null, isLastErr = null;
+          for (let i = 0; i < IS_WAITS.length; i++) {
+            if (IS_WAITS[i] > 0) await new Promise(r => setTimeout(r, IS_WAITS[i]));
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 60000);
+            try {
+              const isRes = await fetch(isUrl, { signal: ctrl.signal });
+              if (!isRes.ok) throw new Error(`HTTP ${isRes.status}`);
+              isJson = await isRes.json();
+              break;
+            } catch (e) {
+              isLastErr = e;
+              if (e.name === 'AbortError') break;
+              console.warn(`[IS fetch] ${i + 1}回目が失敗:`, e.message);
+            } finally { clearTimeout(timer); }
+          }
+          if (!isJson) throw (isLastErr || new Error('IS取得失敗'));
           if (isJson.ok) {
             // ★ v3: 列指向形式（yesV2/noV2）で来たら従来のオブジェクト配列へ復元。
             //    旧GAS（yes/no）／新GAS（yesV2/noV2）どちらでも動くのでデプロイ順序を問わない。
@@ -3401,6 +3485,11 @@ function _normalizeListRow(r) {
     recycle:        String(r.recycle        || '').trim(),
     companyHearText: String(r.companyHearText || '').trim(),  // ★Q列：会社_テキストヒアリング
     contactHearText: String(r.contactHearText || '').trim(),  // ★R列：コンタクト_テキストヒアリング
+    // ★ 2026-08-23 追加: HubSpotの会社プロパティ（IS GAS v4以降のシートにだけ入る）
+    //   companyNextCall = jikaikadenvi（関連コンタクトと会社自身の次回架電日の最大値）
+    //   contactStatus   = kontakutonojoukyou（会社に紐づくコンタクトの最高確度）
+    companyNextCall: String(r.companyNextCall || '').trim(),  // ★S列：会社の次回架電日
+    contactStatus:   String(r.contactStatus   || '').trim(),  // ★T列：コンタクトの状況
   };
 }
 
@@ -3455,12 +3544,25 @@ function _dedupRows(rows) {
       // 単一コンタクトでも contacts 配列を持たせてトグル表示で扱いやすくする
       const single = Object.assign({}, list[0]);
       single.contacts = list.slice();
+      // ★ 2026-08-23: コンタクトが1人の会社は _mergeLatestCompanyRow を通らないため、
+      //   ここでも「会社の次回架電日」を適用する（適用漏れ防止）
+      _applyCompanyNextCall(single);
       result.push(single);
     } else {
       result.push(_mergeLatestCompanyRow(list));
     }
   });
   return result;
+}
+
+// ★ 2026-08-23 追加: 行の nextCall を「会社の次回架電日」で上書きする（値があるときだけ）。
+//   コンタクトが1人の会社は会社単位マージを経由しないので、この関数で取りこぼしを防ぐ。
+//   引数のオブジェクトを直接書き換えて返す（呼び出し側はコピー済みの行を渡すこと）。
+function _applyCompanyNextCall(row) {
+  if (!row) return row;
+  const v = String(row.companyNextCall || '').trim();
+  if (v) row.nextCall = v;
+  return row;
 }
 
 // 同一企業の複数行を「最新の日時」で1行にマージ
@@ -3507,6 +3609,17 @@ function _mergeLatestCompanyRow(list) {
   };
   // パーセプションフロー: 優先順位で最も高いものを採用
   const perceptionVal = _pickPriorityPerception(list);
+  // ============================================================
+  // ★ 2026-08-23 追加: 次回架電日は「会社の次回架電日」を優先する
+  // ------------------------------------------------------------
+  //  従来は pickLatestDateStr('nextCall')＝このシートに載っているコンタクトの最大値だった。
+  //  シートに載るのはISチーム担当のコンタクトだけなので、会社側に入っている
+  //  本来の予定日を取りこぼし、「前回の連絡は今週なのに次回架電日は2020年」が多発していた。
+  //  HubSpotの会社プロパティ jikaikadenvi（＝関連コンタクト全員＋会社自身の最大値）に置き換える。
+  //  列が無い古いシートでは空になるので、その場合は従来どおりコンタクト集約にフォールバック。
+  //  この1か所を直すと、次回架電日の表示・todo4区分・並び順・円グラフすべてに反映される。
+  // ============================================================
+  const companyNextCallVal = firstNonEmpty('companyNextCall');
   return {
     company:        firstNonEmpty('company'),
     companyId:      firstNonEmpty('companyId'),
@@ -3515,7 +3628,9 @@ function _mergeLatestCompanyRow(list) {
     perceptionFlow: perceptionVal,
     lastContact:    pickLatestDateStr('lastContact'),
     lastMet:        pickLatestDateStr('lastMet'),
-    nextCall:       pickLatestDateStr('nextCall'),
+    nextCall:       companyNextCallVal || pickLatestDateStr('nextCall'),
+    companyNextCall: companyNextCallVal,                 // 会社側の値が使われたかの判別用
+    contactStatus:  firstNonEmpty('contactStatus'),      // ★T列：コンタクトの状況（表示は今後）
     recycle:        firstNonEmpty('recycle'),
     companyHearText: firstNonEmpty('companyHearText'), // ★会社_ヒアリング（会社単位：非空優先）
     contacts:       list.slice(), // 同一企業の各コンタクト（トグル表示用。contactHearTextは各contactが保持）
@@ -3566,7 +3681,10 @@ function _byOwnerStats(rows) {
   Object.entries(groups).forEach(([owner, companyMap]) => {
     let cat1 = 0, cat2 = 0, cat3 = 0, cat4 = 0;
     companyMap.forEach((rowList) => {
-      const merged = rowList.length === 1 ? rowList[0] : _mergeLatestCompanyRow(rowList);
+      // ★ 2026-08-23: 1コンタクトの会社にも「会社の次回架電日」を適用（元データは書き換えない）
+      const merged = rowList.length === 1
+        ? _applyCompanyNextCall(Object.assign({}, rowList[0]))
+        : _mergeLatestCompanyRow(rowList);
       const lc = parseValid(merged.lastContact);
       const nc = parseValid(merged.nextCall);
       if (nc && nc > today) {
@@ -3751,7 +3869,6 @@ function _escHtmlPerc(s) { return _escapeHtml(String(s == null ? '' : s)); }
 // ★ 2026-06-16 統合: 3段階アコーディオンの開閉状態
 //   段階1=「担当者」見出し / 段階3=商談化転換元バーを開いている担当者（1人ずつ）
 // ★ 2026-08-10 変更: 段階1の初期状態を「閉じる」に（開きっぱなしで縦に長くなるため）
-// ★ 2026-08-20 変更: 段階1を開くと「担当者別 1か月推移（フェーズ上昇）」パネルも一緒に展開
 let _isAccTier1Open = false;
 let _isAccOpenOwner = null;
 
@@ -3763,28 +3880,6 @@ function toggleIsAccTier1() {
 function toggleIsAccOwner(owner) {
   _isAccOpenOwner = (_isAccOpenOwner === owner) ? null : owner; // 1人ずつ（他を閉じる）
   renderPerceptionActivity();
-}
-
-// ★ 2026-08-20 追加: 「担当者」トグルの開閉に合わせて 1か月推移パネルを出し入れする
-//   Chart.js は display:none の中では幅0で描かれてしまうため、
-//   「表示にしてから描画」「閉じるときは破棄」の順を守る。
-function _syncPercTrendPanel() {
-  const panel = document.getElementById('percTrendPanel');
-  if (!panel) return;
-  if (_isAccTier1Open) {
-    const wasHidden = panel.classList.contains('hidden');
-    panel.classList.remove('hidden');
-    // 開いた瞬間（または未描画）だけ描画。表示直後はレイアウト未確定なので次フレームで（幅0対策）
-    if (wasHidden || !percTrendMemberChart) {
-      requestAnimationFrame(() => {
-        try { renderPercMonthlyTrend(); } catch (e) { console.error('renderPercMonthlyTrend error:', e); }
-      });
-    }
-  } else {
-    panel.classList.add('hidden');
-    if (percTrendMemberChart) { percTrendMemberChart.destroy(); percTrendMemberChart = null; }
-    if (percTrendWeeklyChart) { percTrendWeeklyChart.destroy(); percTrendWeeklyChart = null; }
-  }
 }
 
 // 統合カード本体（KPI補足＋3段階アコーディオン）を描画
@@ -3816,21 +3911,13 @@ function renderPerceptionActivity() {
   trans.forEach(t => { if (t.owner) ownerSet.add(t.owner); });
   const owners = [...ownerSet].sort((a, b) => a.localeCompare(b, 'ja'));
 
-  // ===== 段階1: 「担当者」見出し =====（トグル内に 1か月推移 → 担当者別リストを展開）
+  // ===== 段階1: 「担当者」見出し =====
   const tier1Icon = _isAccTier1Open ? '▾' : '▸';
-  const headerHtml = `
+  let html = `
     <div onclick="toggleIsAccTier1()" class="flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer" style="background:#e0f2fe;">
       <span class="text-[13px] font-bold" style="color:#075985;">${tier1Icon} 担当者</span>
-      <span class="text-[10px] text-right" style="color:#0891b2;">${owners.length}名 ・ ${periodLabel}のフェーズ上昇 ${goalCount}件<br>
-        <span style="color:#1961B5;">${_isAccTier1Open ? '1か月推移＋担当者別を表示中' : '開くと 1か月推移＋担当者別'}</span></span>
+      <span class="text-[10px]" style="color:#0891b2;">${owners.length}名 ・ ${periodLabel}のフェーズ上昇 ${goalCount}件</span>
     </div>`;
-  const headerEl = document.getElementById('isCombinedHeader');
-  if (headerEl) headerEl.innerHTML = headerHtml;
-
-  // 担当者トグル内の「担当者別 1か月推移」パネルを開閉（閉じている間はチャートを破棄）
-  _syncPercTrendPanel();
-
-  let html = headerEl ? '' : headerHtml; // 旧構成（ヘッダ用コンテナ無し）へのフォールバック
 
   if (_isAccTier1Open) {
     if (owners.length === 0) {
@@ -3951,7 +4038,7 @@ function closePercTransModal() {
 //   右: 週次推移（全体 or 担当者1名）
 //   ※ 上部の期間セレクト(_percActivityPeriod)とは独立。常に直近30日/8週を見る。
 // ============================================================
-const PERC_TREND_COLOR = '#1961B5'; // ★ 2026-08-20 変更: 指定の青（旧: 紫 #7c3aed）
+const PERC_TREND_COLOR = '#7c3aed'; // 商談化（ゴール）と同系の独自色
 const PERC_TREND_DAYS  = 30;
 const PERC_TREND_WEEKS = 8;
 let percTrendMemberChart = null, percTrendWeeklyChart = null;
@@ -3972,10 +4059,6 @@ function _percTrendDate(t) {
 function _percTrendMd(d) { return `${d.getMonth() + 1}/${d.getDate()}`; }
 
 function renderPercMonthlyTrend() {
-  // 「担当者」トグルが閉じている間、および IS タブ自体が非表示の間は描画しない
-  //   （display:none の中で描くと幅0のチャートになるため。表示された時に再度呼ばれる）
-  const panel = document.getElementById('percTrendPanel');
-  if (panel && (panel.classList.contains('hidden') || panel.offsetParent === null)) return;
   const memberEl = document.getElementById('percTrendMemberChart');
   const weeklyEl = document.getElementById('percTrendWeeklyChart');
   if (!memberEl && !weeklyEl) return;
@@ -4097,8 +4180,8 @@ function _drawPercTrendWeeklyChart(buckets) {
         label: percTrendMember || '全体',
         data: buckets.map(b => b.count),
         borderColor: PERC_TREND_COLOR,
-        backgroundColor: 'rgba(25,97,181,0.10)',
-        pointBackgroundColor: buckets.map(b => b.ongoing ? '#9dc0e8' : PERC_TREND_COLOR),
+        backgroundColor: 'rgba(124,58,237,0.10)',
+        pointBackgroundColor: buckets.map(b => b.ongoing ? '#c4b5fd' : PERC_TREND_COLOR),
         pointRadius: 4, borderWidth: 2, fill: true, tension: 0.3,
         segment: { borderDash: (c) => (buckets[c.p1DataIndex] && buckets[c.p1DataIndex].ongoing) ? [5, 4] : undefined }
       }]
@@ -5292,8 +5375,7 @@ function renderIsKpis() {
   // ⑥ パーセプションフロー活動（上昇数・アポ転換元）（期間に依存しないので毎回更新）
   renderPerceptionActivity();
 
-  // ⑦ ★ 2026-08-10 追加 / 2026-08-20 変更: 担当者別 1か月推移
-  //    「担当者」トグルを開いている時だけ描画（上部の期間切替に依存せず常に直近30日）
+  // ⑦ ★ 2026-08-10 追加: 担当者別 1か月推移（上部の期間切替に依存せず常に直近30日）
   try { renderPercMonthlyTrend(); } catch (e) { console.error('renderPercMonthlyTrend error:', e); }
 }
 
@@ -9112,6 +9194,32 @@ function _buildReupIsMap() {
     accumulate(map, _reupNormCompanyKey(r.company), r);
     accumulate(byId, String(r.companyId || '').trim(), r);
   });
+
+  // ============================================================
+  // ★ 2026-08-23 追加: 「会社の次回架電日」があればそちらで上書きする
+  // ------------------------------------------------------------
+  //  上の accumulate はコンタクトの次回架電日(J列)を会社ごとに最大値でまとめている。
+  //  しかしこのシートに載るのはISチーム担当のコンタクトだけなので、
+  //  会社側に入っている本来の予定日を取りこぼし、
+  //  「前回の連絡は今週なのに次回架電日は2020年」という表示が多発していた。
+  //  HubSpotの会社プロパティ jikaikadenvi は
+  //  「関連コンタクト全員 ＋ 会社自身」の次回架電日の最大値なので取りこぼしがない。
+  //  列が無い古いシート（IS GAS v3以前）では空になるため、その場合は従来の値をそのまま使う。
+  // ============================================================
+  const applyCompanyNextCall = (m, key, r) => {
+    if (!key) return;
+    const o = m.get(key);
+    if (!o) return;
+    const d = parseD(r.companyNextCall);
+    if (!d) return;
+    // 同じ会社の行はすべて同じ値が入るので、最初に見つかった有効な日付を採用する
+    if (!o._fromCompany) { o.nextCall = d; o._fromCompany = true; }
+  };
+  (isListYes || []).forEach(r => {
+    applyCompanyNextCall(map, _reupNormCompanyKey(r.company), r);
+    applyCompanyNextCall(byId, String(r.companyId || '').trim(), r);
+  });
+
   return { byName: map, byId: byId };
 }
 
