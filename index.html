@@ -297,6 +297,54 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
   .uix-up{ color:var(--success) !important; } .uix-down{ color:var(--danger) !important; } .uix-flat{ color:var(--ink-soft) !important; }
   .uix-warn{ color:#c2780e !important; } html.dark .uix-warn{ color:#fcd34d !important; }
 
+  /* ★ 2026-09-27 失注分析（バブルチャート）。色は検証済み（青×オレンジ：色覚差ΔE 9.2）。数値はtext色で表示 */
+  :root{ --lb-bubble:#2a78d6; --lb-bubble-hi:#184f95; --lb-bench:#eb6834; --lb-ghost:#93a7c0; --lb-grid:#e3e8ee; --lb-axis:#c3cbd4; --lb-heat:42,120,214; }
+  html.dark{ --lb-bubble:#3987e5; --lb-bubble-hi:#86b6ef; --lb-bench:#d95926; --lb-ghost:#7f93aa; --lb-grid:#24405c; --lb-axis:#3d5670; --lb-heat:57,135,229; }
+  #lbChart{ display:block; width:100%; height:auto; }
+  .lb-axes{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .lb-axes div{ background:var(--surface-2); border-radius:10px; padding:10px 12px; font-size:12px; color:var(--ink-soft); }
+  .lb-axes b{ display:block; color:var(--ink); font-size:13px; }
+  .lb-yoy{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px; background:var(--surface-2); border-radius:12px; padding:10px 12px; }
+  .lb-yoy input[type=range]{ flex:1; min-width:180px; accent-color:var(--uix-primary); }
+  .lb-end{ font-size:12px; font-weight:700; color:var(--ink-soft); white-space:nowrap; }
+  .lb-chk{ display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--ink-soft); cursor:pointer; user-select:none; }
+  .lb-warn{ background:var(--uix-warn-bg); color:var(--uix-warn-ink); border-radius:10px; padding:8px 12px; font-size:13px; font-weight:600; margin-top:10px; display:none; }
+  .lb-crumb{ display:flex; align-items:center; gap:8px; margin:14px 0 4px; flex-wrap:wrap; font-size:13px; }
+  .lb-crumb a{ color:var(--uix-primary); cursor:pointer; font-weight:600; text-decoration:underline; }
+  .lb-crumb .cur{ font-weight:700; color:var(--ink); }
+  .lb-legend{ display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--ink-soft); margin-top:6px; }
+  .lb-legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .lb-dot{ display:inline-block; width:12px; height:12px; border-radius:50%; }
+  .lb-ask{ display:none; margin-top:12px; border:1px solid color-mix(in srgb, var(--lb-bench) 35%, transparent);
+    background:color-mix(in srgb, var(--lb-bench) 7%, var(--surface)); border-radius:12px; padding:12px 14px; }
+  .lb-ask-h{ font-size:14px; font-weight:700; color:var(--ink); display:flex; align-items:center; gap:6px; margin-bottom:6px; }
+  .lb-ask-h .ti{ color:var(--lb-bench); }
+  .lb-ask ul{ margin:0; padding-left:18px; font-size:13px; color:var(--ink); list-style:disc; }
+  .lb-ask li{ margin:4px 0; }
+  .lb-gap{ font-weight:700; color:var(--lb-bench); }
+  .lb-tip{ position:fixed; pointer-events:none; background:var(--surface); color:var(--ink); border:1px solid var(--hair);
+    box-shadow:0 8px 24px rgba(8,52,98,.18); border-radius:10px; padding:10px 12px; font-size:12px; display:none; z-index:70; min-width:240px; }
+  .lb-tip b{ display:block; font-size:13px; margin-bottom:6px; }
+  .lb-tip .r{ display:flex; justify-content:space-between; gap:14px; }
+  .lb-tip .hint{ color:var(--ink-faint); margin-top:6px; display:block; }
+  .lb-tablecard{ margin-top:14px; border-top:1px solid var(--hair); padding-top:12px; }
+  .lb-scroll{ overflow-x:auto; margin-top:8px; }
+  .lb-table{ width:100%; border-collapse:collapse; font-size:13px; min-width:1100px; }
+  .lb-table th{ font-size:12px; color:var(--ink-soft); font-weight:600; padding:8px; border-bottom:1px solid var(--hair); text-align:right; white-space:nowrap; vertical-align:bottom; }
+  .lb-table th.l, .lb-table td.l{ text-align:left; }
+  .lb-table th.grp{ text-align:center; border-bottom:0; padding-bottom:0; }
+  .lb-table td{ padding:7px 8px; border-bottom:1px solid var(--hair); text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; color:var(--ink); }
+  .lb-table tr.total td{ font-weight:700; background:var(--surface-2); }
+  .lb-table tr.mg td.l{ padding-left:34px; color:var(--ink-soft); }
+  .lb-table tr.small td{ color:var(--ink-faint); }
+  .lb-table .sep{ border-left:1px solid var(--hair); }
+  .lb-tog{ cursor:pointer; user-select:none; }
+  .lb-tog .ti{ color:var(--ink-faint); margin-right:4px; display:inline-block; transition:transform .15s; }
+  .lb-tog.open .ti{ transform:rotate(90deg); }
+  .lb-chip{ display:inline-block; font-size:12px; font-weight:700; padding:0 6px; border-radius:6px; background:var(--surface-2); color:var(--ink-faint); margin-left:6px; }
+  .lb-heat{ border-radius:6px; padding:2px 6px; display:inline-block; min-width:46px; }
+  @media (max-width:800px){ .lb-axes{ grid-template-columns:1fr; } }
+
   /* ① サマリー帯（IS：従来のKPI 4枚を1本の帯に） */
   .uix-funnel{ display:grid; grid-template-columns:repeat(4,1fr); overflow:visible; }
   .uix-funnel > .kpi-card{ border:0 !important; border-radius:0 !important; box-shadow:none !important;
@@ -548,18 +596,23 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
 
           <!-- 13 -->
           <div>
-            <p class="font-bold text-slate-700 mb-1">13. 失注分析（2軸クロス集計）</p>
+            <p class="font-bold text-slate-700 mb-1">13. 失注分析（ヨミ化率 × ヨミ化後の勝率）</p>
             <table class="w-full border-collapse text-[11px]">
-              <thead><tr class="bg-slate-50"><th class="border border-slate-200 px-2 py-1 text-left">軸</th><th class="border border-slate-200 px-2 py-1 text-left">分類</th></tr></thead>
+              <thead><tr class="bg-slate-50"><th class="border border-slate-200 px-2 py-1 text-left">項目</th><th class="border border-slate-200 px-2 py-1 text-left">定義</th></tr></thead>
               <tbody>
-                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">管理方法（縦）</td><td class="border border-slate-200 px-2 py-1">Excel/スプレッドシート、他社管理システム、採用一括かんりくん、媒体上管理、管理方法不明</td></tr>
-                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">失注カテゴリ（横）</td><td class="border border-slate-200 px-2 py-1">競合失注、ATS導入なし、音信不通、未ヨミ化、その他</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">対象</td><td class="border border-slate-200 px-2 py-1">選択中の期間に<b>FS初回アポを実施した商談</b>（その後の受注・失注・進行中を追う）</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">横軸 ヨミ化率</td><td class="border border-slate-200 px-2 py-1">（受注＋ヨミ後の失注＋進行中のC以上）÷ アポ実施。進行中のD・Eは数えない</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">縦軸 ヨミ化後の勝率</td><td class="border border-slate-200 px-2 py-1">受注 ÷（受注＋ヨミ後の失注）。ヨミ後の失注＝未ヨミ化以外の失注</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">丸の大きさ</td><td class="border border-slate-200 px-2 py-1">受注金額（切替で受注件数）。点線＝平均、白抜き＝ヨミ化後の決着10件未満の参考値</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">階層</td><td class="border border-slate-200 px-2 py-1">全体 → メンバー（アポ実施10件以上）→ 管理方法（他社ATSはシステム名：件数上位5＋その他。表記ゆれは統一）</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">参考にしたい人</td><td class="border border-slate-200 px-2 py-1">その区分で通算（2025/04〜）アポ実施20件以上の人の中で受注率1位（マネージャー除く）。伸びしろ（同じ受注率なら増える受注件数）の大きい順に3つ</td></tr>
+                <tr><td class="border border-slate-200 px-2 py-1 font-semibold">昨対</td><td class="border border-slate-200 px-2 py-1">去年の同じ期間の位置から今期へ動かせる。進行中が残る場合は「D・Eがすべてヨミになった時の最大値」と去年を比べて注意を表示</td></tr>
               </tbody>
             </table>
             <ul class="mt-1 space-y-0.5 text-slate-500 list-disc list-inside">
-              <li>選択中の期間に該当する失注案件のみを集計</li>
               <li>サービス別フィルター（全て / 新卒 / 中途 / 新卒・中途 / 未ヒアリング）対応</li>
-              <li>担当者別フィルターでメンバー単位の傾向を確認可能</li>
+              <li>担当者を選ぶ（または丸をクリック）とその人の管理方法別に切り替え</li>
+              <li>数字の一覧（表）は「数字の一覧を見る」で開く</li>
             </ul>
           </div>
 
@@ -837,22 +890,75 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
 
   <!-- 失注分析 -->
   <div id="uixsec-fs-lost" class="uix-sec bg-white rounded-xl shadow-sm p-5 mt-6">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="font-semibold text-slate-700">失注分析（選択中期間）</h3>
-      <div class="flex gap-2 items-center text-xs">
-        <label>担当者: <select id="lostFilterMember" onchange="renderLostAnalysis()" class="ml-1 border rounded px-2 py-1"><option value="">全員</option></select></label>
+    <!-- ★ 2026-09-27 失注分析を刷新：ヨミ化率 × ヨミ化後の勝率 のバブルチャート（全体 → メンバー → 管理方法／他社システム名）
+         数え方＝選択中の期間に「FS初回アポを実施した商談」が、その後どうなったか。旧・管理方法×失注カテゴリの件数カードは置き換え -->
+    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <h3 class="font-semibold text-slate-700"><i class="ti ti-chart-dots-3"></i> 失注分析（選択中期間）</h3>
+      <div class="flex gap-2 items-center text-xs flex-wrap">
+        <label>担当者: <select id="lostFilterMember" onchange="_lbOnMemberSelect()" class="ml-1 border rounded px-2 py-1"><option value="">全員</option></select></label>
+        <span class="text-slate-500">丸の大きさ:</span>
+        <div class="uix-seg" id="lbSizeSeg">
+          <button type="button" class="uix-seg-on" data-s="amt" onclick="_lbSetSize('amt')">受注金額</button>
+          <button type="button" data-s="cnt" onclick="_lbSetSize('cnt')">受注件数</button>
+        </div>
       </div>
     </div>
     <!-- 検討/対象サービス フィルター -->
-    <div class="flex gap-1.5 mb-4 flex-wrap">
+    <div class="flex gap-1.5 mb-3 flex-wrap">
       <button id="lostSvcBtn-all"    onclick="setLostSvcFilter('all')"    class="px-3 py-1 text-xs font-semibold rounded-full border transition-colors">全て</button>
       <button id="lostSvcBtn-shin"   onclick="setLostSvcFilter('shin')"   class="px-3 py-1 text-xs font-semibold rounded-full border transition-colors">新卒</button>
       <button id="lostSvcBtn-chu"    onclick="setLostSvcFilter('chu')"    class="px-3 py-1 text-xs font-semibold rounded-full border transition-colors">中途</button>
       <button id="lostSvcBtn-both"   onclick="setLostSvcFilter('both')"   class="px-3 py-1 text-xs font-semibold rounded-full border transition-colors">新卒・中途</button>
       <button id="lostSvcBtn-unkn"   onclick="setLostSvcFilter('unkn')"   class="px-3 py-1 text-xs font-semibold rounded-full border transition-colors">未ヒアリング</button>
     </div>
+    <div class="lb-axes">
+      <div><b>→ 横軸：ヨミ化率</b>アポ実施のうち、ヨミ（C以上）になった割合（受注＋ヨミ後の失注＋進行中のC以上）。進行中のD・Eはまだ数えない</div>
+      <div><b>↑ 縦軸：ヨミ化後の勝率</b>ヨミになって決着したもののうち受注した割合（受注 ÷（受注＋ヨミ後の失注））</div>
+      <div><b id="lbAxisSize">● 丸の大きさ：受注金額</b>右上・大きい丸が理想。点線は平均。白抜きは母数が少ない参考値（ヨミ化後の決着10件未満）</div>
+    </div>
+    <!-- 昨対アニメーション -->
+    <div class="lb-yoy">
+      <button type="button" class="uix-btn uix-detail" id="lbPlayBtn" onclick="_lbPlay()"><i class="ti ti-player-play"></i> 昨対から動かす</button>
+      <span class="lb-end" id="lbYoyFrom"></span>
+      <input type="range" id="lbYoyRange" min="0" max="100" value="100" oninput="_lbSetT(this.value / 100)">
+      <span class="lb-end" id="lbYoyTo"></span>
+      <label class="lb-chk"><input type="checkbox" id="lbGhostChk" checked onchange="_lbDraw()"> 昨年の位置を残す</label>
+      <span class="text-xs text-slate-500" id="lbYoyNote"></span>
+    </div>
+    <div class="lb-warn" id="lbWarn"></div>
+    <div class="lb-crumb" id="lbCrumb"></div>
     <div id="lostAnalysisContent">
-      <p class="text-xs text-slate-400">データを読み込むと表示されます</p>
+      <svg id="lbChart" viewBox="0 0 960 540" role="img" aria-label="ヨミ化率とヨミ化後の勝率のバブルチャート"></svg>
+      <p class="text-xs text-slate-400" id="lbEmpty" style="display:none;">データを読み込むと表示されます</p>
+    </div>
+    <div class="lb-legend" id="lbLegend"></div>
+    <!-- 弱いところは、この人に聞く -->
+    <div class="lb-ask" id="lbAsk">
+      <div class="lb-ask-h"><i class="ti ti-message-question"></i> <span id="lbAskTitle"></span></div>
+      <ul id="lbAskList"></ul>
+      <div class="text-xs text-slate-500" style="margin-top:6px">参考にしたい人＝その区分で<b>2025年4月以降の通算アポ実施20件以上</b>の人の中で、受注率（受注 ÷ アポ実施）が一番高い人（マネージャーは除く）。比べやすいよう本人も通算の数字で並べています。</div>
+    </div>
+    <p class="text-xs text-slate-500" style="margin-top:8px"><i class="ti ti-pointer"></i> 丸にマウスを乗せると詳細、<b>メンバーの丸をクリック</b>（または担当者を選択）するとその人の管理方法別に切り替わります。</p>
+    <!-- 数字の一覧（ふだんは隠す） -->
+    <div class="lb-tablecard">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-sm font-semibold text-slate-700"><i class="ti ti-table"></i> 数字の一覧（グラフと同じデータ）</span>
+        <button type="button" class="uix-btn" id="lbTblBtn" onclick="_lbToggleTable()" style="margin-left:auto"><i class="ti ti-chevron-down"></i> 数字の一覧を見る</button>
+      </div>
+      <div class="lb-scroll" id="lbTblBox" style="display:none">
+        <table class="lb-table">
+          <thead>
+            <tr>
+              <th class="l" rowspan="2" style="width:200px">区分</th>
+              <th rowspan="2">アポ実施</th><th rowspan="2">ヨミ化率</th><th rowspan="2">ヨミ化後の勝率</th><th rowspan="2">受注</th>
+              <th rowspan="2">受注率</th><th rowspan="2">失注率</th><th rowspan="2">進行中</th>
+              <th class="grp sep" colspan="5">失注の内訳（÷ アポ実施）</th>
+            </tr>
+            <tr><th class="sep">未ヨミ化</th><th>競合</th><th>ATSなし</th><th>音信不通</th><th>その他</th></tr>
+          </thead>
+          <tbody id="lbTbody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -7186,7 +7292,439 @@ function getMinorWinRate(minor) {
 }
 
 // ===== 失注分析 =====
+// ============================================================
+// ★ 2026-09-27 失注分析（刷新）
+//   選んだ期間に「FS初回アポを実施した商談」（appointMonth）が、その後どうなったかで数える。
+//   横軸＝ヨミ化率（ヨミ＝C以上になった割合）／縦軸＝ヨミ化後の勝率／丸＝受注金額（件数に切替）
+//   全体 → メンバー → 管理方法（他社ATSはシステム名：上位5＋その他）。
+//   メンバーの管理方法別では、弱い区分に「参考にしたい人（通算）」を重ね、昨対（去年の同じ期間）から動かせる。
+//   旧・件数カードは _renderLostAnalysisCardsLegacy として残してある（呼び出していない）。
+// ============================================================
+const LB_MIN_N = 10;           // グラフに出すメンバーの最低アポ実施数
+const LB_MIN_DECIDED = 10;     // ヨミ化後の決着がこれ未満なら参考値（白抜き）
+const LB_BENCH_MIN = 20;       // 参考にしたい人：その区分の通算アポ実施がこれ以上
+const LB_BENCH_MAX = 3;        // 参考を出す数（伸びしろの大きい順）
+const LB_TOP_SYS = 5;          // 他社システム名を個別に出す数（残りは「その他の他社システム」）
+const LB_BENCH_EXCLUDE = new Set(['深津 大堅']);   // 参考役から外す人（マネージャー）
+const LB_CATS = [['mishodan', '未ヨミ化'], ['kyogo', '競合'], ['ats', 'ATSなし'], ['onshin', '音信不通'], ['other', 'その他']];
+const LB_MGMT_LABEL = { excel: 'Excel・スプシ', ats: '他社ATS', kanrikun: 'かんりくん', media: '媒体上管理', unknown: '不明' };
+const LB_SYS_ALIAS = { 'リクナビhrテック': 'リクナビhrtech' };
+const _LB_LOSTCAT = { '未ヨミ化': 'mishodan', '競合失注': 'kyogo', 'ATS導入なし': 'ats', '音信不通': 'onshin' };
+const _lb = { level: { type: 'members' }, size: 'amt', T: 1, anim: null, openRows: new Set(['__total__']), spell: {}, data: null };
+
+function _lbPc(a, b) { return b ? Math.round(a / b * 100) + '%' : '—'; }
+function _lbYen(v) { return v >= 1e6 ? '¥' + (v / 1e6).toFixed(1) + 'M' : '¥' + Math.round(v).toLocaleString(); }
+function _lbEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function _lbLerp(a, b, t) { return a + (b - a) * t; }
+function _lbEase(t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+function _lbRate(a) { return a && a.n ? a.won / a.n : 0; }
+// システム名の表記ゆれを統一するキー（SONAR/sonar、Hito-Link/HitoLink など）
+function _lbSysKey(s) { const k = String(s).toLowerCase().replace(/[\s\-‐ー・_]/g, '').replace(/[>＞]+$/, ''); return LB_SYS_ALIAS[k] || k; }
+function _lbIsGeneric(s) { return /^その他/.test(s) || /カテゴリ以外/.test(s); }
+// 他社ATSに分類された側（新卒／中途）のシステム名（getDealMgmtCategory と同じ判定）
+function _lbSysName(d) {
+  const svc = d.product || '';
+  const sides = [];
+  if (!svc || svc.includes('新卒')) sides.push(_effectiveMgmt(d.replaceNew || '', d.shinStatus || ''));
+  if (!svc || svc.includes('中途')) sides.push(_effectiveMgmt(d.replaceChu || '', d.chuStatus || ''));
+  for (const v of sides) if (v && _classifyMgmt(v) === 'ats') return String(v).split(/[;；]/)[0].trim();
+  return '';
+}
+function _lbFineKey(d) {
+  const m = getDealMgmtCategory(d);
+  if (m !== 'ats') return m;
+  const s = _lbSysName(d);
+  return (!s || _lbIsGeneric(s)) ? 'sys:__generic__' : 'sys:' + _lbSysKey(s);
+}
+function _lbFineLabel(k) {
+  if (!k.startsWith('sys:')) return LB_MGMT_LABEL[k] || k;
+  if (k === 'sys:__generic__') return 'その他ATS（名称なし）';
+  const sp = _lb.spell[k.slice(4)];
+  return sp ? Object.entries(sp).sort((a, b) => b[1] - a[1])[0][0] : k.slice(4);
+}
+function _lbAgg(list) {
+  const a = { n: list.length, won: 0, wonAmt: 0, lost: 0, open: 0, oy: 0, c: { mishodan: 0, kyogo: 0, ats: 0, onshin: 0, other: 0 } };
+  list.forEach(d => {
+    if (d.stage === 'S') { a.won++; a.wonAmt += (d.amount || 0); }
+    else if (d.stage === '失注') { a.lost++; a.c[_LB_LOSTCAT[d.lostLabel] || 'other']++; }
+    else { a.open++; if (['C', 'C+', 'B', 'A'].includes(d.stage)) a.oy++; }
+  });
+  return a;
+}
+// yomi＝ヨミ（C以上）になった件数（受注＋ヨミ後の失注＋進行中のC以上）／de＝進行中でまだD・E
+function _lbMetr(a) {
+  const postLost = a.lost - a.c.mishodan, decided = a.won + postLost, yomi = a.won + postLost + (a.oy || 0);
+  return { x: a.n ? yomi / a.n : 0, y: decided ? a.won / decided : null, decided, postLost, yomi, de: a.open - (a.oy || 0) };
+}
+function _lbPartition(list, K) {
+  const cnt = {};
+  list.forEach(d => { const k = K.get(d); if (k.startsWith('sys:') && k !== 'sys:__generic__') cnt[k] = (cnt[k] || 0) + 1; });
+  return Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, LB_TOP_SYS).map(e => e[0]);
+}
+function _lbGroups(list, top, K) {
+  const out = [];
+  top.forEach(k => { const l = list.filter(d => K.get(d) === k); if (l.length) out.push({ key: k, label: _lbFineLabel(k), ..._lbAgg(l) }); });
+  const rest = list.filter(d => { const k = K.get(d); return k.startsWith('sys:') && !top.includes(k); });
+  if (rest.length) out.push({ key: 'sys:__other__', label: 'その他の他社システム（' + new Set(rest.map(d => K.get(d))).size + '種）', ..._lbAgg(rest) });
+  ['kanrikun', 'excel', 'media', 'unknown'].forEach(k => { const l = list.filter(d => K.get(d) === k); if (l.length) out.push({ key: k, label: LB_MGMT_LABEL[k], ..._lbAgg(l) }); });
+  return out;
+}
+function _lbFine(list, K) {
+  const g = {}; list.forEach(d => { const k = K.get(d); (g[k] = g[k] || []).push(d); });
+  const o = {}; Object.entries(g).forEach(([k, l]) => { o[k] = { label: _lbFineLabel(k), ..._lbAgg(l) }; }); return o;
+}
+function _lbBuild() {
+  const months = getMonthsForPeriod();
+  const all = [...getActivePipeline(), ...lostDeals].filter(d => d.appointMonth && _matchLostSvc(d));
+  const K = new Map(); _lb.spell = {};
+  all.forEach(d => {
+    const k = _lbFineKey(d); K.set(d, k);
+    if (k.startsWith('sys:') && k !== 'sys:__generic__') { const s = _lbSysName(d), kk = k.slice(4); (_lb.spell[kk] = _lb.spell[kk] || {})[s] = (_lb.spell[kk][s] || 0) + 1; }
+  });
+  const inM = ms => all.filter(d => ms.includes(d.appointMonth));
+  const byMem = list => { const m = {}; list.forEach(d => { const n = d.name || '（担当者なし）'; (m[n] = m[n] || []).push(d); }); return m; };
+  const scope = (list, top) => ({ ..._lbAgg(list), mgmt: _lbGroups(list, top, K), fine: _lbFine(list, K) });
+  const cur = inM(months), tTop = _lbPartition(cur, K);
+  const members = Object.entries(byMem(cur)).sort((a, b) => b[1].length - a[1].length).map(([name, l]) => { const top = _lbPartition(l, K); return { name, top, ...scope(l, top) }; });
+  // 昨対：去年の同じ期間（データは2025/04以降のみ。かからない場合は null）
+  const lyMonths = _uixYoyMonths(months);
+  let ly = null;
+  if (lyMonths) {
+    const l = inM(lyMonths);
+    if (l.length) {
+      const lm = byMem(l);
+      ly = { total: scope(l, tTop), members: {} };
+      members.forEach(m => { if (lm[m.name]) ly.members[m.name] = scope(lm[m.name], m.top); });
+    }
+  }
+  // 参考にしたい人用：2025/04〜今月の通算（メンバー×区分）
+  const longMonths = [];
+  for (let ym = '2025/04'; ym <= _uixTodayYM(); ym = _uixShiftYM(ym, -1)) longMonths.push(ym);
+  const long = {};
+  Object.entries(byMem(inM(longMonths))).forEach(([n, l]) => { long[n] = _lbFine(l, K); });
+  return { months, lyMonths, cur: { total: scope(cur, tTop), members }, ly, long };
+}
+
+// 表示する丸（a＝今期、b＝去年の同じ期間）
+function _lbPoints() {
+  const D = _lb.data, ly = D.ly, lv = _lb.level;
+  if (lv.type === 'members')
+    return D.cur.members.filter(m => m.n >= LB_MIN_N).map(m => ({ key: m.name, label: m.name, a: m, b: ly ? ly.members[m.name] || null : null, drill: true }));
+  if (lv.type === 'teamMgmt')
+    return D.cur.total.mgmt.map(m => ({ key: m.key, label: m.label, a: m, b: ly ? (ly.total.mgmt.find(x => x.key === m.key) || null) : null }));
+  const mem = D.cur.members.find(m => m.name === lv.name), lym = ly ? ly.members[lv.name] : null;
+  return mem ? mem.mgmt.map(m => ({ key: m.key, label: m.label, a: m, b: lym ? (lym.mgmt.find(x => x.key === m.key) || null) : null })) : [];
+}
+function _lbScope() {
+  const D = _lb.data, lv = _lb.level;
+  if (lv.type === 'memberMgmt') {
+    const mem = D.cur.members.find(m => m.name === lv.name);
+    if (mem) return { a: mem, b: D.ly ? D.ly.members[lv.name] || null : null, label: lv.name + ' の平均', who: lv.name + 'さん' };
+  }
+  return { a: D.cur.total, b: D.ly ? D.ly.total : null, label: 'チーム平均', who: 'チーム全体' };
+}
+// 参考にしたい人：本人のグラフに個別の丸として出ている区分ごとに、通算20件以上の他メンバー（マネージャー除く）で受注率1位
+function _lbBenchmarks() {
+  const lv = _lb.level;
+  if (lv.type !== 'memberMgmt') return { list: [], none: [] };
+  const D = _lb.data, meLong = D.long[lv.name] || {}, mem = D.cur.members.find(m => m.name === lv.name);
+  if (!mem) return { list: [], none: [] };
+  const keys = mem.mgmt.map(m => m.key).filter(k => !['unknown', 'kanrikun', 'sys:__other__'].includes(k) && mem.fine[k] && mem.fine[k].n >= 5);
+  const list = [], none = [];
+  keys.forEach(k => {
+    const mine = meLong[k]; if (!mine) return;
+    const peers = Object.entries(D.long).filter(([n, f]) => n !== lv.name && !LB_BENCH_EXCLUDE.has(n) && f[k] && f[k].n >= LB_BENCH_MIN)
+      .map(([n, f]) => ({ name: n, a: f[k] })).sort((x, y) => _lbRate(y.a) - _lbRate(x.a) || y.a.n - x.a.n);
+    const best = peers[0];
+    if (!best) { none.push({ key: k, label: mem.fine[k].label }); return; }
+    const gain = (_lbRate(best.a) - _lbRate(mine)) * mem.fine[k].n;
+    if (gain > 0.3) list.push({ key: k, label: mem.fine[k].label, best, mine, cur: mem.fine[k], gain });
+  });
+  return { list: list.sort((a, b) => b.gain - a.gain).slice(0, LB_BENCH_MAX), none: none.slice(0, 2) };
+}
+
+function _lbTipEl() {
+  let t = document.getElementById('lbTip');
+  if (!t) { t = document.createElement('div'); t.id = 'lbTip'; t.className = 'lb-tip'; document.body.appendChild(t); }
+  return t;
+}
+function _lbPlaceTip(e) {
+  const t = _lbTipEl(); t.style.display = 'block';
+  t.style.left = Math.min(e.clientX + 16, innerWidth - t.offsetWidth - 8) + 'px';
+  t.style.top = Math.min(e.clientY + 16, innerHeight - t.offsetHeight - 8) + 'px';
+}
+function _lbHideTip() { const t = document.getElementById('lbTip'); if (t) t.style.display = 'none'; }
+
+function _lbDraw() {
+  const svg = document.getElementById('lbChart');
+  if (!svg || !_lb.data) return;
+  const D = _lb.data, lv = _lb.level;
+  const W = 960, H = 540, M = { l: 70, r: 150, t: 24, b: 58 }, pw = W - M.l - M.r, ph = H - M.t - M.b;
+  const pts = _lbPoints().map(p => ({ ...p, m: _lbMetr(p.a), mb: p.b ? _lbMetr(p.b) : null }));
+  const bm = _lbBenchmarks(), bl = bm.list.map(x => ({ ...x, m: _lbMetr(x.best.a) }));
+  const ghostOn = !!D.ly && (document.getElementById('lbGhostChk') || {}).checked !== false;
+  const empty = document.getElementById('lbEmpty');
+  if (!pts.length) { svg.innerHTML = ''; if (empty) { empty.style.display = 'block'; empty.textContent = 'この期間にFS初回アポを実施した商談がありません（または10件未満の担当者のみ）'; } _lbDrawAsk(bm); return; }
+  if (empty) empty.style.display = 'none';
+  // 軸の範囲：今期・昨年・参考の全部が入るように固定（動かしている間に目盛りが変わらない）
+  const allX = [...pts.map(p => p.m.x), ...pts.filter(p => p.mb).map(p => p.mb.x), ...bl.map(b => b.m.x)];
+  const allY = [...pts.map(p => p.m.y ?? 0), ...pts.filter(p => p.mb).map(p => p.mb.y ?? 0), ...bl.map(b => b.m.y ?? 0)];
+  const xMax = Math.min(1, Math.max(0.6, Math.ceil((Math.max(...allX, 0) + 0.05) * 10) / 10));
+  const yMax = Math.min(1, Math.max(0.6, Math.ceil((Math.max(...allY, 0) + 0.05) * 10) / 10));
+  const X = v => M.l + v / xMax * pw, Y = v => M.t + ph - v / yMax * ph;
+  const sv = a => _lb.size === 'amt' ? a.wonAmt : a.won;
+  const vMax = Math.max(...pts.map(p => sv(p.a)), ...pts.filter(p => p.b).map(p => sv(p.b)), 1);
+  const R = v => v > 0 ? 7 + Math.sqrt(v / vMax) * 29 : 5;     // 面積 ∝ 値
+  const tt = _lbEase(_lb.T);
+  let g = `<defs>
+    <marker id="lbArG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--lb-ghost)"/></marker>
+    <marker id="lbArB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--lb-bench)"/></marker></defs>`;
+  for (let t = 0; t <= xMax + 1e-9; t += 0.1) { const x = X(t); g += `<line x1="${x}" y1="${M.t}" x2="${x}" y2="${M.t + ph}" stroke="var(--lb-grid)"/><text x="${x}" y="${M.t + ph + 18}" font-size="12" fill="var(--ink-faint)" text-anchor="middle">${Math.round(t * 100)}%</text>`; }
+  for (let t = 0; t <= yMax + 1e-9; t += 0.1) { const y = Y(t); g += `<line x1="${M.l}" y1="${y}" x2="${M.l + pw}" y2="${y}" stroke="var(--lb-grid)"/><text x="${M.l - 8}" y="${y + 4}" font-size="12" fill="var(--ink-faint)" text-anchor="end">${Math.round(t * 100)}%</text>`; }
+  g += `<line x1="${M.l}" y1="${M.t + ph}" x2="${M.l + pw}" y2="${M.t + ph}" stroke="var(--lb-axis)"/><line x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${M.t + ph}" stroke="var(--lb-axis)"/>`;
+  g += `<text x="${M.l + pw / 2}" y="${H - 12}" font-size="13" font-weight="600" fill="var(--ink-soft)" text-anchor="middle">ヨミ化率 →（アポをヨミにできた割合）</text>`;
+  g += `<text x="18" y="${M.t + ph / 2}" font-size="13" font-weight="600" fill="var(--ink-soft)" text-anchor="middle" transform="rotate(-90 18 ${M.t + ph / 2})">ヨミ化後の勝率 →（ヨミを勝ち切った割合）</text>`;
+  const placed = [];
+  const reserve = (x, y, anchor, w, h) => { const x0 = anchor === 'end' ? x - w : anchor === 'middle' ? x - w / 2 : x; placed.push([x0, y - 13, x0 + w, y - 13 + h]); };
+  const sc = _lbScope(), bmm = _lbMetr(sc.a);
+  if (bmm.y !== null) {
+    const bx = X(bmm.x), by = Y(bmm.y);
+    g += `<line x1="${bx}" y1="${M.t}" x2="${bx}" y2="${M.t + ph}" stroke="var(--ink-faint)" stroke-dasharray="5 5"/><line x1="${M.l}" y1="${by}" x2="${M.l + pw}" y2="${by}" stroke="var(--ink-faint)" stroke-dasharray="5 5"/>`;
+    g += `<text x="${bx + 6}" y="${M.t + 14}" font-size="12" fill="var(--ink-faint)">${_lbEsc(sc.label)} ${Math.round(bmm.x * 100)}%</text><text x="${M.l + pw - 6}" y="${by - 6}" font-size="12" fill="var(--ink-faint)" text-anchor="end">${_lbEsc(sc.label)} ${Math.round(bmm.y * 100)}%</text>`;
+    reserve(bx + 6, M.t + 14, 'start', 150, 16); reserve(M.l + pw - 6, by - 6, 'end', 150, 16);
+    const q = (x, y, anchor, t1, t2) => { reserve(x, y, anchor, Math.max(t1.length, t2.length) * 12.5, t2 ? 34 : 18); return `<text x="${x}" y="${y}" font-size="12" font-weight="700" fill="var(--ink-faint)" text-anchor="${anchor}">${t1}</text><text x="${x}" y="${y + 16}" font-size="12" fill="var(--ink-faint)" text-anchor="${anchor}">${t2}</text>`; };
+    g += q(M.l + pw - 8, M.t + 34, 'end', '◎ ヨミ化も勝ち切りも強い', '');
+    g += q(M.l + pw - 8, M.t + ph - 26, 'end', 'ヨミにはできる', '→ 勝ち切りに課題');
+    g += q(M.l + 10, M.t + 34, 'start', 'ヨミになれば勝てる', '→ ヨミ化に課題');
+    g += q(M.l + 10, M.t + ph - 26, 'start', '両方に課題', '');
+  }
+  // 昨年の位置（母数が十分な丸だけ。少ない丸は位置が大きく飛ぶため残さない）
+  if (ghostOn) pts.filter(p => p.mb && p.mb.y !== null && p.m.y !== null && p.m.decided >= LB_MIN_DECIDED && p.mb.decided >= LB_MIN_DECIDED).forEach(p => {
+    const x0 = X(p.mb.x), y0 = Y(p.mb.y), x1 = X(_lbLerp(p.mb.x, p.m.x, tt)), y1 = Y(_lbLerp(p.mb.y, p.m.y, tt));
+    g += `<circle cx="${x0}" cy="${y0}" r="${R(sv(p.b))}" fill="none" stroke="var(--lb-ghost)" stroke-width="1.5" stroke-dasharray="3 4" opacity=".8"/>`;
+    if (Math.hypot(x1 - x0, y1 - y0) > 12) g += `<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="var(--lb-ghost)" stroke-width="1.5" marker-end="url(#lbArG)" opacity=".9"/>`;
+  });
+  // 丸本体（大きい順に描いて小さい丸を上に）
+  const sorted = pts.slice().sort((a, c) => sv(c.a) - sv(a.a));
+  const labels = [];
+  let bubbles = '';
+  sorted.forEach(p => {
+    const has = p.mb && p.mb.y !== null && p.m.y !== null;
+    const mx = has ? _lbLerp(p.mb.x, p.m.x, tt) : p.m.x, my = has ? _lbLerp(p.mb.y, p.m.y, tt) : (p.m.y ?? 0);
+    const r = has ? _lbLerp(R(sv(p.b)), R(sv(p.a)), tt) : R(sv(p.a));
+    const op = has || !D.ly ? 1 : tt;   // 昨年データが無い丸は、動かしている間フェードイン
+    const cx = X(mx), cy = Y(my), ref = p.m.decided < LB_MIN_DECIDED || p.m.y === null;
+    const fill = ref ? 'var(--surface)' : 'var(--lb-bubble)';
+    bubbles += `<g class="lb-pt" data-k="${_lbEsc(p.key)}" style="cursor:${p.drill ? 'pointer' : 'default'};opacity:${op}">
+      <circle cx="${cx}" cy="${cy}" r="${Math.max(r + 8, 14)}" fill="transparent"/>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" fill-opacity="${ref ? 1 : .72}" stroke="${ref ? 'var(--lb-bubble)' : 'var(--surface)'}" stroke-width="2" ${ref ? 'stroke-dasharray="3 3"' : ''}/></g>`;
+    const tag = !p.b && D.ly && lv.type === 'members' ? '（今期から）' : '';
+    labels.push({ x: cx, y: cy, r, text: p.label + (ref ? '（参考）' : '') + tag, op, ref });
+  });
+  // 参考にしたい人（動かし終わった時だけ）
+  let bench = '';
+  const benchLabels = [];
+  if (_lb.T >= 1) bl.forEach(x => {
+    const own = pts.find(p => p.key === x.key);
+    const bx = X(x.m.x), by = Y(x.m.y ?? 0), r = 12;
+    // 本人の丸が参考値（母数が少ない）なら、矢印は薄く（位置がぶれやすいため）
+    const ownRef = own && (own.m.decided < LB_MIN_DECIDED || own.m.y === null);
+    if (own) bench += `<line x1="${X(own.m.x)}" y1="${Y(own.m.y ?? 0)}" x2="${bx}" y2="${by}" stroke="var(--lb-bench)" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#lbArB)" opacity="${ownRef ? .4 : 1}"/>`;
+    bench += `<g class="lb-bpt" data-k="${_lbEsc(x.key)}"><circle cx="${bx}" cy="${by}" r="${r + 8}" fill="transparent"/><circle cx="${bx}" cy="${by}" r="${r}" fill="var(--lb-bench)" fill-opacity=".22" stroke="var(--lb-bench)" stroke-width="2.5"/></g>`;
+    benchLabels.push({ x: bx, y: by, r, text: x.label + '｜' + x.best.name });
+  });
+  g += bubbles + bench;
+  // ラベル（見出し・他のラベルと重ならない場所へ。置けない参考値のラベルは省略＝マウスで表示）
+  const place = (L, color) => {
+    const tw = L.text.length * 12.5, th = 14;
+    const cand = [[L.x + L.r + 5, L.y + 4, 'start'], [L.x - L.r - 5, L.y + 4, 'end'], [L.x, L.y - L.r - 6, 'middle'], [L.x, L.y + L.r + 15, 'middle'],
+      [L.x + L.r + 5, L.y + 20, 'start'], [L.x + L.r + 5, L.y - 12, 'start'], [L.x - L.r - 5, L.y + 20, 'end'], [L.x - L.r - 5, L.y - 12, 'end'], [L.x, L.y + L.r + 31, 'middle'], [L.x, L.y - L.r - 22, 'middle']];
+    let ch = cand[0], fit = false;
+    for (const c of cand) {
+      const x0 = c[2] === 'start' ? c[0] : c[2] === 'end' ? c[0] - tw : c[0] - tw / 2, box = [x0, c[1] - th + 3, x0 + tw, c[1] + 3];
+      if (box[0] < M.l || box[2] > W - 4 || box[1] < 0) continue;
+      if (!placed.some(q => !(box[2] < q[0] || box[0] > q[2] || box[3] < q[1] || box[1] > q[3]))) { ch = c; placed.push(box); fit = true; break; }
+    }
+    if (!fit && L.ref) return '';
+    return `<text x="${ch[0]}" y="${ch[1]}" font-size="12.5" font-weight="${color ? 700 : 600}" fill="${color || 'var(--ink-soft)'}" text-anchor="${ch[2]}" pointer-events="none" opacity="${L.op ?? 1}">${_lbEsc(L.text)}</text>`;
+  };
+  g += benchLabels.map(L => place(L, 'var(--lb-bench)')).join('') + labels.map(L => place(L)).join('');
+  // 丸の大きさの凡例
+  const lx = M.l + pw + 34;
+  g += `<text x="${lx}" y="${M.t + 10}" font-size="12" font-weight="700" fill="var(--ink-soft)">丸の大きさ</text><text x="${lx}" y="${M.t + 26}" font-size="12" fill="var(--ink-faint)">${_lb.size === 'amt' ? '＝受注金額' : '＝受注件数'}</text>`;
+  let ly = M.t + 58;
+  [1, 0.5, 0.15].forEach(f => { const v = vMax * f, r = R(v); g += `<circle cx="${lx + 30}" cy="${ly + r}" r="${r}" fill="var(--lb-bubble)" fill-opacity=".25" stroke="var(--lb-bubble)"/><text x="${lx + 70}" y="${ly + r + 4}" font-size="12" fill="var(--ink-soft)">${_lb.size === 'amt' ? _lbYen(v) : Math.round(v) + '件'}</text>`; ly += r * 2 + 14; });
+  svg.innerHTML = g;
+  // 凡例（グラフの下）
+  const lg = [`<span><span class="lb-dot" style="background:var(--lb-bubble)"></span>${lv.type === 'memberMgmt' ? _lbEsc(lv.name) + 'さん' : lv.type === 'teamMgmt' ? 'チーム全体' : 'メンバー'}（今期）</span>`,
+    `<span><span class="lb-dot" style="border:2px dashed var(--lb-bubble);background:var(--surface)"></span>参考値（母数が少ない）</span>`];
+  if (ghostOn) lg.push(`<span><span class="lb-dot" style="border:1.5px dashed var(--lb-ghost)"></span>去年の同じ期間の位置 → 矢印が今期（母数が十分な丸のみ）</span>`);
+  if (bl.length) lg.push(`<span><span class="lb-dot" style="background:color-mix(in srgb,var(--lb-bench) 22%,transparent);border:2.5px solid var(--lb-bench)"></span>参考にしたい人（通算）</span>`);
+  const lgEl = document.getElementById('lbLegend'); if (lgEl) lgEl.innerHTML = lg.join('');
+  // ホバー・クリック
+  svg.querySelectorAll('.lb-pt').forEach(el => {
+    const p = pts.find(q => q.key === el.dataset.k); if (!p) return;
+    el.addEventListener('mousemove', e => _lbShowTip(e, p));
+    el.addEventListener('mouseleave', _lbHideTip);
+    if (p.drill) el.addEventListener('click', () => { _lbHideTip(); _lbSetLevel('memberMgmt', p.key); });
+  });
+  svg.querySelectorAll('.lb-bpt').forEach(el => {
+    const x = bl.find(q => q.key === el.dataset.k); if (!x) return;
+    el.addEventListener('mousemove', e => _lbShowBenchTip(e, x));
+    el.addEventListener('mouseleave', _lbHideTip);
+  });
+  _lbDrawAsk(bm);
+}
+function _lbShowTip(e, p) {
+  const a = p.a, m = p.m, b = p.b, mb = p.mb;
+  const yoy = b && mb && mb.y !== null
+    ? `<div class="r" style="margin-top:6px;border-top:1px solid var(--hair);padding-top:6px"><span>去年の同じ期間 → 今期</span><span></span></div>
+       <div class="r"><span>ヨミ化率</span><span>${_lbPc(mb.yomi, b.n)} → <b style="display:inline">${_lbPc(m.yomi, a.n)}</b></span></div>
+       <div class="r"><span>ヨミ化後の勝率</span><span>${_lbPc(b.won, mb.decided)} → <b style="display:inline">${m.y === null ? '—' : _lbPc(a.won, m.decided)}</b></span></div>
+       <div class="r"><span>受注</span><span>${b.won}件 → <b style="display:inline">${a.won}件</b></span></div>`
+    : (_lb.data.ly ? '<span class="hint">去年の同じ期間のデータなし</span>' : '');
+  _lbTipEl().innerHTML = `<b>${_lbEsc(p.label)}</b>
+    <div class="r"><span>アポ実施</span><span>${a.n}件</span></div>
+    <div class="r"><span>ヨミ化率</span><span>${_lbPc(m.yomi, a.n)}（${m.yomi}件）</span></div>
+    <div class="r"><span>ヨミ化後の勝率</span><span>${m.y === null ? '—' : _lbPc(a.won, m.decided)}（${a.won}/${m.decided}件）</span></div>
+    <div class="r"><span>受注</span><span>${a.won}件・${_lbYen(a.wonAmt)}</span></div>
+    <div class="r"><span>進行中</span><span>${a.open}件</span></div>${yoy}
+    ${m.decided < LB_MIN_DECIDED ? '<span class="hint">※ ヨミ化後の決着が10件未満のため参考値</span>' : ''}
+    ${p.drill ? '<span class="hint">クリックで管理方法別に切り替え</span>' : ''}`;
+  _lbPlaceTip(e);
+}
+function _lbShowBenchTip(e, x) {
+  const bm = _lbMetr(x.best.a);
+  _lbTipEl().innerHTML = `<b>${_lbEsc(x.label)}：${_lbEsc(x.best.name)}さん（通算）</b>
+    <div class="r"><span>アポ実施</span><span>${x.best.a.n}件</span></div>
+    <div class="r"><span>受注率</span><span>${_lbPc(x.best.a.won, x.best.a.n)}（${x.best.a.won}件）</span></div>
+    <div class="r"><span>ヨミ化率</span><span>${_lbPc(bm.yomi, x.best.a.n)}</span></div>
+    <div class="r"><span>ヨミ化後の勝率</span><span>${bm.y === null ? '—' : _lbPc(x.best.a.won, bm.decided)}</span></div>
+    <div class="r" style="margin-top:6px;border-top:1px solid var(--hair);padding-top:6px"><span>${_lbEsc(_lb.level.name)}さん（通算）</span><span>受注率 ${_lbPc(x.mine.won, x.mine.n)}（${x.mine.won}/${x.mine.n}）</span></div>`;
+  _lbPlaceTip(e);
+}
+function _lbDrawAsk(bm) {
+  const box = document.getElementById('lbAsk'); if (!box) return;
+  if (_lb.level.type !== 'memberMgmt' || _lb.T < 1) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  const nm = _lb.level.name;
+  document.getElementById('lbAskTitle').textContent = nm + 'さん：弱いところは、この人に聞くといい';
+  const li = bm.list.map(x => `<li><b>${_lbEsc(x.label)}</b> は <b>${_lbEsc(x.best.name)}さん</b>に聞く：受注率 <b>${_lbPc(x.best.a.won, x.best.a.n)}</b>（${x.best.a.won}/${x.best.a.n}件） vs ${_lbEsc(nm)}さん ${_lbPc(x.mine.won, x.mine.n)}（${x.mine.won}/${x.mine.n}件）
+      → 今期の${x.cur.n}件が同じ受注率なら <span class="lb-gap">＋${x.gain.toFixed(1)}件</span></li>`);
+  bm.none.forEach(x => li.push(`<li style="color:var(--ink-faint)"><b>${_lbEsc(x.label)}</b>：参考にできる人がまだいません（通算20件以上の人なし）</li>`));
+  if (!li.length) li.push('<li>今のところ、他のメンバーと比べて大きく差がある区分はありません。</li>');
+  document.getElementById('lbAskList').innerHTML = li.join('');
+}
+function _lbDrawCrumb() {
+  const c = document.getElementById('lbCrumb'); if (!c) return;
+  const lv = _lb.level;
+  const t = (lab, fn, cur) => cur ? `<span class="cur">${lab}</span>` : `<a onclick="${fn}">${lab}</a>`;
+  let h = '<i class="ti ti-sitemap" style="color:var(--ink-faint)"></i> ' + t('全体：メンバー別', "_lbSetLevel('members')", lv.type === 'members') + ' ｜ ' + t('全体：管理方法別', "_lbSetLevel('teamMgmt')", lv.type === 'teamMgmt');
+  if (lv.type === 'memberMgmt') h += ` › <span class="cur">${_lbEsc(lv.name)} の管理方法別</span> <a onclick="_lbSetLevel('members')" style="margin-left:8px">← メンバー別に戻る</a>`;
+  c.innerHTML = h;
+}
+function _lbDrawWarn() {
+  const w = document.getElementById('lbWarn'); if (!w) return;
+  const D = _lb.data, msgs = [];
+  if (D.months.length === 1) {
+    const per = D.cur.members.filter(x => x.n >= LB_MIN_N).map(x => _lbMetr(x).decided);
+    if (per.length) msgs.push(`月単位では縦軸の母数が少なく（1人あたりヨミ化後の決着 ${Math.min(...per)}〜${Math.max(...per)}件）、丸の位置が大きくぶれます。`);
+  }
+  // 昨対の注意：進行中が残っていても「最大でどこまで行くか」を出して、下がったのが確かかを判定する
+  const sc = _lbScope();
+  if (D.ly && sc.b && sc.a.open > 0) {
+    const m = _lbMetr(sc.a), lm = _lbMetr(sc.b);
+    const maxX = (m.yomi + m.de) / sc.a.n;
+    const verdict = maxX < lm.x
+      ? `去年（${_lbPc(lm.yomi, sc.b.n)}）を下回るため、<b>ヨミ化率が実際に下がっているのは確か</b>です。`
+      : `去年（${_lbPc(lm.yomi, sc.b.n)}）に届く可能性があるため、下がったとはまだ言い切れません。`;
+    msgs.push(`昨対の注意（${_lbEsc(sc.who)}）：今期は ${sc.a.open}件（${_lbPc(sc.a.open, sc.a.n)}）がまだ進行中です（去年の同じ期間は ${sc.b.open}件）。進行中のD・E（${m.de}件）がすべてヨミになったとしても、ヨミ化率は<b>最大 ${Math.round(maxX * 100)}%</b> です。${verdict}`);
+  }
+  w.style.display = msgs.length ? 'block' : 'none';
+  w.innerHTML = msgs.map(s => '<i class="ti ti-alert-triangle"></i> ' + s).join('<br>');
+}
+function _lbDrawYoy() {
+  const D = _lb.data, has = !!D.ly;
+  const set = (id, fn) => { const e = document.getElementById(id); if (e) fn(e); };
+  set('lbPlayBtn', e => { e.disabled = !has; });
+  set('lbYoyRange', e => { e.disabled = !has; e.value = Math.round(_lb.T * 100); });
+  set('lbGhostChk', e => { e.disabled = !has; });
+  set('lbYoyFrom', e => { e.textContent = has ? _uixPrevLabel(D.lyMonths) : '去年'; });
+  set('lbYoyTo', e => { e.textContent = has ? _uixPeriodText() : '今期'; });
+  set('lbYoyNote', e => { e.textContent = has ? '' : '※ 去年の同じ期間のデータが無いため、昨対比較はできません（データは2025年4月以降のみ）'; });
+}
+function _lbHeat(v, n) { const p = n ? v / n * 100 : 0; return `<span class="lb-heat" style="background:rgba(var(--lb-heat),${(Math.min(p / 80, 1) * 0.55).toFixed(3)})">${v ? _lbPc(v, n) : '—'}</span>`; }
+function _lbRow(cls, label, a, extra) {
+  const m = _lbMetr(a), small = a.n < LB_MIN_N;
+  return `<tr class="${cls}${small ? ' small' : ''}"><td class="l">${extra || ''}${_lbEsc(label)}${small ? '<span class="lb-chip">参考</span>' : ''}</td>
+    <td>${a.n.toLocaleString()}</td><td><b>${_lbPc(m.yomi, a.n)}</b></td><td><b>${m.y === null ? '—' : _lbPc(a.won, m.decided)}</b></td>
+    <td>${a.won}件・${_lbYen(a.wonAmt)}</td><td>${_lbPc(a.won, a.n)}</td><td>${_lbPc(a.lost, a.n)}</td><td>${a.open ? a.open.toLocaleString() + '件' : '—'}</td>
+    ${LB_CATS.map(([k], i) => `<td${i === 0 ? ' class="sep"' : ''}>${_lbHeat(a.c[k], a.n)}</td>`).join('')}</tr>`;
+}
+function _lbDrawTable() {
+  const tb = document.getElementById('lbTbody'); if (!tb) return;
+  const D = _lb.data.cur, o = _lb.openRows;
+  const tog = (k, open) => `<span class="lb-tog ${open ? 'open' : ''}" onclick="_lbToggleRow('${_lbEsc(k).replace(/'/g, '&#39;')}')"><i class="ti ti-chevron-right"></i></span>`;
+  let h = _lbRow('total', '全体', D.total, tog('__total__', o.has('__total__')));
+  if (o.has('__total__')) D.total.mgmt.forEach(m => { h += _lbRow('mg', '└ ' + m.label, m); });
+  D.members.forEach(mem => {
+    h += _lbRow('mem', mem.name, mem, tog(mem.name, o.has(mem.name)));
+    if (o.has(mem.name)) mem.mgmt.forEach(m => { h += _lbRow('mg', '└ ' + m.label, m); });
+  });
+  tb.innerHTML = h;
+}
+function _lbToggleRow(k) { _lb.openRows.has(k) ? _lb.openRows.delete(k) : _lb.openRows.add(k); _lbDrawTable(); }
+function _lbToggleTable() {
+  const b = document.getElementById('lbTblBox'); if (!b) return;
+  const open = b.style.display === 'none';
+  b.style.display = open ? 'block' : 'none';
+  document.getElementById('lbTblBtn').innerHTML = open ? '<i class="ti ti-chevron-up"></i> 数字の一覧を閉じる' : '<i class="ti ti-chevron-down"></i> 数字の一覧を見る';
+}
+function _lbSetSize(s) {
+  _lb.size = s;
+  document.querySelectorAll('#lbSizeSeg button').forEach(b => b.classList.toggle('uix-seg-on', b.dataset.s === s));
+  const ax = document.getElementById('lbAxisSize'); if (ax) ax.textContent = '● 丸の大きさ：' + (s === 'amt' ? '受注金額' : '受注件数');
+  _lbDraw();
+}
+function _lbSetLevel(t, name) {
+  _lb.level = t === 'memberMgmt' ? { type: t, name } : { type: t };
+  const sel = document.getElementById('lostFilterMember');
+  if (sel) sel.value = (t === 'memberMgmt' && [...sel.options].some(o => o.value === name)) ? name : '';
+  _lb.T = 1;
+  _lbRenderAll();
+}
+function _lbOnMemberSelect() {
+  const v = document.getElementById('lostFilterMember')?.value || '';
+  _lbSetLevel(v ? 'memberMgmt' : 'members', v);
+}
+// 昨対アニメーション
+function _lbSetT(v) { _lb.T = v; const r = document.getElementById('lbYoyRange'); if (r) r.value = Math.round(v * 100); _lbDraw(); }
+function _lbPlay() {
+  if (!_lb.data || !_lb.data.ly) return;
+  cancelAnimationFrame(_lb.anim);
+  const dur = 1600;
+  _lbSetT(0);
+  setTimeout(() => {
+    const start = performance.now();
+    const step = now => { const t = Math.min((now - start) / dur, 1); _lbSetT(t); if (t < 1) _lb.anim = requestAnimationFrame(step); };
+    _lb.anim = requestAnimationFrame(step);
+  }, 350);
+}
+function _lbRenderAll() { _lbDrawYoy(); _lbDrawCrumb(); _lbDrawWarn(); _lbDraw(); _lbDrawTable(); }
+
 function renderLostAnalysis() {
+  if (!document.getElementById('lbChart')) return;
+  try { _lb.data = _lbBuild(); } catch (e) { console.error('[失注分析] 集計エラー:', e); return; }
+  // 選んでいたメンバーが今の期間にいなければ、全体に戻す
+  if (_lb.level.type === 'memberMgmt' && !_lb.data.cur.members.some(m => m.name === _lb.level.name)) _lb.level = { type: 'members' };
+  const sel = document.getElementById('lostFilterMember');
+  if (sel && _lb.level.type === 'memberMgmt' && [...sel.options].some(o => o.value === _lb.level.name)) sel.value = _lb.level.name;
+  if (!_lb.data.ly) _lb.T = 1;
+  _lbRenderAll();
+}
+
+// 旧：管理方法 × 失注カテゴリの件数カード（2026-09-27 に上のバブルチャートへ置き換え。呼び出していない）
+function _renderLostAnalysisCardsLegacy() {
   const el = document.getElementById('lostAnalysisContent');
   if (!el) return;
 
