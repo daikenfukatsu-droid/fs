@@ -1,7 +1,6 @@
 
 
 
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -202,15 +201,149 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
   html.dark [style*="#dbeafe"],html.dark [style*="#e0f2fe"],html.dark [style*="#eff6ff"]{ background-color:rgba(56,189,248,.15) !important; }
   html.dark [style*="#eef2ff"],html.dark [style*="#e0e7ff"]{ background-color:rgba(99,102,241,.15) !important; }
   html.dark [style*="#ecfeff"]{ background-color:rgba(34,211,238,.15) !important; }
+
+  /* ===================================================================
+     ★ 2026-09-27 UI/UX改善（機能・計算は不変。見た目・配置のみ）
+       ① サマリー帯 ② 固定バー ③ 最小サイズ（文字12px／ボタン32px）
+       ④ ページ内ナビ ⑤ 詳細の入口統一＋詳細メニュー ⑥ 今月ではない表示
+     ※ 新しい部品は uix- で始まる独自クラス（Tailwind の再ビルド不要）
+     =================================================================== */
+  :root{ --uix-primary:#0284c7; --uix-primary-light:#e0f2fe; --uix-warn-bg:#fff4e5; --uix-warn-ink:#9a5b13;
+         --uix-note-bg:#fffbea; --uix-note-ink:#6b5310; --uix-bar-h:150px; }
+  html.dark{ --uix-primary:#38a8e0; --uix-primary-light:rgba(56,168,224,.16); --uix-warn-bg:rgba(230,146,74,.16);
+             --uix-warn-ink:#f2b77c; --uix-note-bg:rgba(250,220,120,.1); --uix-note-ink:#f0d68a; }
+
+  /* ③ 最小サイズ：文字は12px未満を12pxへ底上げ（クラス指定・インライン指定の両方） */
+  .text-\[9px\], .text-\[10px\], .text-\[11px\], .status-chip{ font-size:12px !important; }
+  [style*="font-size:9px"], [style*="font-size: 9px"], [style*="font-size:10px"], [style*="font-size: 10px"],
+  [style*="font-size:10.5px"], [style*="font-size: 10.5px"], [style*="font-size:11px"], [style*="font-size: 11px"],
+  [style*="font-size:0.7rem"], [style*="font-size:.75rem"]{ font-size:12px !important; }
+  /* ③ 最小サイズ：ボタン・セレクトは高さ32px以上（表・カレンダーのセル内など密集した場所は対象外） */
+  #dashboardContent-fs button, #dashboardContent-is button,
+  #dashboardContent-fs select, #dashboardContent-is select, .uix-btn{ min-height:32px; }
+  #dashboardContent-fs td button, #dashboardContent-is td button, #dashboardContent-fs th button, #dashboardContent-is th button,
+  #dashboardContent-fs td select, #dashboardContent-is td select,
+  #dashboardContent-fs #eCalendar button, #dashboardContent-is #isCalendar button,
+  #dashboardContent-fs #eCalNoDayList button, #dashboardContent-is #isCalNoDayList button,
+  #dashboardContent-fs [id$="Modal"] button, #dashboardContent-is [id$="Modal"] button,
+  #dashboardContent-fs [id$="Modal"] select, #dashboardContent-is [id$="Modal"] select{ min-height:0; }
+
+  /* 共通ボタン */
+  .uix-btn{ display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:0 12px; border-radius:9px;
+    border:1px solid var(--hair); background:var(--surface); color:var(--ink); font-size:13px; font-weight:600;
+    line-height:1; white-space:nowrap; cursor:pointer; }
+  .uix-btn:hover{ border-color:var(--uix-primary); }
+  /* ⑤ 「詳細」ボタンの見た目を全画面で統一 */
+  .uix-detail{ color:var(--uix-primary) !important; background:var(--uix-primary-light) !important;
+    border:1px solid color-mix(in srgb, var(--uix-primary) 40%, transparent) !important; }
+  .uix-detail:hover{ filter:brightness(0.97); }
+
+  /* ② 固定バー */
+  .uix-bar{ position:sticky; top:0; z-index:30; background:var(--surface); border-radius:16px;
+    box-shadow:0 6px 20px rgba(8,52,98,.10); padding:10px 16px 4px; margin-bottom:16px; }
+  html.dark .uix-bar{ box-shadow:0 8px 24px rgba(0,0,0,.45); }
+  .uix-row{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding-bottom:8px; }
+  .uix-group{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .uix-seg{ display:inline-flex; background:var(--surface-2); border-radius:10px; padding:3px; gap:2px; }
+  .uix-seg button{ min-height:32px; padding:0 16px; border-radius:8px; border:0; background:transparent;
+    color:var(--ink-soft); font-size:13px; font-weight:700; cursor:pointer; }
+  .uix-seg button.uix-seg-on{ background:var(--surface); color:var(--brand); box-shadow:0 1px 4px rgba(12,68,124,.18); }
+  html.dark .uix-seg button.uix-seg-on{ background:rgba(124,196,255,.16); color:#bfe2ff; }
+  .uix-upd{ margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .uix-link{ display:inline-grid; place-items:center; width:32px; height:32px; border-radius:9px; color:var(--brand-mid);
+    font-size:18px; text-decoration:none; border:1px solid var(--hair); }
+  .uix-link:hover{ border-color:var(--uix-primary); }
+  /* ⑥ 表示中の期間（今月ではない時は注意色＋「今月へ戻る」） */
+  .uix-viewing{ display:inline-flex; align-items:center; gap:8px; min-height:32px; padding:0 12px; border-radius:9px;
+    font-size:13px; font-weight:600; background:var(--uix-primary-light); color:var(--uix-primary); }
+  .uix-viewing.uix-past{ background:var(--uix-warn-bg); color:var(--uix-warn-ink); }
+  .uix-viewing a{ color:inherit; font-weight:700; text-decoration:underline; cursor:pointer; }
+  .uix-today{ position:relative; }
+  .uix-today::after{ content:""; position:absolute; top:3px; right:4px; width:6px; height:6px; border-radius:50%; background:var(--success); }
+  /* ④ ページ内ナビ */
+  .uix-navrow{ border-top:1px solid var(--hair); padding-top:6px; padding-bottom:6px; }
+  .uix-nav{ display:flex; gap:4px; flex-wrap:wrap; }
+  .uix-nav a{ display:inline-flex; align-items:center; gap:6px; min-height:32px; padding:0 12px; border-radius:8px;
+    font-size:13px; font-weight:600; color:var(--ink-soft); text-decoration:none; white-space:nowrap; }
+  .uix-nav a:hover{ background:var(--surface-2); color:var(--ink); }
+  .uix-nav a.uix-act{ background:var(--uix-primary-light); color:var(--uix-primary); }
+  /* ⑤ 詳細メニュー */
+  .uix-menu{ position:relative; margin-left:auto; }
+  .uix-pop{ display:none; position:absolute; right:0; top:40px; width:310px; background:var(--surface); border-radius:12px;
+    box-shadow:0 14px 40px rgba(8,52,98,.25); padding:8px; z-index:45; border:1px solid var(--hair); }
+  .uix-menu.uix-open .uix-pop{ display:block; }
+  .uix-grp{ font-size:12px; font-weight:700; color:var(--ink-faint); padding:8px 10px 4px; }
+  .uix-pop a{ display:flex; align-items:center; gap:8px; min-height:36px; padding:0 10px; border-radius:8px; font-size:13px;
+    color:var(--ink); cursor:pointer; text-decoration:none; }
+  .uix-pop a:hover{ background:var(--surface-2); }
+  .uix-pop a span{ margin-left:auto; font-size:12px; color:var(--ink-faint); }
+  /* ページ内ジャンプ時、固定バーに隠れないように */
+  .uix-sec{ scroll-margin-top:calc(var(--uix-bar-h) + 12px); }
+
+  /* ① サマリー帯（FS） */
+  .uix-sum-title{ font-size:13px; font-weight:600; color:var(--ink-soft); margin:0 0 8px 4px; }
+  .uix-summary{ display:grid; grid-template-columns:1.3fr 1fr 1fr 1fr .9fr; overflow:hidden; margin-bottom:16px; }
+  .uix-summary > div{ padding:18px 20px; border-right:1px solid var(--hair); min-width:0; }
+  .uix-summary > div:last-child{ border-right:0; }
+  .uix-lbl{ display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--ink-soft); }
+  .uix-big{ font-size:30px; font-weight:700; line-height:1.2; margin-top:4px; color:var(--ink); }
+  .uix-mid{ font-size:24px; font-weight:700; line-height:1.25; margin-top:4px; color:var(--ink); }
+  .uix-meta{ font-size:13px; color:var(--ink-soft); margin-top:4px; }
+  .uix-track{ position:relative; height:8px; border-radius:4px; background:var(--surface-2); margin-top:10px; overflow:hidden; }
+  .uix-track i{ position:absolute; left:0; top:0; bottom:0; border-radius:4px; transition:width .6s ease; }
+  .uix-badge-cell{ display:flex; flex-direction:column; justify-content:center; gap:8px; }
+  .uix-badge{ display:inline-flex; align-items:center; justify-content:center; gap:6px; font-size:13px; font-weight:700;
+    padding:8px 12px; border-radius:9px; }
+  .uix-up{ color:var(--success) !important; } .uix-down{ color:var(--danger) !important; } .uix-flat{ color:var(--ink-soft) !important; }
+  .uix-warn{ color:#c2780e !important; } html.dark .uix-warn{ color:#fcd34d !important; }
+
+  /* ① サマリー帯（IS：従来のKPI 4枚を1本の帯に） */
+  .uix-funnel{ display:grid; grid-template-columns:repeat(4,1fr); overflow:visible; }
+  .uix-funnel > .kpi-card{ border:0 !important; border-radius:0 !important; box-shadow:none !important;
+    background:transparent !important; padding:18px 20px !important; min-width:0; }
+  .uix-funnel > .kpi-card:hover{ transform:none; box-shadow:none !important; }
+  .uix-funnel > .kpi-card + .kpi-card{ border-left:1px solid var(--hair) !important; }
+  .uix-funnel > .kpi-card + .kpi-card::before{ content:""; position:absolute; left:-7px; top:50%; width:12px; height:12px;
+    background:var(--surface); border-top:2px solid var(--ink-faint); border-right:2px solid var(--ink-faint);
+    transform:translateY(-50%) rotate(45deg); }
+  .uix-funnel .text-2xl{ font-size:28px !important; }
+  .uix-delta{ font-size:12px; color:var(--ink-soft); margin-top:4px; }
+  .uix-delta b{ font-weight:700; }
+  /* IS：枠ごとの期間の明記 */
+  .uix-scope{ display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:700; padding:3px 10px;
+    border-radius:8px; background:var(--surface-2); color:var(--ink-soft); margin-left:auto; }
+  .uix-scope-fixed{ background:var(--uix-note-bg); color:var(--uix-note-ink); margin-left:8px; }
+
+  /* 計算ルール：右から開くパネル */
+  .uix-drawer{ position:fixed; top:0; right:0; bottom:0; width:min(560px,94vw); background:var(--surface); z-index:60;
+    box-shadow:-14px 0 40px rgba(8,52,98,.22); padding:20px 22px 40px; overflow-y:auto;
+    transform:translateX(105%); transition:transform .25s ease; }
+  .uix-drawer.uix-open{ transform:none; }
+  .uix-drawer-bg{ position:fixed; inset:0; background:rgba(15,23,42,.35); z-index:59; display:none; }
+  .uix-drawer-bg.uix-open{ display:block; }
+  .uix-drawer-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+
+  @media (max-width: 1024px){
+    .uix-summary{ grid-template-columns:1fr 1fr; }
+    .uix-summary > div{ border-bottom:1px solid var(--hair); }
+    .uix-funnel{ grid-template-columns:1fr 1fr; }
+    .uix-funnel > .kpi-card::before{ display:none; }
+    .uix-upd{ margin-left:0; }
+  }
+  @media (max-width: 640px){
+    .uix-summary, .uix-funnel{ grid-template-columns:1fr; }
+    .uix-funnel > .kpi-card + .kpi-card{ border-left:0 !important; border-top:1px solid var(--hair) !important; }
+    .uix-bar{ position:static; }
+  }
 </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
 <div class="max-w-7xl mx-auto p-6">
 
   <!-- Header (Tabs) -->
-  <div class="mb-6">
+  <div class="mb-4">
     <!-- ブランド行（ロゴ＋タイトル＋ツール） -->
-    <div class="flex items-center justify-between mb-4 ds-rise">
+    <div class="flex items-center justify-between ds-rise">
       <div class="flex items-center" style="gap:14px;">
         <div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--brand),var(--brand-bright));display:grid;place-items:center;color:#fff;font-size:22px;box-shadow:0 8px 20px rgba(23,105,192,.35);flex-shrink:0;"><i class="ti ti-chart-histogram"></i></div>
         <div>
@@ -224,25 +357,26 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
+        <!-- ★ 2026-09-27 UI/UX改善: 計算ルールは右から開くパネルに（FS画面のみ表示） -->
+        <button id="uixRulesBtn" type="button" class="uix-btn" onclick="openRulesDrawer()"><i class="ti ti-book-2"></i> 計算ルール（15項目）</button>
         <button class="iconbtn" onclick="toggleTheme()" title="ライト / ダーク切替"><i id="themeToggleIcon" class="ti ti-moon"></i></button>
       </div>
     </div>
-    <!-- ピル型タブ（FS / IS） -->
-    <div class="seg2 ds-rise" style="animation-delay:.05s;">
-      <button id="dashTab-fs" type="button" onclick="switchDashboard('fs')" class="seg2-btn">FS案件</button>
-      <button id="dashTab-is" type="button" onclick="switchDashboard('is')" class="seg2-btn">IS案件</button>
-    </div>
+    <!-- ★ 2026-09-27 UI/UX改善: FS/IS 切替は各画面の固定バーへ移動（switchDashboard は従来どおり） -->
   </div><!-- /.mb-6 (header) -->
 
   <!-- FS ダッシュボードコンテンツ（ルール + 全FS機能を包む） -->
   <div id="dashboardContent-fs">
-    <div class="text-xs text-slate-600 bg-white rounded-lg p-3">
-      <!-- 折りたたみルール一覧 -->
+    <!-- ★ 2026-09-27 UI/UX改善: 詳細ルール一覧 → 右から開くパネル（中身は従来と同じ15項目） -->
+    <div id="rulesDrawerBg" class="uix-drawer-bg" onclick="closeRulesDrawer()"></div>
+    <aside id="rulesDrawer" class="uix-drawer text-xs text-slate-600" aria-label="計算ルール">
       <div>
-        <button onclick="toggleRules()" class="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 text-[11px] font-semibold">
-          <span id="rulesArrow">▶</span> 詳細ルール一覧（全15項目）
-        </button>
-        <div id="rulesPanel" class="hidden mt-3 space-y-4 text-[11px] text-slate-600">
+        <div class="uix-drawer-head">
+          <span style="font-size:16px;font-weight:700;color:var(--ink);"><i class="ti ti-book-2"></i> 計算ルール（全15項目）</span>
+          <span id="rulesArrow" style="display:none;">▼</span>
+          <button type="button" class="uix-btn" onclick="closeRulesDrawer()" title="閉じる"><i class="ti ti-x"></i></button>
+        </div>
+        <div id="rulesPanel" class="mt-3 space-y-4 text-[11px] text-slate-600">
 
           <!-- 1 -->
           <div>
@@ -454,95 +588,101 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
 
         </div>
       </div>
-    </div>
+    </aside>
 
-  <!-- Upload Zone -->
-  <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
-    <div class="flex items-center justify-between mb-3">
-      <div>
-        <h2 class="font-semibold text-slate-700">
-          <a href="https://docs.google.com/spreadsheets/d/1m3qxU1A1VwMuB6BAMHiyINdg2ePRoQxxPVtRE-w3csY/edit?gid=226183199#gid=226183199"
-             target="_blank" rel="noopener"
-             class="hover:underline inline-flex items-center gap-1"
-             style="color:#0284c7;"
-             title="同期元スプレッドシートを開く">
-            パイプラインデータ読み込み <span class="text-xs"><i class="ti ti-external-link"></i></span>
-          </a>
-        </h2>
-        <p class="text-xs text-slate-500 mt-1">HubSpotのデータをGASが自動同期します。「データ更新」で最新を取得。</p>
+  <!-- ★ 2026-09-27 UI/UX改善: 固定バー（FS/IS切替・期間・データ更新・ページ内ナビ・詳細メニュー）
+       旧「パイプラインデータ読み込み」カードと「表示単位」カードを統合。ボタンのID・onclickは従来のまま -->
+  <div id="uixBar-fs" class="uix-bar">
+    <div class="uix-row">
+      <div class="uix-seg">
+        <button type="button" class="uix-seg-on" onclick="switchDashboard('fs')">FS案件</button>
+        <button type="button" onclick="switchDashboard('is')">IS案件</button>
       </div>
-      <div class="flex gap-2 items-center">
-        <button onclick="fetchFromSheets()" id="fetchBtn" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold flex items-center gap-1" style="background:#0284c7">
-          <span id="fetchBtnIcon"><i class="ti ti-refresh"></i></span> データ更新
-        </button>
-        <span id="fileStatus" class="text-xs text-slate-500"></span>
+      <div class="uix-group">
+        <span class="text-xs text-slate-500 font-semibold">表示単位:</span>
+        <button onclick="setView('month')" id="view-month" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-active">月別</button>
+        <button onclick="setView('quarter')" id="view-quarter" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">四半期</button>
+        <button onclick="setView('half')" id="view-half" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">半期</button>
+        <button onclick="setView('year')" id="view-year" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">年間</button>
       </div>
-    </div>
-  </div>
-
-  <!-- View Mode Tabs -->
-  <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
-    <div class="flex gap-2 mb-3 items-center flex-wrap">
-      <span class="text-xs text-slate-500 font-semibold mr-2">表示単位:</span>
-      <button onclick="setView('month')" id="view-month" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-active">月別</button>
-      <button onclick="setView('quarter')" id="view-quarter" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">四半期</button>
-      <button onclick="setView('half')" id="view-half" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">半期</button>
-      <button onclick="setView('year')" id="view-year" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">年間</button>
-      <div class="ml-auto flex items-center gap-1 border rounded-lg overflow-hidden text-xs font-semibold">
+      <div class="flex items-center gap-1 border rounded-lg overflow-hidden text-xs font-semibold">
         <button id="fy-btn-2025" onclick="switchFY('FY2025')" class="px-3 py-1.5 bg-slate-100 text-slate-500 hover:bg-slate-200">FY2025</button>
         <button id="fy-btn-2026" onclick="switchFY('FY2026')" class="px-3 py-1.5 text-white" style="background:#0284c7">FY2026</button>
       </div>
-    </div>
-    <div class="flex gap-1 flex-wrap" id="periodTabs"></div>
-  </div>
-
-  <!-- Snapshot Zone: 自動保存（サーバーが毎日23時 + ダッシュボードを開いた時も保険保存）。同日は最新1件にdedup。閲覧用UIのみ復元（保存/全削除/担当者フィルタなどは削除済み） -->
-  <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
-    <div class="flex items-center justify-between mb-3">
-      <div>
-        <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-camera"></i> スナップショット（経過追跡）</h3>
-        <p class="text-xs text-slate-500 mt-0.5">毎日23時にサーバーが自動保存（開いた時も保険で保存）。期間で絞って積載率の推移を確認できます</p>
-      </div>
-      <div class="flex gap-2 items-center">
-        <button id="compareBtn" onclick="doCompare()" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold hidden" style="background:#0369a1"><i class="ti ti-git-compare"></i> 比較する</button>
+      <div class="uix-upd">
+        <a href="https://docs.google.com/spreadsheets/d/1m3qxU1A1VwMuB6BAMHiyINdg2ePRoQxxPVtRE-w3csY/edit?gid=226183199#gid=226183199"
+           target="_blank" rel="noopener" class="uix-link" title="同期元スプレッドシートを開く（HubSpotのデータをGASが自動同期）"><i class="ti ti-table-share"></i></a>
+        <span id="fileStatus" class="text-xs text-slate-500"></span>
+        <button onclick="fetchFromSheets()" id="fetchBtn" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold flex items-center gap-1" style="background:#0284c7">
+          <span id="fetchBtnIcon"><i class="ti ti-refresh"></i></span> データ更新
+        </button>
       </div>
     </div>
-    <div id="snapshotSection">
-      <!-- 日付範囲選択（常時表示・件数に関わらず表示） -->
-      <div class="flex items-center gap-2 mb-3 p-2 bg-slate-50 rounded-lg flex-wrap">
-        <span class="text-xs text-slate-500 font-semibold whitespace-nowrap">期間で選択:</span>
-        <input type="date" id="rangeFrom" class="px-2 py-1 text-xs border rounded bg-white">
-        <span class="text-xs text-slate-400">〜</span>
-        <input type="date" id="rangeTo" class="px-2 py-1 text-xs border rounded bg-white">
-        <button onclick="applyDateRange()" class="px-3 py-1 text-xs text-white rounded-lg font-semibold hover:opacity-90 whitespace-nowrap" style="background:#475569">適用する</button>
-        <button onclick="clearDateRange()" class="px-3 py-1 text-xs bg-white border text-slate-500 rounded-lg hover:bg-slate-100 whitespace-nowrap">クリア</button>
-      </div>
-      <div id="snapshotEmpty" class="text-xs text-slate-400 text-center py-4">スナップショットがまだありません（毎日23時にサーバーが自動保存。開いた時も保険で保存されます）。</div>
-      <div id="snapshotContent" class="hidden">
-        <!-- スナップショット一覧テーブル: UIには非表示。データ取得・選択機能のために要素は残しておく -->
-        <div class="overflow-x-auto" style="display:none;">
-          <table class="min-w-full text-xs">
-            <thead class="bg-slate-50 text-slate-600">
-              <tr>
-                <th class="px-2 py-2 text-center w-8">
-                  <input type="checkbox" id="snapSelectAll" onchange="toggleSelectAll(this.checked)"
-                    class="w-3.5 h-3.5 cursor-pointer accent-sky-600" title="全選択 / 全解除">
-                </th>
-                <th class="px-2 py-2 text-left">日時 <span class="text-slate-400 font-normal text-[10px]">Shift+クリックで範囲選択</span></th>
-                <th class="px-2 py-2 text-right">案件数</th>
-                <th class="px-2 py-2 text-right">目標</th>
-                <th class="px-2 py-2 text-right">実施積載</th>
-                <th class="px-2 py-2 text-right">ヨミ積載</th>
-                <th class="px-2 py-2 text-right">受注</th>
-              </tr>
-            </thead>
-            <tbody id="snapshotList"></tbody>
-          </table>
+    <div class="uix-row">
+      <div class="flex gap-1 flex-wrap" id="periodTabs"></div>
+      <button type="button" class="uix-btn uix-detail" onclick="uixGoToday()"><i class="ti ti-calendar-event"></i> 今月</button>
+      <span id="uixViewing-fs" class="uix-viewing"></span>
+    </div>
+    <div class="uix-row uix-navrow">
+      <nav class="uix-nav" id="uixNav-fs">
+        <a href="#uixsec-fs-summary" onclick="return uixJump(event,'uixsec-fs-summary')"><i class="ti ti-layout-dashboard"></i> サマリー・予測</a>
+        <a href="#uixsec-fs-stage" onclick="return uixJump(event,'uixsec-fs-stage')"><i class="ti ti-stairs"></i> ステージ</a>
+        <a href="#uixsec-fs-member" onclick="return uixJump(event,'uixsec-fs-member')"><i class="ti ti-users"></i> メンバー</a>
+        <a href="#uixsec-fs-lost" onclick="return uixJump(event,'uixsec-fs-lost')"><i class="ti ti-chart-pie"></i> 失注分析</a>
+        <a href="#uixsec-fs-cal" onclick="return uixJump(event,'uixsec-fs-cal')"><i class="ti ti-calendar"></i> 商談カレンダー</a>
+        <a href="#uixsec-fs-snap" onclick="return uixJump(event,'uixsec-fs-snap')"><i class="ti ti-camera"></i> スナップショット</a>
+      </nav>
+      <div class="uix-menu" id="uixMenu-fs">
+        <button type="button" class="uix-btn" onclick="uixToggleMenu('fs', event)"><i class="ti ti-list-details"></i> 詳細メニュー <i class="ti ti-chevron-down"></i></button>
+        <div class="uix-pop">
+          <div class="uix-grp">予測・積載</div>
+          <a onclick="uixMenuDo(function(){ openChartDetailModal('landing'); })"><i class="ti ti-target"></i> 着地予想 詳細 <span>予実誤差モニター含む</span></a>
+          <a onclick="uixMenuDo(function(){ openChartDetailModal('jisshi'); })"><i class="ti ti-chart-line"></i> 実施積載 詳細</a>
+          <a onclick="uixMenuDo(function(){ openWinRatesModal(); })"><i class="ti ti-settings"></i> 勝率設定</a>
+          <div class="uix-grp">商談カレンダー</div>
+          <a onclick="uixMenuDo(function(){ uixGoCal('today'); })"><i class="ti ti-check"></i> 本日の商談</a>
+          <a onclick="uixMenuDo(function(){ uixGoCal('weekly'); })"><i class="ti ti-chart-bar"></i> 週次</a>
+          <a onclick="uixMenuDo(function(){ uixGoCal('reup'); })"><i class="ti ti-refresh"></i> 再アップ時期 <span>状態別4ブロック</span></a>
+          <div class="uix-grp">その他</div>
+          <a onclick="uixMenuDo(function(){ uixJump(null,'uixsec-fs-lost'); })"><i class="ti ti-chart-pie"></i> 失注分析へ移動</a>
+          <a onclick="uixMenuDo(function(){ openRulesDrawer(); })"><i class="ti ti-book-2"></i> 計算ルール（15項目）</a>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- ★ 2026-09-27 UI/UX改善: ① 今月のサマリー帯（既存KPIの計算結果をそのまま表示。uixRenderFsSummary が render() の最後に更新） -->
+  <section id="uixsec-fs-summary" class="uix-sec">
+    <p id="uixSumTitle-fs" class="uix-sum-title"></p>
+    <div class="uix-summary bg-white rounded-xl shadow-sm">
+      <div>
+        <div class="uix-lbl"><i class="ti ti-trophy" style="color:var(--success)"></i> 受注実績（S）</div>
+        <div id="uixS-amount" class="uix-big num">¥0</div>
+        <div id="uixS-meta" class="uix-meta"></div>
+        <div class="uix-track"><i id="uixS-bar" style="background:var(--success);width:0%"></i></div>
+      </div>
+      <div>
+        <div class="uix-lbl"><i class="ti ti-target" style="color:var(--cyan)"></i> 売上着地予想</div>
+        <div id="uixL-amount" class="uix-mid num">¥0</div>
+        <div id="uixL-meta" class="uix-meta"></div>
+      </div>
+      <div>
+        <div class="uix-lbl"><i class="ti ti-flag"></i> 目標まであと</div>
+        <div id="uixRemain" class="uix-mid num">¥0</div>
+        <div id="uixRemain-meta" class="uix-meta"></div>
+      </div>
+      <div>
+        <div id="uixDelta-lbl" class="uix-lbl"><i class="ti ti-arrows-diff"></i> 昨対同月比（受注）</div>
+        <div id="uixDelta" class="uix-mid num">—</div>
+        <div id="uixDelta-meta" class="uix-meta"></div>
+      </div>
+      <div>
+        <div class="uix-lbl"><i class="ti ti-gauge"></i> 達成可能性</div>
+        <div id="uixBadge" class="uix-mid num">—</div>
+        <div id="uixBadge-meta" class="uix-meta"></div>
+      </div>
+    </div>
+  </section>
 
   <!-- Progress Chart -->
   <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
@@ -631,7 +771,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
   </div>
 
   <!-- Stage Breakdown -->
-  <div class="bg-white rounded-xl shadow-sm p-5 mb-6">
+  <div id="uixsec-fs-stage" class="uix-sec bg-white rounded-xl shadow-sm p-5 mb-6">
     <h3 class="font-semibold text-slate-700 mb-3 text-sm">ステージ別 件数・金額</h3>
     <div class="grid grid-cols-2 md:grid-cols-7 gap-3 text-sm">
       <div class="border-l-4 pl-2" style="border-color:#94a3b8"><div class="text-xs text-slate-500"><span class="stage-e font-bold">E</span> 実施予定</div><div id="cnt-e" class="font-semibold">0件 / ¥0</div></div>
@@ -645,13 +785,13 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
   </div>
 
   <!-- Charts -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+  <div id="uixsec-fs-member" class="uix-sec grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
 
     <!-- 受注金額ランキング -->
     <div class="bg-white rounded-xl shadow-sm p-5">
       <div class="flex items-center justify-between mb-3">
         <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-trophy"></i> FSメンバー別 受注金額ランキング</h3>
-        <button onclick="openChartDetailModal('jisshi')" class="text-[11px] font-semibold px-2 py-0.5 rounded border border-sky-300 text-sky-600 hover:bg-sky-50 transition-colors"><i class="ti ti-chart-line"></i> 実施積載 詳細</button>
+        <button onclick="openChartDetailModal('jisshi')" class="uix-btn uix-detail"><i class="ti ti-arrow-up-right"></i> 実施積載 詳細</button>
       </div>
       <div style="position:relative;width:100%;height:360px;">
         <canvas id="rankAmountChart"></canvas>
@@ -662,7 +802,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
     <div class="bg-white rounded-xl shadow-sm p-5">
       <div class="flex items-center justify-between mb-3">
         <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-award"></i> FSメンバー別 受注件数ランキング</h3>
-        <button onclick="openChartDetailModal('landing')" class="text-[11px] font-semibold px-2 py-0.5 rounded border border-sky-400 text-sky-700 hover:bg-sky-50 transition-colors"><i class="ti ti-target"></i> 着地予想 詳細</button>
+        <button onclick="openChartDetailModal('landing')" class="uix-btn uix-detail"><i class="ti ti-arrow-up-right"></i> 着地予想 詳細</button>
       </div>
       <div style="position:relative;width:100%;height:360px;">
         <canvas id="rankCountChart"></canvas>
@@ -696,7 +836,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
   </div>
 
   <!-- 失注分析 -->
-  <div class="bg-white rounded-xl shadow-sm p-5 mt-6">
+  <div id="uixsec-fs-lost" class="uix-sec bg-white rounded-xl shadow-sm p-5 mt-6">
     <div class="flex items-center justify-between mb-3">
       <h3 class="font-semibold text-slate-700">失注分析（選択中期間）</h3>
       <div class="flex gap-2 items-center text-xs">
@@ -717,7 +857,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
   </div>
 
   <!-- E Stage Calendar -->
-  <div class="bg-white rounded-xl shadow-sm p-5 mt-6">
+  <div id="uixsec-fs-cal" class="uix-sec bg-white rounded-xl shadow-sm p-5 mt-6">
     <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
       <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-calendar"></i> 商談カレンダー</h3>
       <!-- ★ ビュー切替タブ -->
@@ -822,6 +962,56 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
     </div>
   </div>
 
+  <!-- Snapshot Zone: 自動保存（サーバーが毎日23時 + ダッシュボードを開いた時も保険保存）。同日は最新1件にdedup。閲覧用UIのみ復元（保存/全削除/担当者フィルタなどは削除済み） -->
+  <!-- ★ 2026-09-27 UI/UX改善: 画面の一番下へ移動。スナップショットが無い間は1行に折りたたみ（中身・動作は従来どおり） -->
+  <div id="uixsec-fs-snap" class="uix-sec bg-white rounded-xl shadow-sm p-4 mt-6 mb-6">
+    <div class="flex items-center justify-between flex-wrap gap-2">
+      <div>
+        <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-camera"></i> スナップショット（経過追跡）</h3>
+        <p id="uixSnapSub" class="text-xs text-slate-500 mt-0.5">毎日23時にサーバーが自動保存（開いた時も保険で保存）。期間で絞って積載率の推移を確認できます</p>
+      </div>
+      <div class="flex gap-2 items-center">
+        <button id="compareBtn" onclick="doCompare()" class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold hidden" style="background:#0369a1"><i class="ti ti-git-compare"></i> 比較する</button>
+        <button id="uixSnapToggle" type="button" class="uix-btn" onclick="uixToggleSnap()"><i class="ti ti-chevron-down"></i> 開く</button>
+      </div>
+    </div>
+    <div id="snapshotSection" class="mt-3">
+      <!-- 日付範囲選択（常時表示・件数に関わらず表示） -->
+      <div class="flex items-center gap-2 mb-3 p-2 bg-slate-50 rounded-lg flex-wrap">
+        <span class="text-xs text-slate-500 font-semibold whitespace-nowrap">期間で選択:</span>
+        <input type="date" id="rangeFrom" class="px-2 py-1 text-xs border rounded bg-white">
+        <span class="text-xs text-slate-400">〜</span>
+        <input type="date" id="rangeTo" class="px-2 py-1 text-xs border rounded bg-white">
+        <button onclick="applyDateRange()" class="px-3 py-1 text-xs text-white rounded-lg font-semibold hover:opacity-90 whitespace-nowrap" style="background:#475569">適用する</button>
+        <button onclick="clearDateRange()" class="px-3 py-1 text-xs bg-white border text-slate-500 rounded-lg hover:bg-slate-100 whitespace-nowrap">クリア</button>
+      </div>
+      <div id="snapshotEmpty" class="text-xs text-slate-400 text-center py-4">スナップショットがまだありません（毎日23時にサーバーが自動保存。開いた時も保険で保存されます）。</div>
+      <div id="snapshotContent" class="hidden">
+        <!-- スナップショット一覧テーブル: UIには非表示。データ取得・選択機能のために要素は残しておく -->
+        <div class="overflow-x-auto" style="display:none;">
+          <table class="min-w-full text-xs">
+            <thead class="bg-slate-50 text-slate-600">
+              <tr>
+                <th class="px-2 py-2 text-center w-8">
+                  <input type="checkbox" id="snapSelectAll" onchange="toggleSelectAll(this.checked)"
+                    class="w-3.5 h-3.5 cursor-pointer accent-sky-600" title="全選択 / 全解除">
+                </th>
+                <th class="px-2 py-2 text-left">日時 <span class="text-slate-400 font-normal text-[10px]">Shift+クリックで範囲選択</span></th>
+                <th class="px-2 py-2 text-right">案件数</th>
+                <th class="px-2 py-2 text-right">目標</th>
+                <th class="px-2 py-2 text-right">実施積載</th>
+                <th class="px-2 py-2 text-right">ヨミ積載</th>
+                <th class="px-2 py-2 text-right">受注</th>
+              </tr>
+            </thead>
+            <tbody id="snapshotList"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
   <p class="text-xs text-slate-400 mt-4 mb-2 text-center">データは本ブラウザ内のみで処理されます（サーバー送信なし）</p>
   </div><!-- /dashboardContent-fs -->
 
@@ -839,38 +1029,146 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
 
   <!-- IS ダッシュボードコンテンツ -->
   <div id="dashboardContent-is" class="hidden">
-    <!-- IS パイプラインデータ読み込み -->
-    <div class="bg-white rounded-xl shadow-sm p-5 mb-4">
-      <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
-        <div>
-          <h2 class="font-semibold text-slate-700">
-            <a href="https://docs.google.com/spreadsheets/d/1yE_zvzh1mB9rOqIV3Lw_jXtjVUWb1Yorx_xQY5hLc5Q/edit?usp=sharing"
-               target="_blank" rel="noopener" class="hover:underline" style="color:#0284c7">
-              IS パイプラインデータ読み込み ↗
-            </a>
-          </h2>
-          <p class="text-xs text-slate-500 mt-1">リサイクルコンタクト_Yes / No スプシから GAS が自動同期します。「データ更新」で最新を取得。</p>
+    <!-- ★ 2026-09-27 UI/UX改善: IS 固定バー（FSと共通の部品。期間はFSとは別に記憶＝従来どおり）
+         旧「IS パイプラインデータ読み込み」カードと「表示単位」カードを統合。ボタンのID・onclickは従来のまま -->
+    <div id="uixBar-is" class="uix-bar">
+      <div class="uix-row">
+        <div class="uix-seg">
+          <button type="button" onclick="switchDashboard('fs')">FS案件</button>
+          <button type="button" class="uix-seg-on" onclick="switchDashboard('is')">IS案件</button>
         </div>
-        <div class="flex gap-2 items-center">
+        <div class="uix-group">
+          <span class="text-xs text-slate-500 font-semibold">表示単位:</span>
+          <button onclick="setView('month')" id="is-view-month" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-active">月別</button>
+          <button onclick="setView('quarter')" id="is-view-quarter" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">四半期</button>
+          <button onclick="setView('half')" id="is-view-half" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">半期</button>
+          <button onclick="setView('year')" id="is-view-year" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">年間</button>
+        </div>
+        <div class="flex items-center gap-1 border rounded-lg overflow-hidden text-xs font-semibold">
+          <button id="is-fy-btn-2025" onclick="switchFY('FY2025')" class="px-3 py-1.5 bg-slate-100 text-slate-500 hover:bg-slate-200">FY2025</button>
+          <button id="is-fy-btn-2026" onclick="switchFY('FY2026')" class="px-3 py-1.5 text-white" style="background:#0284c7">FY2026</button>
+        </div>
+        <div class="uix-upd">
+          <a href="https://docs.google.com/spreadsheets/d/1yE_zvzh1mB9rOqIV3Lw_jXtjVUWb1Yorx_xQY5hLc5Q/edit?usp=sharing"
+             target="_blank" rel="noopener" class="uix-link" title="同期元スプレッドシートを開く（リサイクルコンタクト_Yes / No スプシから GAS が自動同期）"><i class="ti ti-table-share"></i></a>
+          <span id="isFileStatus" class="text-xs text-slate-500"></span>
           <button onclick="fetchFromSheets()" id="isFetchBtn"
             class="px-3 py-1.5 text-xs text-white rounded-lg hover:opacity-90 font-semibold flex items-center gap-1"
             style="background:#0284c7">
             <span id="isFetchBtnIcon"><i class="ti ti-refresh"></i></span> データ更新
           </button>
-          <span id="isFileStatus" class="text-xs text-slate-500"></span>
+        </div>
+      </div>
+      <div class="uix-row">
+        <div class="flex gap-1 flex-wrap" id="is-periodTabs"></div>
+        <button type="button" class="uix-btn uix-detail" onclick="uixGoToday()"><i class="ti ti-calendar-event"></i> 今月</button>
+        <span id="uixViewing-is" class="uix-viewing"></span>
+      </div>
+      <div class="uix-row uix-navrow">
+        <nav class="uix-nav" id="uixNav-is">
+          <a href="#uixsec-is-summary" onclick="return uixJump(event,'uixsec-is-summary')"><i class="ti ti-layout-dashboard"></i> サマリー</a>
+          <a href="#uixsec-is-list" onclick="return uixJump(event,'uixsec-is-list')"><i class="ti ti-list-check"></i> 保有リスト</a>
+          <a href="#uixsec-is-trend" onclick="return uixJump(event,'uixsec-is-trend')"><i class="ti ti-trending-up"></i> 1か月推移</a>
+          <a href="#uixsec-is-rank" onclick="return uixJump(event,'uixsec-is-rank')"><i class="ti ti-trophy"></i> ランキング</a>
+          <a href="#uixsec-is-table" onclick="return uixJump(event,'uixsec-is-table')"><i class="ti ti-table"></i> 状況テーブル</a>
+          <a href="#uixsec-is-cal" onclick="return uixJump(event,'uixsec-is-cal')"><i class="ti ti-calendar"></i> 商談カレンダー</a>
+        </nav>
+        <div class="uix-menu" id="uixMenu-is">
+          <button type="button" class="uix-btn" onclick="uixToggleMenu('is', event)"><i class="ti ti-list-details"></i> 詳細メニュー <i class="ti ti-chevron-down"></i></button>
+          <div class="uix-pop">
+            <div class="uix-grp">KPI</div>
+            <a onclick="uixMenuDo(function(){ openIsKpiDetailModal('apo'); })"><i class="ti ti-phone"></i> アポ取得数 詳細</a>
+            <a onclick="uixMenuDo(function(){ openIsKpiDetailModal('jisshi'); })"><i class="ti ti-calendar-check"></i> アポ実施数 詳細 <span>済／予定</span></a>
+            <a onclick="uixMenuDo(function(){ openIsKpiDetailModal('yomi'); })"><i class="ti ti-clipboard-check"></i> ヨミ化数 詳細</a>
+            <a onclick="uixMenuDo(function(){ openIsKpiDetailModal('contrib'); })"><i class="ti ti-trophy"></i> 受注貢献 詳細</a>
+            <div class="uix-grp">保有リスト</div>
+            <a onclick="uixMenuDo(function(){ openIsListModal(); })"><i class="ti ti-list-check"></i> IS保有リスト 詳細</a>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- 期間表示 -->
-    <p class="text-[11px] text-slate-400 mb-3">期間: <span id="isPeriodLabel" class="font-semibold text-slate-600">—</span> ／ <span class="text-emerald-600">独立</span>: FSタブとは別に切替可能</p>
+    <!-- ★ 2026-09-27 UI/UX改善: ① IS サマリー帯（従来のKPI 4枚を1本の帯に。計算・ID・詳細ボタンは従来どおり。前期比は uixRenderIsSummary が追記） -->
+    <section id="uixsec-is-summary" class="uix-sec">
+    <p id="uixSumTitle-is" class="uix-sum-title"></p>
+    <div class="uix-funnel bg-white rounded-xl shadow-sm mb-2">
+      <!-- アポ取得数 -->
+      <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#0284c7">
+        <button onclick="openIsKpiDetailModal('apo')"
+          class="uix-btn uix-detail absolute top-3 right-3"><i class="ti ti-arrow-up-right"></i> 詳細</button>
+        <p class="text-xs text-slate-500 mb-1"><i class="ti ti-phone"></i> アポ取得数</p>
+        <div class="flex items-baseline gap-2">
+          <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-apo-count">0</span><span class="text-sm font-normal text-slate-400 ml-1">件</span></p>
+          <p class="text-xs text-slate-500">/ <span id="is-kpi-apo-target">0</span></p>
+        </div>
+        <div class="mt-1.5 h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div id="is-kpi-apo-bar" class="progress-bar h-2 rounded-full bg-sky-600" style="width:0%"></div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">達成率 <span id="is-kpi-apo-rate" class="font-semibold">0%</span></p>
+        <p class="uix-delta" id="uixIsDelta-apo"></p>
+      </div>
+      <!-- アポ実施数（実施済み=濃い橙 / 実施予定E=薄い橙の内訳バー） -->
+      <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#f59e0b">
+        <button onclick="openIsKpiDetailModal('jisshi')"
+          class="uix-btn uix-detail absolute top-3 right-3"><i class="ti ti-arrow-up-right"></i> 詳細</button>
+        <p class="text-xs text-slate-500 mb-1"><i class="ti ti-calendar-check"></i> アポ実施数</p>
+        <div class="flex items-baseline gap-2">
+          <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-jisshi-count">0</span><span class="text-sm font-normal text-slate-400 ml-1">件</span></p>
+          <p class="text-xs text-slate-500">/ <span id="is-kpi-jisshi-target">0</span></p>
+        </div>
+        <p class="text-[10px] mt-0.5">
+          <span style="color:#b45309;font-weight:600">済 <span id="is-kpi-jisshi-done">0</span></span>
+          <span class="text-slate-300 mx-1">|</span>
+          <span style="color:#fbbf24;font-weight:600">予定 <span id="is-kpi-jisshi-planned">0</span></span>
+        </p>
+        <div class="mt-1.5 h-2 bg-slate-100 rounded-full overflow-hidden flex">
+          <div id="is-kpi-jisshi-bar-done" class="h-2" style="background:#b45309;width:0%;transition:width 0.6s"></div>
+          <div id="is-kpi-jisshi-bar-planned" class="h-2" style="background:#fcd34d;width:0%;transition:width 0.6s"></div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">達成率 <span id="is-kpi-jisshi-rate" class="font-semibold">0%</span></p>
+        <p class="uix-delta" id="uixIsDelta-jisshi"></p>
+      </div>
+      <!-- ヨミ化数 -->
+      <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#0284c7">
+        <button onclick="openIsKpiDetailModal('yomi')"
+          class="uix-btn uix-detail absolute top-3 right-3"><i class="ti ti-arrow-up-right"></i> 詳細</button>
+        <p class="text-xs text-slate-500 mb-1"><i class="ti ti-clipboard-check"></i> ヨミ化数</p>
+        <div class="flex items-baseline gap-2">
+          <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-yomi-count">0</span><span class="text-sm font-normal text-slate-400 ml-1">件</span></p>
+          <p class="text-xs text-slate-500">/ <span id="is-kpi-yomi-target">0</span></p>
+        </div>
+        <div class="mt-1.5 h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div id="is-kpi-yomi-bar" class="progress-bar h-2 rounded-full bg-sky-500" style="width:0%"></div>
+        </div>
+        <p class="text-[11px] text-slate-500 mt-1">達成率 <span id="is-kpi-yomi-rate" class="font-semibold">0%</span></p>
+        <p class="uix-delta" id="uixIsDelta-yomi"></p>
+      </div>
+      <!-- 受注貢献 -->
+      <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#10b981">
+        <button onclick="openIsKpiDetailModal('contrib')"
+          class="uix-btn uix-detail absolute top-3 right-3"><i class="ti ti-arrow-up-right"></i> 詳細</button>
+        <p class="text-xs text-slate-500 mb-1"><i class="ti ti-trophy"></i> 受注貢献</p>
+        <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-contrib-amount">¥0</span></p>
+        <p class="text-xs text-slate-400 mt-0.5"><span id="is-kpi-contrib-count">0</span>件</p>
+        <p class="text-[10px] text-amber-600 mt-1" id="is-kpi-contrib-note"></p>
+        <p class="uix-delta" id="uixIsDelta-contrib"></p>
+      </div>
+    </div>
+
+    <p class="text-[11px] text-slate-400 mb-4">※ 目標値は埋め込み済（FY2025/FY2026）。実績は HubSpot同期データから「アポ作成日」「FS初回アポ実施日」「ヨミ/未ヨミ決着日」「クローズ日」を基準に集計しています。</p>
+    </section>
+
+    <!-- 期間表示（★ 2026-09-27: 固定バーの「表示中」に置き換え。要素は renderIsKpis が書き込むため残す） -->
+    <p class="text-[11px] text-slate-400 mb-3" style="display:none;">期間: <span id="isPeriodLabel" class="font-semibold text-slate-600">—</span> ／ <span class="text-emerald-600">独立</span>: FSタブとは別に切替可能</p>
 
     <!-- ★ 2026-06-16 統合: IS保有リスト ＆ 商談化転換元（3段階アコーディオン） -->
-    <div class="bg-white rounded-xl shadow-sm p-4 mb-4 border-l-4 relative" style="border-left-color:#0ea5e9">
+    <div id="uixsec-is-list" class="uix-sec bg-white rounded-xl shadow-sm p-4 mb-4 border-l-4 relative" style="border-left-color:#0ea5e9">
       <button onclick="openIsListModal()"
-        class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-500 text-sky-600 hover:bg-sky-50">詳細</button>
-      <div class="flex items-center justify-between mb-2 flex-wrap gap-2 pr-12">
+        class="uix-btn uix-detail absolute top-3 right-3"><i class="ti ti-arrow-up-right"></i> 詳細</button>
+      <div class="flex items-center justify-between mb-2 flex-wrap gap-2" style="padding-right:84px;">
         <p class="text-xs text-slate-500"><i class="ti ti-list-check"></i> IS保有リスト ＆ フェーズ上昇</p>
+        <!-- ★ 2026-09-27: この枠だけの期間（上の固定バーとは別に動く＝従来どおり）であることを明記 -->
+        <span class="uix-scope" title="上の固定バーの期間とは別に動きます"><i class="ti ti-clock"></i> この枠の期間：</span>
         <select onchange="setPercActivityPeriod(this.value)" id="percActPeriodSelect"
           class="text-[11px] font-semibold rounded-lg px-2 py-1 cursor-pointer"
           style="background:#f1f5f9;border:1px solid #e2e8f0;color:#334155;outline:none;">
@@ -902,9 +1200,9 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
     </div>
 
     <!-- ★ 2026-08-10 追加: 担当者別 1か月推移（フェーズ上昇） -->
-    <div class="bg-white rounded-xl shadow-sm p-4 mb-4 border-l-4" style="border-left-color:#7c3aed">
+    <div id="uixsec-is-trend" class="uix-sec bg-white rounded-xl shadow-sm p-4 mb-4 border-l-4" style="border-left-color:#7c3aed">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <p class="text-xs text-slate-500"><i class="ti ti-trending-up"></i> 担当者別 1か月推移（フェーズ上昇）</p>
+        <p class="text-xs text-slate-500"><i class="ti ti-trending-up"></i> 担当者別 1か月推移（フェーズ上昇） <span class="uix-scope uix-scope-fixed" title="上の固定バーの期間とは関係なく、常に直近30日を表示します"><i class="ti ti-lock"></i> 期間：直近30日（固定）</span></p>
         <span id="percTrendRangeLabel" class="text-[10px] text-slate-400"></span>
       </div>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -955,87 +1253,8 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
       </div>
     </div>
 
-    <!-- IS View Mode Tabs（FSと独立） -->
-    <div class="bg-white rounded-xl shadow-sm p-4 mb-4">
-      <div class="flex gap-2 mb-3 items-center flex-wrap">
-        <span class="text-xs text-slate-500 font-semibold mr-2">表示単位:</span>
-        <button onclick="setView('month')" id="is-view-month" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-active">月別</button>
-        <button onclick="setView('quarter')" id="is-view-quarter" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">四半期</button>
-        <button onclick="setView('half')" id="is-view-half" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">半期</button>
-        <button onclick="setView('year')" id="is-view-year" class="px-3 py-1.5 rounded-lg font-semibold text-sm tab-inactive">年間</button>
-        <div class="ml-auto flex items-center gap-1 border rounded-lg overflow-hidden text-xs font-semibold">
-          <button id="is-fy-btn-2025" onclick="switchFY('FY2025')" class="px-3 py-1.5 bg-slate-100 text-slate-500 hover:bg-slate-200">FY2025</button>
-          <button id="is-fy-btn-2026" onclick="switchFY('FY2026')" class="px-3 py-1.5 text-white" style="background:#0284c7">FY2026</button>
-        </div>
-      </div>
-      <div class="flex gap-1 flex-wrap" id="is-periodTabs"></div>
-    </div>
-
-    <!-- IS KPIカード（ファネル順: アポ取得数 → アポ実施数 → ヨミ化数 → 受注貢献） -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-      <!-- アポ取得数 -->
-      <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#0284c7">
-        <button onclick="openIsKpiDetailModal('apo')"
-          class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-400 text-sky-700 hover:bg-sky-600">詳細</button>
-        <p class="text-xs text-slate-500 mb-1"><i class="ti ti-phone"></i> アポ取得数</p>
-        <div class="flex items-baseline gap-2">
-          <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-apo-count">0</span><span class="text-sm font-normal text-slate-400 ml-1">件</span></p>
-          <p class="text-xs text-slate-500">/ <span id="is-kpi-apo-target">0</span></p>
-        </div>
-        <div class="mt-1.5 h-2 bg-slate-100 rounded-full overflow-hidden">
-          <div id="is-kpi-apo-bar" class="progress-bar h-2 rounded-full bg-sky-600" style="width:0%"></div>
-        </div>
-        <p class="text-[11px] text-slate-500 mt-1">達成率 <span id="is-kpi-apo-rate" class="font-semibold">0%</span></p>
-      </div>
-      <!-- アポ実施数（実施済み=濃い橙 / 実施予定E=薄い橙の内訳バー） -->
-      <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#f59e0b">
-        <button onclick="openIsKpiDetailModal('jisshi')"
-          class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-amber-500 text-amber-600 hover:bg-amber-50">詳細</button>
-        <p class="text-xs text-slate-500 mb-1"><i class="ti ti-calendar-check"></i> アポ実施数</p>
-        <div class="flex items-baseline gap-2">
-          <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-jisshi-count">0</span><span class="text-sm font-normal text-slate-400 ml-1">件</span></p>
-          <p class="text-xs text-slate-500">/ <span id="is-kpi-jisshi-target">0</span></p>
-        </div>
-        <p class="text-[10px] mt-0.5">
-          <span style="color:#b45309;font-weight:600">済 <span id="is-kpi-jisshi-done">0</span></span>
-          <span class="text-slate-300 mx-1">|</span>
-          <span style="color:#fbbf24;font-weight:600">予定 <span id="is-kpi-jisshi-planned">0</span></span>
-        </p>
-        <div class="mt-1.5 h-2 bg-slate-100 rounded-full overflow-hidden flex">
-          <div id="is-kpi-jisshi-bar-done" class="h-2" style="background:#b45309;width:0%;transition:width 0.6s"></div>
-          <div id="is-kpi-jisshi-bar-planned" class="h-2" style="background:#fcd34d;width:0%;transition:width 0.6s"></div>
-        </div>
-        <p class="text-[11px] text-slate-500 mt-1">達成率 <span id="is-kpi-jisshi-rate" class="font-semibold">0%</span></p>
-      </div>
-      <!-- ヨミ化数 -->
-      <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#0284c7">
-        <button onclick="openIsKpiDetailModal('yomi')"
-          class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-sky-500 text-sky-600 hover:bg-sky-50">詳細</button>
-        <p class="text-xs text-slate-500 mb-1"><i class="ti ti-clipboard-check"></i> ヨミ化数</p>
-        <div class="flex items-baseline gap-2">
-          <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-yomi-count">0</span><span class="text-sm font-normal text-slate-400 ml-1">件</span></p>
-          <p class="text-xs text-slate-500">/ <span id="is-kpi-yomi-target">0</span></p>
-        </div>
-        <div class="mt-1.5 h-2 bg-slate-100 rounded-full overflow-hidden">
-          <div id="is-kpi-yomi-bar" class="progress-bar h-2 rounded-full bg-sky-500" style="width:0%"></div>
-        </div>
-        <p class="text-[11px] text-slate-500 mt-1">達成率 <span id="is-kpi-yomi-rate" class="font-semibold">0%</span></p>
-      </div>
-      <!-- 受注貢献 -->
-      <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 relative" style="border-left-color:#10b981">
-        <button onclick="openIsKpiDetailModal('contrib')"
-          class="absolute top-3 right-3 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-emerald-500 text-emerald-600 hover:bg-emerald-50">詳細</button>
-        <p class="text-xs text-slate-500 mb-1"><i class="ti ti-trophy"></i> 受注貢献</p>
-        <p class="text-2xl font-bold text-slate-700"><span id="is-kpi-contrib-amount">¥0</span></p>
-        <p class="text-xs text-slate-400 mt-0.5"><span id="is-kpi-contrib-count">0</span>件</p>
-        <p class="text-[10px] text-amber-600 mt-1" id="is-kpi-contrib-note"></p>
-      </div>
-    </div>
-
-    <p class="text-[11px] text-slate-400 mb-2">※ 目標値は埋め込み済（FY2025/FY2026）。実績は HubSpot同期データから「アポ作成日」「FS初回アポ実施日」「ヨミ/未ヨミ決着日」「クローズ日」を基準に集計しています。</p>
-
     <!-- IS メンバー別 ランキング（FS同様の横棒ランキング形式 / 3グループ×2軸 切替） -->
-    <div class="bg-white rounded-xl shadow-sm p-5 mt-4 mb-4">
+    <div id="uixsec-is-rank" class="uix-sec bg-white rounded-xl shadow-sm p-5 mt-4 mb-4">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
         <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-trophy"></i> ISメンバー別 ランキング</h3>
         <p class="text-[10px] text-slate-400">バーにカーソルで詳細／上位3名にメダル</p>
@@ -1067,7 +1286,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
     </div>
 
     <!-- IS 個人状況テーブル -->
-    <div class="bg-white rounded-xl shadow-sm p-5 mt-4 mb-6">
+    <div id="uixsec-is-table" class="uix-sec bg-white rounded-xl shadow-sm p-5 mt-4 mb-6">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
         <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-table"></i> 担当者別 状況テーブル</h3>
         <p class="text-[10px] text-slate-400">数値クリックで詳細表示</p>
@@ -1150,7 +1369,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
     </div>
 
     <!-- IS 商談カレンダー -->
-    <div class="bg-white rounded-xl shadow-sm p-5 mt-6">
+    <div id="uixsec-is-cal" class="uix-sec bg-white rounded-xl shadow-sm p-5 mt-6">
       <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
           <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-calendar"></i> IS 商談カレンダー</h3>
@@ -1314,6 +1533,334 @@ function toggleRules() {
   const isHidden = panel.classList.contains('hidden');
   panel.classList.toggle('hidden', !isHidden);
   arrow.textContent = isHidden ? '▼' : '▶';
+}
+
+// ============================================================
+// ★ 2026-09-27 UI/UX改善（表示専用。既存の計算・状態変数は「読むだけ」で、値は変えない）
+//   ① サマリー帯 ② 固定バー ④ ページ内ナビ ⑤ 詳細メニュー ⑥ 今月ではない表示 ＋ 計算ルールのパネル化
+// ============================================================
+function openRulesDrawer() {
+  const d = document.getElementById('rulesDrawer'), b = document.getElementById('rulesDrawerBg');
+  if (d) d.classList.add('uix-open');
+  if (b) b.classList.add('uix-open');
+}
+function closeRulesDrawer() {
+  const d = document.getElementById('rulesDrawer'), b = document.getElementById('rulesDrawerBg');
+  if (d) d.classList.remove('uix-open');
+  if (b) b.classList.remove('uix-open');
+}
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') { closeRulesDrawer(); _uixCloseMenus(); }
+});
+
+// --- 日付ヘルパー（'YYYY/MM' 形式） ---
+function _uixTodayYM() {
+  const d = new Date();
+  return d.getFullYear() + '/' + String(d.getMonth() + 1).padStart(2, '0');
+}
+function _uixFyOfYM(ym) {
+  const [y, m] = ym.split('/').map(Number);
+  return 'FY' + (m >= 4 ? y : y - 1);
+}
+function _uixYmLabel(ym) {
+  const [y, m] = String(ym).split('/');
+  return y + '年' + parseInt(m, 10) + '月';
+}
+function _uixShiftYM(ym, k) {
+  const [y, m] = ym.split('/').map(Number);
+  const t = y * 12 + (m - 1) - k;
+  return Math.floor(t / 12) + '/' + String((t % 12) + 1).padStart(2, '0');
+}
+// 比較対象（同じ長さだけ前の期間）。データは 2025/04 以降のみ保有のため、それより前にかかる場合は null
+function _uixPrevMonths(months) {
+  if (!months || !months.length) return null;
+  const n = months.length;
+  const prev = months.map(m => _uixShiftYM(m, n));
+  return prev.some(m => m < '2025/04') ? null : prev;
+}
+// 昨対（前年の同じ月・同じ期間）。2025/04 より前にかかる場合は null
+function _uixYoyMonths(months) {
+  if (!months || !months.length) return null;
+  const prev = months.map(m => _uixShiftYM(m, 12));
+  return prev.some(m => m < '2025/04') ? null : prev;
+}
+// 表示単位を切り替えた時・FYを切り替えた時の既定の期間：今月（今のQ・今の半期）。別FYでは同じ月・同じ期
+function _uixDefaultPeriod(mode) {
+  const fy = getFyData();
+  const mm = _uixTodayYM().split('/')[1];
+  const pickKey = (obj, fallback) => {
+    const hit = Object.entries(obj).find(([, v]) => (v.months || []).some(m => m.split('/')[1] === mm));
+    return hit ? hit[0] : fallback;
+  };
+  if (mode === 'month') return fy.months.find(m => m.split('/')[1] === mm) || fy.months[1];
+  if (mode === 'quarter') return pickKey(fy.quarters, 'Q1');
+  if (mode === 'half') return pickKey(fy.halves, 'H1');
+  return 'FY';
+}
+function _uixPrevLabel(prev) {
+  if (!prev) return '';
+  return prev.length === 1 ? _uixYmLabel(prev[0]) : (_uixYmLabel(prev[0]) + '〜' + _uixYmLabel(prev[prev.length - 1]));
+}
+function _uixUnitLabel() {
+  return ({ month: '前月比', quarter: '前四半期比', half: '前半期比', year: '前年比' })[currentMode] || '前期比';
+}
+// 期間の残り営業日（土日のみ除外。祝日は考慮しない）。期間が終わっていれば null
+function _uixRemainBizDays(months) {
+  if (!months || !months.length) return null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const [fy0, fm0] = months[0].split('/').map(Number);
+  const [ly, lm] = months[months.length - 1].split('/').map(Number);
+  const start = new Date(fy0, fm0 - 1, 1);
+  const end = new Date(ly, lm, 0);
+  if (end < today) return null;
+  let c = 0;
+  for (let d = new Date(Math.max(start, today)); d <= end; d.setDate(d.getDate() + 1)) {
+    if (d.getDay() !== 0 && d.getDay() !== 6) c++;
+  }
+  return c;
+}
+function _uixPeriodText() {
+  const fy = getFyData();
+  if (currentMode === 'month') return _uixYmLabel(currentPeriod);
+  if (currentMode === 'quarter') return currentFY + ' ' + ((fy.quarters[currentPeriod] || {}).label || currentPeriod);
+  if (currentMode === 'half') return currentFY + ' ' + ((fy.halves[currentPeriod] || {}).label || currentPeriod);
+  return currentFY + ' 通年';
+}
+
+// ⑥ 表示中の期間（今月ではない時は注意色＋「今月へ戻る」）。renderPeriodTabs の最後から呼ばれる
+function uixUpdateViewing() {
+  const el = document.getElementById('uixViewing-' + activeTab);
+  if (!el) return;
+  let months = [];
+  try { months = getMonthsForPeriod(); } catch (e) {}
+  const today = _uixTodayYM();
+  const txt = _uixPeriodText();
+  const isNow = currentMode === 'month' ? currentPeriod === today : months.includes(today);
+  if (isNow) {
+    el.className = 'uix-viewing';
+    el.innerHTML = '<i class="ti ti-eye"></i> 表示中：' + txt + '（' + (currentMode === 'month' ? '今月' : '今月を含む期間') + '）';
+  } else {
+    el.className = 'uix-viewing uix-past';
+    el.innerHTML = '<i class="ti ti-alert-triangle"></i> 表示中：' + txt + '（今月ではありません）<a onclick="uixGoToday()">今月へ戻る</a>';
+  }
+  // 今月の月ボタンに目印（緑の点）
+  const wrap = document.getElementById((activeTab === 'is' ? 'is-' : '') + 'periodTabs');
+  if (wrap && currentMode === 'month') {
+    wrap.querySelectorAll('button').forEach(b => {
+      if ((b.getAttribute('onclick') || '').indexOf("'" + today + "'") >= 0) b.classList.add('uix-today');
+    });
+  }
+  const t = document.getElementById('uixSumTitle-' + activeTab);
+  if (t) t.textContent = txt + ' の' + (activeTab === 'is' ? ' IS ' : '') + 'サマリー';
+  _uixSyncBarHeight();
+}
+function _uixSyncBarHeight() {
+  const bar = document.getElementById('uixBar-' + activeTab);
+  if (bar && bar.offsetHeight) document.documentElement.style.setProperty('--uix-bar-h', bar.offsetHeight + 'px');
+}
+
+// 「今月」ボタン：月別表示にして今月を選ぶ（今月がダッシュボードの期間設定に無い場合は何もしない）
+function uixGoToday() {
+  const ym = _uixTodayYM();
+  const fy = _uixFyOfYM(ym);
+  const fyMonths = fy === 'FY2025' ? FY2025_MONTHS : (fy === 'FY2026' ? FY_MONTHS : null);
+  if (!fyMonths || !fyMonths.includes(ym)) {
+    alert('今月（' + _uixYmLabel(ym) + '）は、まだダッシュボードの期間設定（FY2025／FY2026）にありません。');
+    return;
+  }
+  currentFY = fy;
+  currentMode = 'month';
+  currentPeriod = ym;
+  _saveCurrentToActiveTab();
+  syncPeriodUI();
+  renderPeriodTabs();
+  _afterPaint(render);
+}
+
+// ① FS サマリー帯（render() が計算した totals をそのまま表示。前期比のみ同じ条件で前の期間の受注を合計）
+function uixRenderFsSummary(totals, tSrate, tLrate, tLErate, months, pipe) {
+  const set = (id, html) => { const e = document.getElementById(id); if (e) e.innerHTML = html; };
+  set('uixS-amount', fmt(totals.s));
+  set('uixS-meta', totals.target > 0
+    ? '目標 ' + fmt(totals.target) + ' に対して <b class="uix-up">' + pct(tSrate) + '</b>（' + totals.sc + '件）'
+    : totals.sc + '件（目標未設定）');
+  const bar = document.getElementById('uixS-bar');
+  if (bar) bar.style.width = Math.min(tSrate * 100, 100) + '%';
+
+  set('uixL-amount', fmt(totals.land));
+  set('uixL-meta', '達成見込み <b style="color:var(--uix-primary)">' + pct(tLrate) + '</b>・E込み最大 ' + fmt(totals.land + totals.landE) + '（' + pct(tLErate) + '）');
+
+  const remain = totals.target - totals.s;
+  const rEl = document.getElementById('uixRemain');
+  if (rEl) { rEl.textContent = remain > 0 ? fmt(remain) : '達成'; rEl.className = 'uix-mid num' + (remain > 0 ? '' : ' uix-up'); }
+  const bd = _uixRemainBizDays(months);
+  set('uixRemain-meta', remain > 0
+    ? (bd === null ? '期間は終了しています' : '残り営業日 ' + bd + '日（土日除く）')
+    : (totals.target > 0 ? '目標を ' + fmt(-remain) + ' 上回っています' : '目標未設定'));
+
+  // ★ 2026-09-27 変更: 前月比 → 昨対同月比（四半期・半期・年間は昨対同期比）
+  const isMonth = currentMode === 'month';
+  set('uixDelta-lbl', '<i class="ti ti-arrows-diff"></i> ' + (isMonth ? '昨対同月比' : '昨対同期比') + '（受注）');
+  const dEl = document.getElementById('uixDelta');
+  const prev = _uixYoyMonths(months);
+  if (!prev) {
+    if (dEl) { dEl.textContent = '—'; dEl.className = 'uix-mid num uix-flat'; }
+    set('uixDelta-meta', '比較できる前年のデータがありません（データは2025年4月以降のみ）');
+  } else {
+    const prevS = (pipe || []).filter(d => d.stage === 'S' && prev.includes(d.month) && (!currentSnapMember || d.name === currentSnapMember))
+                              .reduce((s, d) => s + (d.amount || 0), 0);
+    if (dEl) {
+      if (prevS > 0) {
+        const r = (totals.s - prevS) / prevS;
+        dEl.innerHTML = '<i class="ti ti-trending-' + (r >= 0 ? 'up' : 'down') + '"></i> ' + (r >= 0 ? '+' : '') + Math.round(r * 100) + '%';
+        dEl.className = 'uix-mid num ' + (r >= 0 ? 'uix-up' : 'uix-down');
+      } else {
+        dEl.textContent = totals.s > 0 ? '前期 ¥0' : '±0';
+        dEl.className = 'uix-mid num uix-flat';
+      }
+    }
+    set('uixDelta-meta', (isMonth ? '前年同月（' : '前年同期（') + _uixPrevLabel(prev) + '） ' + fmt(prevS));
+  }
+
+  // ★ 2026-09-27 変更: 達成可能性は文言ではなく「着地予想 ÷ 目標」の％で表示
+  //   色は既存バッジと同じ判定（100%以上＝緑／E込みなら届く＝黄／届かない＝赤）。判定の文言はツールチップに残す
+  const b = document.getElementById('uixBadge');
+  if (b) {
+    if (totals.target > 0) {
+      b.textContent = pct(tLrate);
+      b.className = 'uix-mid num ' + (tLrate >= 1 ? 'uix-up' : tLErate >= 1 ? 'uix-warn' : 'uix-down');
+      const src = document.getElementById('kpi-achieve-badge');
+      b.title = src ? src.textContent.trim() : '';
+      set('uixBadge-meta', '着地予想 ÷ 目標<br>' + fmt(totals.land) + ' / ' + fmt(totals.target));
+    } else {
+      b.textContent = '—';
+      b.className = 'uix-mid num uix-flat';
+      b.title = '';
+      set('uixBadge-meta', '目標未設定');
+    }
+  }
+}
+
+// ① IS サマリー帯の前期比（renderIsKpis と同じ条件で、前の期間の件数を数えて比較）
+function uixRenderIsSummary(months, activePipe, cur) {
+  const prev = _uixPrevMonths(months);
+  const unit = _uixUnitLabel();
+  const put = (key, html) => { const e = document.getElementById('uixIsDelta-' + key); if (e) e.innerHTML = html; };
+  if (!prev) {
+    ['apo', 'jisshi', 'yomi', 'contrib'].forEach(k => put(k, unit + '：—（前の期間のデータなし）'));
+    return;
+  }
+  const allDeals = [...activePipe, ...lostDeals];
+  const inPrev = (date) => {
+    if (!(date instanceof Date) || isNaN(date)) return false;
+    return prev.includes(date.getFullYear() + '/' + String(date.getMonth() + 1).padStart(2, '0'));
+  };
+  const prevVals = {
+    apo: _getMemberDealsForKind('__ALL__', 'apo', prev).length,
+    jisshi: _getMemberDealsForKind('__ALL__', 'jisshi', prev).length,
+    yomi: allDeals.filter(d => {
+      if (!inPrev(d.yomiDecidedDate)) return false;
+      if (d.stage === 'E' || d.stage === 'D') return false;
+      if (d.stage === '失注' && d.lostLabel === '未ヨミ化') return false;
+      return true;
+    }).length,
+  };
+  const prevS = allDeals.filter(d => d.stage === 'S' && prev.includes(d.month));
+  const cnt = (key) => {
+    const diff = cur[key] - prevVals[key];
+    const cls = diff > 0 ? 'uix-up' : diff < 0 ? 'uix-down' : 'uix-flat';
+    put(key, unit + ' <b class="' + cls + '">' + (diff > 0 ? '+' : diff < 0 ? '−' : '±') + Math.abs(diff) + '件</b>（前 ' + prevVals[key] + '件）');
+  };
+  cnt('apo'); cnt('jisshi'); cnt('yomi');
+  const prevAmt = prevS.reduce((s, d) => s + (d.amount || 0), 0);
+  const dc = cur.contribCount - prevS.length;
+  const cls = dc > 0 ? 'uix-up' : dc < 0 ? 'uix-down' : 'uix-flat';
+  put('contrib', unit + ' <b class="' + cls + '">' + (dc > 0 ? '+' : dc < 0 ? '−' : '±') + Math.abs(dc) + '件</b>（前 ' + prevS.length + '件・¥' + prevAmt.toLocaleString() + '）');
+}
+
+// FS：スナップショット枠は、利用者が開閉していなければ「スナップショットが無い間は折りたたみ」
+function uixToggleSnap() {
+  if (typeof toggleSnapshotSection === 'function') toggleSnapshotSection();
+  _uixSyncSnapBtn();
+}
+function _uixSyncSnapBtn() {
+  const sec = document.getElementById('snapshotSection');
+  const btn = document.getElementById('uixSnapToggle');
+  if (!sec || !btn) return;
+  const closed = sec.classList.contains('hidden');
+  btn.innerHTML = closed ? '<i class="ti ti-chevron-down"></i> 開く' : '<i class="ti ti-chevron-up"></i> 閉じる';
+  const sub = document.getElementById('uixSnapSub');
+  const empty = document.getElementById('snapshotEmpty');
+  if (sub) sub.textContent = (closed && empty && !empty.classList.contains('hidden'))
+    ? 'まだありません・毎日23時にサーバーが自動保存（開いた時も保険で保存）'
+    : '毎日23時にサーバーが自動保存（開いた時も保険で保存）。期間で絞って積載率の推移を確認できます';
+}
+function uixAfterRender() {
+  const sec = document.getElementById('snapshotSection');
+  const empty = document.getElementById('snapshotEmpty');
+  let pref = null;
+  try { pref = localStorage.getItem(SNAPSHOT_COLLAPSE_KEY); } catch (e) {}
+  if (sec && empty && pref === null) sec.classList.toggle('hidden', !empty.classList.contains('hidden'));
+  _uixSyncSnapBtn();
+  _uixSyncBarHeight();
+  _uixSpy();
+}
+
+// ④ ページ内ナビ：固定バーの高さぶん下げてスクロール
+function uixJump(e, id) {
+  if (e) e.preventDefault();
+  const el = document.getElementById(id);
+  if (!el) return false;
+  const barH = (document.getElementById('uixBar-' + activeTab) || {}).offsetHeight || 0;
+  const y = el.getBoundingClientRect().top + window.scrollY - barH - 12;
+  window.scrollTo({ top: Math.max(y, 0), behavior: 'smooth' });
+  return false;
+}
+// ④ 今見ているセクションをナビで光らせる
+function _uixSpy() {
+  const nav = document.getElementById('uixNav-' + activeTab);
+  if (!nav) return;
+  const links = nav.querySelectorAll('a');
+  const barH = (document.getElementById('uixBar-' + activeTab) || {}).offsetHeight || 0;
+  let idx = 0;
+  links.forEach((a, i) => {
+    const id = (a.getAttribute('href') || '').slice(1);
+    const s = document.getElementById(id);
+    if (s && s.getBoundingClientRect().top - barH - 40 <= 0) idx = i;
+  });
+  links.forEach((a, i) => a.classList.toggle('uix-act', i === idx));
+}
+let _uixSpyTick = false;
+window.addEventListener('scroll', function () {
+  if (_uixSpyTick) return;
+  _uixSpyTick = true;
+  requestAnimationFrame(function () { _uixSpyTick = false; _uixSpy(); });
+}, { passive: true });
+window.addEventListener('resize', function () { _uixSyncBarHeight(); });
+
+// ⑤ 詳細メニュー
+function uixToggleMenu(tab, e) {
+  if (e) e.stopPropagation();
+  const m = document.getElementById('uixMenu-' + tab);
+  if (!m) return;
+  const willOpen = !m.classList.contains('uix-open');
+  _uixCloseMenus();
+  if (willOpen) m.classList.add('uix-open');
+}
+function _uixCloseMenus() {
+  document.querySelectorAll('.uix-menu.uix-open').forEach(m => m.classList.remove('uix-open'));
+}
+function uixMenuDo(fn) {
+  _uixCloseMenus();
+  try { fn(); } catch (e) { console.error('[詳細メニュー]', e); }
+}
+document.addEventListener('click', function (e) {
+  if (!e.target.closest || !e.target.closest('.uix-menu')) _uixCloseMenus();
+});
+// 商談カレンダーの各ビューへ移動（ビュー切替は既存の setECalView）
+function uixGoCal(view) {
+  if (typeof setECalView === 'function') setECalView(view);
+  uixJump(null, 'uixsec-fs-cal');
 }
 
 // ===== 定数 =====
@@ -1500,9 +2047,16 @@ function loadWinRates() {
 const DASH_TAB_KEY = 'fs-dashboard-active-tab-v1';
 const TAB_STATE_KEY = 'fs-dashboard-tab-state-v1';
 let activeTab = 'fs';
+// ★ 2026-09-27: 初めて開いた人（保存された期間が無い人）は「今月」で開く（FY2025〜FY2026の範囲外なら従来の2026/05）
+const _UIX_INIT = (function () {
+  const d = new Date();
+  const ym = d.getFullYear() + '/' + String(d.getMonth() + 1).padStart(2, '0');
+  if (ym < '2025/04' || ym > '2027/03') return { fy: 'FY2026', period: '2026/05' };
+  return { fy: 'FY' + (d.getMonth() + 1 >= 4 ? d.getFullYear() : d.getFullYear() - 1), period: ym };
+})();
 const TAB_STATE = {
-  fs: { mode: 'month', fy: 'FY2026', period: '2026/05' },
-  is: { mode: 'month', fy: 'FY2026', period: '2026/05' }
+  fs: { mode: 'month', fy: _UIX_INIT.fy, period: _UIX_INIT.period },
+  is: { mode: 'month', fy: _UIX_INIT.fy, period: _UIX_INIT.period }
 };
 // localStorageから復元
 try {
@@ -1559,6 +2113,11 @@ function switchDashboard(tab) {
   var _l = document.getElementById('dashSheetLink'); if (_l) { _l.href = _m.l; _l.style.display = (_m.l === '#' ? 'none' : ''); }
 
   try { localStorage.setItem(DASH_TAB_KEY, tab); } catch (e) {}
+
+  // ★ 2026-09-27 UI/UX改善: 計算ルール（FSのルール）はFS画面のみ表示。開いているメニュー・パネルは閉じる
+  var _rb = document.getElementById('uixRulesBtn'); if (_rb) _rb.style.display = (tab === 'fs' ? '' : 'none');
+  if (typeof closeRulesDrawer === 'function') closeRulesDrawer();
+  if (typeof _uixCloseMenus === 'function') _uixCloseMenus();
 
   // 切替先のタブUIに状態を反映＋再描画
   if (typeof syncPeriodUI === 'function') syncPeriodUI();
@@ -2964,11 +3523,8 @@ function switchFY(fy) {
     }
   });
   // 現在のモードに合わせてperiodをリセット
-  const fy2 = getFyData();
-  if (currentMode === 'month') currentPeriod = fy2.months[1];
-  else if (currentMode === 'quarter') currentPeriod = 'Q1';
-  else if (currentMode === 'half') currentPeriod = 'H1';
-  else currentPeriod = 'FY';
+  // ★ 2026-09-27: 固定の5月／Q1／上期ではなく「今月（今の期）」を選ぶ。別FYでは同じ月（同じ期）
+  currentPeriod = _uixDefaultPeriod(currentMode);
   _saveCurrentToActiveTab();
   renderPeriodTabs();
   _afterPaint(render);
@@ -2985,11 +3541,8 @@ function setView(v) {
   });
   const ve = document.getElementById(prefix + 'view-' + v);
   if (ve) { ve.classList.remove('tab-inactive'); ve.classList.add('tab-active'); }
-  const fy = getFyData();
-  if (v === 'month') currentPeriod = fy.months[1]; // 5月相当
-  else if (v === 'quarter') currentPeriod = 'Q1';
-  else if (v === 'half') currentPeriod = 'H1';
-  else currentPeriod = 'FY';
+  // ★ 2026-09-27: 固定の5月／Q1／上期ではなく「今月（今の期）」を選ぶ。別FYでは同じ月（同じ期）
+  currentPeriod = _uixDefaultPeriod(v);
   _saveCurrentToActiveTab();
   renderPeriodTabs();
   _afterPaint(render);
@@ -3017,6 +3570,8 @@ function renderPeriodTabs() {
     const active = currentMode === 'year' ? o.key === currentFY : o.key === currentPeriod;
     return `<button onclick="setPeriod('${o.key}')" class="px-3 py-1.5 rounded-lg font-medium text-xs ${active?'tab-active':'tab-inactive'}">${o.label}</button>`;
   }).join('');
+  // ★ 2026-09-27 UI/UX改善: 固定バーの「表示中」表示を更新
+  if (typeof uixUpdateViewing === 'function') { try { uixUpdateViewing(); } catch (e) { console.error('uixUpdateViewing error:', e); } }
 }
 
 function setPeriod(k) {
@@ -3406,6 +3961,8 @@ function render() {
     badge.innerHTML = '<i class="ti ti-alert-triangle"></i> 積み増し必要';
     badge.className = 'mt-2 text-center text-xs font-bold px-2 py-1 rounded-lg bg-red-100 text-red-700';
   }
+  // ★ 2026-09-27 UI/UX改善: ① サマリー帯（上で計算した値をそのまま表示）
+  try { uixRenderFsSummary(totals, tSrate, tLrate, tLErate, months, activePipeline); } catch (e) { console.error('uixRenderFsSummary error:', e); }
 
   document.getElementById('cnt-e').textContent = `${totals.ec}件 / ${fmt(totals.e)}`;
   document.getElementById('cnt-d').textContent = `${totals.dc}件 / ${fmt(totals.d)}`;
@@ -3457,6 +4014,8 @@ function render() {
   try { renderIsRanking(); }    catch (e) { console.error('renderIsRanking error:', e); }
   try { renderIsMemberTable(); } catch (e) { console.error('renderIsMemberTable error:', e); }
   try { renderIsCalendar(); }    catch (e) { console.error('renderIsCalendar error:', e); }
+  // ★ 2026-09-27 UI/UX改善: スナップショット枠の開閉・固定バーの高さ・ナビの現在地
+  try { uixAfterRender(); } catch (e) { console.error('uixAfterRender error:', e); }
 }
 
 // ============================================================
@@ -4134,8 +4693,8 @@ function _drawPercTrendMemberChart(items) {
       responsive: true, indexAxis: 'y', maintainAspectRatio: false,
       layout: { padding: { right: 96 } },
       scales: {
-        x: { beginAtZero: true, ticks: { font: { size: 10 }, color: '#94a3b8', precision: 0 }, grid: { color: 'rgba(148,163,184,0.12)' } },
-        y: { ticks: { font: { size: 11 }, color: '#475569' }, grid: { display: false } }
+        x: { beginAtZero: true, ticks: { font: { size: 12 }, color: '#94a3b8', precision: 0 }, grid: { color: 'rgba(148,163,184,0.12)' } },
+        y: { ticks: { font: { size: 12 }, color: '#475569' }, grid: { display: false } }
       },
       plugins: {
         legend: { display: false },
@@ -4189,8 +4748,8 @@ function _drawPercTrendWeeklyChart(buckets) {
     options: {
       responsive: true, maintainAspectRatio: false,
       scales: {
-        x: { ticks: { font: { size: 10 }, color: '#94a3b8' }, grid: { display: false } },
-        y: { beginAtZero: true, ticks: { font: { size: 10 }, color: '#94a3b8', precision: 0 }, grid: { color: 'rgba(148,163,184,0.12)' } }
+        x: { ticks: { font: { size: 12 }, color: '#94a3b8' }, grid: { display: false } },
+        y: { beginAtZero: true, ticks: { font: { size: 12 }, color: '#94a3b8', precision: 0 }, grid: { color: 'rgba(148,163,184,0.12)' } }
       },
       plugins: {
         legend: { display: false },
@@ -5377,6 +5936,11 @@ function renderIsKpis() {
 
   // ⑦ ★ 2026-08-10 追加: 担当者別 1か月推移（上部の期間切替に依存せず常に直近30日）
   try { renderPercMonthlyTrend(); } catch (e) { console.error('renderPercMonthlyTrend error:', e); }
+
+  // ⑧ ★ 2026-09-27 UI/UX改善: IS サマリー帯の前期比
+  try {
+    uixRenderIsSummary(months, activePipe, { apo: apoDeals.length, jisshi: jisshiCount, yomi: yomiDeals.length, contribCount: contribCount });
+  } catch (e) { console.error('uixRenderIsSummary error:', e); }
 }
 
 // ===== IS KPI 詳細（管理方法別カード + モーダル） =====
@@ -6155,16 +6719,16 @@ function renderProgressChart() {
       animation: { duration: 1100, easing: 'easeInOutCubic' },
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { display: true, position: 'top', labels: { font: { size: 11 }, color: (document.documentElement.classList.contains('dark')?'#d7e2ee':'#8294ab'), usePointStyle: true, pointStyleWidth: 10, boxHeight: 7 } },
+        legend: { display: true, position: 'top', labels: { font: { size: 12 }, color: (document.documentElement.classList.contains('dark')?'#d7e2ee':'#8294ab'), usePointStyle: true, pointStyleWidth: 10, boxHeight: 7 } },
         tooltip: { callbacks: { label: c => `${c.dataset.label}: ¥${Math.round(c.parsed.y).toLocaleString()}` } }
       },
       scales: {
-        x: { grid: { display: false }, ticks: { color: (document.documentElement.classList.contains('dark')?'#d7e2ee':'#93a7c0'), font: { size: 10 } } },
+        x: { grid: { display: false }, ticks: { color: (document.documentElement.classList.contains('dark')?'#d7e2ee':'#93a7c0'), font: { size: 12 } } },
         y: {
           beginAtZero: true,
           grid: { color: (document.documentElement.classList.contains('dark')?'rgba(255,255,255,0.12)':'rgba(120,140,165,0.14)') },
           border: { display: false },
-          ticks: { color: (document.documentElement.classList.contains('dark')?'#d7e2ee':'#93a7c0'), font: { size: 10 }, callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v.toLocaleString() }
+          ticks: { color: (document.documentElement.classList.contains('dark')?'#d7e2ee':'#93a7c0'), font: { size: 12 }, callback: v => v >= 1000000 ? (v/1000000).toFixed(1)+'M' : v.toLocaleString() }
         }
       }
     }
@@ -6817,10 +7381,10 @@ function drawRankChart(id, oldChart, rows, mode, setter) {
       layout: { padding: { right: 90 } },
       scales: {
         x: { beginAtZero: true,
-             ticks: { font: { size: 10 }, color: (document.documentElement.classList.contains('dark')?'#d7e2ee':'#94a3b8'),
+             ticks: { font: { size: 12 }, color: (document.documentElement.classList.contains('dark')?'#d7e2ee':'#94a3b8'),
                       callback: (v) => mode === 'amount' ? '¥' + Math.round(v/10000).toLocaleString() + '万' : v + '件' },
              grid: { color: 'rgba(148,163,184,0.12)' } },
-        y: { ticks: { font: { size: 11 }, color: '#475569' }, grid: { display: false } }
+        y: { ticks: { font: { size: 12 }, color: '#475569' }, grid: { display: false } }
       },
       plugins: {
         legend: { display: false },
@@ -8435,11 +8999,11 @@ function _renderForecastErrChart() {
     options: {
       responsive: true, maintainAspectRatio: false,
       scales: {
-        x: { ticks: { font: { size: 10 }, color: '#94a3b8' }, grid: { display: false } },
-        y: { beginAtZero: true, ticks: { font: { size: 10 }, color: '#94a3b8', callback: (v) => '¥' + (v / 1000000).toFixed(0) + 'M' }, grid: { color: 'rgba(148,163,184,0.12)' } }
+        x: { ticks: { font: { size: 12 }, color: '#94a3b8' }, grid: { display: false } },
+        y: { beginAtZero: true, ticks: { font: { size: 12 }, color: '#94a3b8', callback: (v) => '¥' + (v / 1000000).toFixed(0) + 'M' }, grid: { color: 'rgba(148,163,184,0.12)' } }
       },
       plugins: {
-        legend: { display: true, labels: { font: { size: 10 }, boxWidth: 10, color: '#64748b' } },
+        legend: { display: true, labels: { font: { size: 12 }, boxWidth: 10, color: '#64748b' } },
         tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ¥${Math.round(c.parsed.y).toLocaleString()}` } }
       }
     }
@@ -8537,7 +9101,7 @@ function _renderLandingTrendChart() {
       animation: { duration: 1100, easing: 'easeInOutCubic' },
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'bottom', labels: { font: { size: 11 }, color: (document.documentElement.classList.contains('dark')?'#d7e2ee':'#8294ab'), usePointStyle: true, pointStyleWidth: 10, boxHeight: 7 } },
+        legend: { position: 'bottom', labels: { font: { size: 12 }, color: (document.documentElement.classList.contains('dark')?'#d7e2ee':'#8294ab'), usePointStyle: true, pointStyleWidth: 10, boxHeight: 7 } },
         tooltip: {
           callbacks: {
             label: (ctx) => `${ctx.dataset.label}: ¥${ctx.parsed.y.toLocaleString()}`
@@ -8546,7 +9110,7 @@ function _renderLandingTrendChart() {
       },
       scales: {
         y: { beginAtZero: true, grid: { color: (document.documentElement.classList.contains('dark')?'rgba(255,255,255,0.12)':'rgba(120,140,165,0.14)') }, border: { display: false }, ticks: { color: (document.documentElement.classList.contains('dark')?'#d7e2ee':'#93a7c0'), callback: v => '¥' + (v/10000).toFixed(0) + '万' } },
-        x: { grid: { display: false }, ticks: { color: (document.documentElement.classList.contains('dark')?'#d7e2ee':'#93a7c0'), font: { size: 10 } } }
+        x: { grid: { display: false }, ticks: { color: (document.documentElement.classList.contains('dark')?'#d7e2ee':'#93a7c0'), font: { size: 12 } } }
       }
     }
   });
@@ -9978,8 +10542,8 @@ function _drawIsRankChart(canvasId, oldChart, items, baseColor, setter) {
       responsive: true, indexAxis: 'y', maintainAspectRatio: false,
       layout: { padding: { right: 96 } },
       scales: {
-        x: { beginAtZero: true, ticks: { font:{size:10}, color:'#94a3b8' }, grid: { color:'rgba(148,163,184,0.12)' } },
-        y: { ticks: { font:{size:11}, color:'#475569' }, grid: { display:false } }
+        x: { beginAtZero: true, ticks: { font:{size:12}, color:'#94a3b8' }, grid: { color:'rgba(148,163,184,0.12)' } },
+        y: { ticks: { font:{size:12}, color:'#475569' }, grid: { display:false } }
       },
       plugins: {
         legend: { display:false },
