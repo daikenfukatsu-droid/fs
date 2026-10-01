@@ -2952,10 +2952,21 @@ async function _fetchGasOnly(onlyKey, useFresh, timeoutMs, label) {
 //   本体に含めると4.3MB超（週ごとに増加）で、本体が大きいほど
 //   GASの転送先が一時的に404を返しやすくなるため分離した。
 //   これを使うのは「週次トレンド」と「予実誤差モニター」だけなので、後から届いても支障がない。
+// ★ 2026-10-01 追加: GAS の軽量版（weeklyV2：5項目の配列＋辞書番号）を従来の形へ戻す。
+//   使うのは 取引ID(i)・金額(a)・ステージ(s)・対象サービス(p)・クローズ月(m) だけなので、それ以外は復元しない。
+function unpackWeeklyV2(v) {
+  if (!v || !Array.isArray(v.w)) return [];
+  const sd = v.sd || [], pd = v.pd || [], md = v.md || [];
+  return v.w.map(w => ({
+    dateStr: w[0], dayOfWeek: w[1],
+    deals: (w[2] || []).map(r => ({ i: r[0], a: Number(r[1]) || 0, s: sd[r[2]] ?? '', p: pd[r[3]] ?? '', m: md[r[4]] ?? '' })),
+  }));
+}
 async function _loadWeeklyLazy(useFresh) {
   try {
     const j = await _fetchGasOnly('weekly', useFresh, 180000, '週次スナップショット');
-    weeklySnapshots = Array.isArray(j.weeklySnapshots) ? j.weeklySnapshots : [];
+    // 新しいGAS＝weeklyV2（軽量版）／古いGAS＝weeklySnapshots のどちらでも受け取る
+    weeklySnapshots = j.weeklyV2 ? unpackWeeklyV2(j.weeklyV2) : (Array.isArray(j.weeklySnapshots) ? j.weeklySnapshots : []);
     console.log('[週次スナップショット] 後追い取得:', weeklySnapshots.length);
     // 週次トレンド／予実誤差を開いていれば、その場で描き直す
     const modal = document.getElementById('chartDetailModal');
