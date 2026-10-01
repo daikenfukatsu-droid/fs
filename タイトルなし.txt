@@ -1557,7 +1557,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
     <h3 class="font-semibold text-slate-800 mb-1"><i class="ti ti-settings"></i> 着地予想 勝率設定</h3>
     <p class="text-xs text-slate-500 mb-3">ステージ×検討サービスごとの勝率（%）を入力してください。※ 変更はブラウザに保存されます。</p>
     <!-- E案件設定 -->
-    <div class="mb-4 p-3 bg-sky-600 rounded-lg border border-sky-400">
+    <div class="mb-4 p-3 bg-sky-50 rounded-lg border border-sky-200">
       <div class="flex items-center gap-3">
         <span class="text-xs font-semibold text-slate-700 whitespace-nowrap">E案件 最終受注率</span>
         <div class="flex items-center gap-1">
@@ -1586,7 +1586,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
       <div id="timingMonitorBody" class="p-3 text-xs text-slate-500">読み込み中…</div>
     </div>
     <div id="winRatesTableWrap" class="mb-4 overflow-x-auto"></div>
-    <div class="mt-3 p-3 bg-sky-600 rounded-lg text-xs text-slate-600">
+    <div class="mt-3 p-3 bg-sky-50 rounded-lg text-xs text-slate-600">
       <b class="text-sky-700"><i class="ti ti-pin"></i> 滞留減衰について</b><br>
       D/C/C+/B は、スナップショット間で同じステージに留まった回数に応じて期待値が下がります。<br>
       減衰率: 1回あたり −12%、最低40%まで（スナップショットが溜まるほど自動で精度向上）
@@ -8069,7 +8069,7 @@ function renderEMinorRates() {
         <div class="flex items-center gap-1 justify-center">
           <input type="number" min="0" max="100" step="0.1" value="${cur}"
             id="wr-emin-${mi}"
-            class="w-16 border rounded px-1 py-0.5 text-right text-xs ${hasCustom ? 'border-sky-400 bg-sky-600' : ''}" />
+            class="w-16 border rounded px-1 py-0.5 text-right text-xs ${hasCustom ? 'border-sky-400 bg-sky-50' : ''}" />
           <span class="text-slate-400">%</span>
         </div></td>
     </tr>`;
@@ -8097,7 +8097,7 @@ function renderWinRatesTable() {
         <div class="flex items-center gap-1 justify-center">
           <input type="number" min="0" max="100" step="0.1" value="${cur}"
             id="wr-${stage.replace('+','p')}-${prod}"
-            class="w-16 border rounded px-1 py-0.5 text-right text-xs ${hasCustom ? 'border-sky-400 bg-sky-600' : ''}" />
+            class="w-16 border rounded px-1 py-0.5 text-right text-xs ${hasCustom ? 'border-sky-400 bg-sky-50' : ''}" />
           <span class="text-slate-400">%</span>
         </div></td>`;
     });
@@ -12427,7 +12427,7 @@ function renderSnapshots() {
     const isViewing = snapshotView && snapshotView.id === p.id;
     const isSelected = selectedSnapIds.has(p.id);
     return `
-    <tr class="border-b hover:bg-slate-50 ${isViewing ? 'bg-amber-50' : ''} ${isSelected ? 'bg-sky-600' : ''}">
+    <tr class="border-b hover:bg-slate-50 ${isViewing ? 'bg-amber-50' : ''} ${isSelected ? 'bg-sky-50' : ''}">
       <td class="px-2 py-1.5 text-center">
         <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSnapSelect('${p.id}', event)"
           class="w-3.5 h-3.5 cursor-pointer accent-sky-600" title="比較対象に追加（Shift+クリックで範囲選択）">
