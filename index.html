@@ -494,6 +494,13 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
               </tbody>
             </table>
             <p class="text-slate-400 mt-1">検討サービス別（新卒/中途/新卒・中途）に個別設定可能。⚙️ボタンから変更・ブラウザ保存。</p>
+            <p class="font-bold text-slate-700 mt-2 mb-1">🧪 新方式（残り週数別・2026-10 試験運用・現行と併記）</p>
+            <ul class="space-y-0.5 text-slate-500 list-disc list-inside">
+              <li>予想＝ 受注済み ＋ Σ 案件金額 ×「月末の残り週数とステージから見た、その月のうちに受注する確率」 ＋ これから入る見込み</li>
+              <li>確率・見込み額は、直近6か月の決着済みの月について「月末の何週前に、どのステージだった案件が、その月に受注したか」から毎回自動で学習（翌月以降の予定からの前倒し・Eからの昇格も同じ方法で見込む）</li>
+              <li>これから入る見込み＝その時点のパイプラインに無いのに、その月に受注した分の平均。担当者には過去の“予定外の受注”の割合で配分</li>
+              <li>幅＝学習月を1か月ずつ伏せて予想したときの平均誤差（残り週数別）。季節性（昨対同月）つきの案も記録し、2か月続けて現行より当たる方をメインに切り替える</li>
+            </ul>
           </div>
 
           <!-- 6 -->
@@ -817,6 +824,16 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
           <span id="kpi-land-timed-rate" class="text-xs font-bold text-amber-600">0%</span>
         </div>
         <p class="text-[11px] text-slate-400"><i class="ti ti-calendar"></i> タイミング補正後（参考）<span id="kpi-land-timed-note" class="text-slate-300"></span></p>
+      </div>
+      <!-- ★ 2026-10-02 新方式（残り週数別・試験運用）。現行の着地予想は上のまま -->
+      <div id="kpi-hz-wrap" class="border-t border-slate-100 mt-2 pt-2 hidden">
+        <div class="flex items-baseline gap-1.5">
+          <p id="kpi-hz-amount" class="text-base font-bold num" style="color:var(--lb-bubble);">¥0</p>
+          <span id="kpi-hz-rate" class="text-xs font-bold" style="color:var(--lb-bubble);">0%</span>
+        </div>
+        <p class="text-[11px] text-slate-400"><i class="ti ti-flask"></i> 新方式（試験運用）</p>
+        <div id="kpi-hz-stack" style="display:flex;gap:2px;height:8px;border-radius:4px;overflow:hidden;background:var(--surface-2);margin:4px 0;"></div>
+        <p id="kpi-hz-range" class="text-[11px] text-slate-400" style="line-height:1.5;"></p>
       </div>
       <!-- 達成可能性バッジ -->
       <div id="kpi-achieve-badge" class="mt-2 text-center text-xs font-bold px-2 py-1 rounded-lg"></div>
@@ -1585,6 +1602,14 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
       </div>
       <div id="timingMonitorBody" class="p-3 text-xs text-slate-500">読み込み中…</div>
     </div>
+    <!-- ★ 2026-10-02 新方式（残り週数別・試験運用）が自動で学習した確率 -->
+    <div class="mb-4 border border-sky-200 rounded-lg overflow-hidden">
+      <div class="px-3 py-2 bg-sky-50 flex items-center gap-2 flex-wrap">
+        <span class="text-sm font-semibold text-sky-800"><i class="ti ti-flask"></i> 新方式：その月のうちに受注する確率（自動学習）</span>
+        <span class="text-[11px] text-slate-500">月末の何週前に、どのステージだった案件が受注したか（直近6か月）</span>
+      </div>
+      <div id="hzMonitorBody" class="p-3 text-xs text-slate-500">読み込み中…</div>
+    </div>
     <div id="winRatesTableWrap" class="mb-4 overflow-x-auto"></div>
     <div class="mt-3 p-3 bg-sky-50 rounded-lg text-xs text-slate-600">
       <b class="text-sky-700"><i class="ti ti-pin"></i> 滞留減衰について</b><br>
@@ -1794,7 +1819,11 @@ function uixRenderFsSummary(totals, tSrate, tLrate, tLErate, months, pipe) {
   if (bar) bar.style.width = Math.min(tSrate * 100, 100) + '%';
 
   set('uixL-amount', fmt(totals.land));
-  set('uixL-meta', '達成見込み <b style="color:var(--uix-primary)">' + pct(tLrate) + '</b>・E込み最大 ' + fmt(totals.land + totals.landE) + '（' + pct(tLErate) + '）');
+  set('uixL-meta', '達成見込み <b style="color:var(--uix-primary)">' + pct(tLrate) + '</b>・E込み最大 ' + fmt(totals.land + totals.landE) + '（' + pct(tLErate) + '）'
+    // ★ 2026-10-02 新方式（試験運用）を併記
+    + (_hzLast ? '<br><span style="color:var(--lb-bubble);font-weight:600;"><i class="ti ti-flask"></i> 新方式 ' + fmt(_hzLast.total)
+      + (totals.target > 0 ? '（' + pct(_hzLast.total / totals.target) + '）' : '')
+      + (_hzLast.band > 0 ? '・幅 ' + fmt(Math.max(_hzLast.won, _hzLast.total - _hzLast.band)) + '〜' + fmt(_hzLast.total + _hzLast.band) : '') + '</span>' : ''));
 
   const remain = totals.target - totals.s;
   const rEl = document.getElementById('uixRemain');
@@ -2968,6 +2997,10 @@ async function _loadWeeklyLazy(useFresh) {
     // 新しいGAS＝weeklyV2（軽量版）／古いGAS＝weeklySnapshots のどちらでも受け取る
     weeklySnapshots = j.weeklyV2 ? unpackWeeklyV2(j.weeklyV2) : (Array.isArray(j.weeklySnapshots) ? j.weeklySnapshots : []);
     console.log('[週次スナップショット] 後追い取得:', weeklySnapshots.length);
+    // ★ 2026-10-02: 新方式は週次も学習に使うので、届いたら描き直して今週分を記録
+    _weeklyLoaded = true;
+    _afterPaint(render);
+    setTimeout(() => _maybeRecordForecastLog(), 1500);
     // 週次トレンド／予実誤差を開いていれば、その場で描き直す
     const modal = document.getElementById('chartDetailModal');
     if (modal && !modal.classList.contains('hidden')) {
@@ -2975,6 +3008,8 @@ async function _loadWeeklyLazy(useFresh) {
     }
   } catch (e) {
     console.warn('[週次スナップショット] 後追い取得に失敗（週次トレンドと予実誤差のみ影響）:', e);
+    _weeklyLoaded = true;   // 失敗しても、毎日のスナップショットだけで記録は続ける
+    setTimeout(() => _maybeRecordForecastLog(), 1500);
   }
 }
 
@@ -3204,12 +3239,14 @@ async function fetchFromSheets(silent = false, useFresh = !silent) {
 
     if (Array.isArray(json.weeklySnapshots)) {
       weeklySnapshots = json.weeklySnapshots;
+      _weeklyLoaded = true;   // 旧GAS（本体に同梱）
       console.log('[週次スナップショット] 取得件数:', weeklySnapshots.length);
     } else if (json.weeklyLazy) {
       // ★ 2026-08-13: 本体から分離したので後追いで取得する（旧GASはこのフラグを返さない）
       _enqueueLazy(() => _loadWeeklyLazy(useFresh));
     } else {
       weeklySnapshots = [];
+      _weeklyLoaded = true;
     }
 
     // NOTE: ISリスト保有データは FS GAS ではなく専用の IS GAS から取得（下記）
@@ -4078,6 +4115,8 @@ function render() {
     badge.innerHTML = '<i class="ti ti-alert-triangle"></i> 積み増し必要';
     badge.className = 'mt-2 text-center text-xs font-bold px-2 py-1 rounded-lg bg-red-100 text-red-700';
   }
+  // ★ 2026-10-02 新方式（残り週数別・試験運用）を着地予想カードに併記（サマリー帯より先に計算）
+  try { _hzRenderKpi(totals.target, months); } catch (e) { console.error('_hzRenderKpi error:', e); }
   // ★ 2026-09-27 UI/UX改善: ① サマリー帯（上で計算した値をそのまま表示）
   try { uixRenderFsSummary(totals, tSrate, tLrate, tLErate, months, activePipeline); } catch (e) { console.error('uixRenderFsSummary error:', e); }
 
@@ -8056,6 +8095,7 @@ function openWinRatesModal() {
   renderWinRatesTable();
   renderAccuracyMonitor();
   renderTimingMonitor();
+  try { renderHzMonitor(); } catch (e) { console.error('renderHzMonitor error:', e); }   // ★ 2026-10-02 新方式
   const eEl = document.getElementById('wr-e-rate');
   if (eEl) eEl.value = Math.round(eWinRate * 100);
   document.getElementById('winRatesModal').classList.remove('hidden');
@@ -8813,6 +8853,25 @@ function _renderLandingHierarchy(col) {
     maxCnt: unitAgg.reduce((s, u) => s + u.maxCnt, 0) + (otherAgg ? otherAgg.maxCnt : 0),
   };
 
+  // ★ 2026-10-02 新方式（残り週数別・試験運用）：ユニット・メンバー別（各月の所属ユニットへ振り分け）
+  const _hzP = (() => { try { return _hzForecastPeriod(months, {}); } catch (e) { return null; } })();
+  const _hzU = {}, _hzM = {};
+  let _hzTot = null;
+  if (_hzP) {
+    _hzTot = { v: _hzP.total, now: _hzP.inM - _hzP.won + _hzP.pull, nb: _hzP.nb };
+    _hzP.res.forEach(r => Object.entries(r.byOwner).forEach(([w, o]) => {
+      const unit = _fsUnitForMonth(w, r.ym) || 'その他';
+      const addTo = (map, key) => { const x = map[key] = map[key] || { v: 0, now: 0, nb: 0 }; x.v += o.inM + o.pull + o.nb; x.now += o.inM - o.won + o.pull; x.nb += o.nb; };
+      addTo(_hzU, unit); addTo(_hzM, unit + '|' + w);
+    }));
+  }
+  // 新方式のセル：予想額＋（今ある案件から・これから入る見込み）
+  const hzCell = (x, strong) => {
+    if (!_hzP) return '<td style="padding:5px 8px;font-size:11px;text-align:right;color:#94a3b8;background:#f5f9ff;">—</td>';
+    const v = x || { v: 0, now: 0, nb: 0 };
+    return `<td style="padding:5px 8px;font-size:11px;text-align:right;white-space:nowrap;background:#f5f9ff;color:#1d4ed8;font-weight:${strong ? 700 : 600};">${fmt(v.v)}<div style="font-size:9px;color:#94a3b8;font-weight:400;margin-top:1px;">今ある${fmt(v.now)}・見込み${fmt(v.nb)}</div></td>`;
+  };
+
   // ヘッダー（紫系）
   const purple = '#0369a1';
   const purpleBg = '#f0f9ff';
@@ -8828,6 +8887,7 @@ function _renderLandingHierarchy(col) {
         <th style="${thS}">Min</th>
         <th style="${thS}">Mid</th>
         <th style="${thS}">Max</th>
+        <th style="${thS}background:#e8f1ff;color:#1d4ed8;" title="残り週数別の新しい着地予想（試験運用）。受注済みを含む">新方式（試験）</th>
       </tr>
     </thead>`;
 
@@ -8857,6 +8917,7 @@ function _renderLandingHierarchy(col) {
       ${td(fmt(u.min) + cntLine(u.minCnt),    { fw: '700', color: '#dc2626' })}
       ${td(fmt(u.mid) + cntLine(u.midCnt),    { fw: '700', color: '#d97706' })}
       ${td(fmt(u.max) + cntLine(u.maxCnt),    { fw: '700', color: '#0284c7' })}
+      ${hzCell(_hzU[u.unit], true)}
     </tr>`;
 
     if (uOpen) {
@@ -8872,12 +8933,13 @@ function _renderLandingHierarchy(col) {
           ${td(fmt(m.min) + cntLine(m.minCnt), { color: '#dc2626' })}
           ${td(fmt(m.mid) + cntLine(m.midCnt), { color: '#d97706' })}
           ${td(fmt(m.max) + cntLine(m.maxCnt), { color: '#0284c7' })}
+          ${hzCell(_hzM[u.unit + '|' + m.name])}
         </tr>`;
 
         if (mOpen) {
           // メンバー配下の案件行
           if (m.deals.length === 0) {
-            body += `<tr style="background:#ffffff;"><td></td><td colspan="6" style="padding:6px 8px 6px 48px;font-size:10px;color:#94a3b8;">対象案件なし</td></tr>`;
+            body += `<tr style="background:#ffffff;"><td></td><td colspan="7" style="padding:6px 8px 6px 48px;font-size:10px;color:#94a3b8;">対象案件なし</td></tr>`;
           } else {
             // 案件はステージ順(S>A>B>C+>C>D>E>失注) → 同ステージ内は金額降順
             const _stageOrd = { 'S':0, 'A':1, 'B':2, 'C+':3, 'C':4, 'D':5, 'E':6, '失注':7 };
@@ -8890,7 +8952,7 @@ function _renderLandingHierarchy(col) {
             // 案件ヘッダー（説明行）: 順序変更 → 分類 → メモ の順
             body += `<tr style="background:#fafafa;border-bottom:1px solid #e2e8f0;">
               <td></td>
-              <td colspan="6" style="padding:4px 6px 4px 28px;">
+              <td colspan="7" style="padding:4px 6px 4px 28px;">
                 <div style="display:flex;gap:4px;align-items:center;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.3px;">
                   <span style="flex:1.4;min-width:0;">企業名</span>
                   <span style="width:42px;text-align:center;flex-shrink:0;">ステージ</span>
@@ -8941,7 +9003,7 @@ function _renderLandingHierarchy(col) {
               const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
               body += `<tr style="background:${rowBg};border-bottom:1px solid #f1f5f9;">
                 <td></td>
-                <td colspan="6" style="padding:4px 6px 4px 28px;">
+                <td colspan="7" style="padding:4px 6px 4px 28px;">
                   <div style="display:flex;gap:4px;align-items:center;font-size:11px;color:#475569;">
                     <span style="flex:1.4;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_escapeHtml(d.company || '')}">${companyHtml}</span>
                     <span class="${stClass}" style="width:42px;text-align:center;font-weight:700;font-size:10px;flex-shrink:0;">${stageLabel}</span>
@@ -8972,6 +9034,7 @@ function _renderLandingHierarchy(col) {
       ${td(fmt(otherAgg.min) + cntLine(otherAgg.minCnt),    { fw: '700', color: '#dc2626' })}
       ${td(fmt(otherAgg.mid) + cntLine(otherAgg.midCnt),    { fw: '700', color: '#d97706' })}
       ${td(fmt(otherAgg.max) + cntLine(otherAgg.maxCnt),    { fw: '700', color: '#0284c7' })}
+      ${hzCell(_hzU['その他'], true)}
     </tr>`;
     if (uOpen) {
       otherAgg.members.forEach(m => {
@@ -8985,15 +9048,16 @@ function _renderLandingHierarchy(col) {
           ${td(fmt(m.min) + cntLine(m.minCnt), { color: '#dc2626' })}
           ${td(fmt(m.mid) + cntLine(m.midCnt), { color: '#d97706' })}
           ${td(fmt(m.max) + cntLine(m.maxCnt), { color: '#0284c7' })}
+          ${hzCell(_hzM['その他|' + m.name])}
         </tr>`;
         if (mOpen) {
           if (m.deals.length === 0) {
-            body += `<tr style="background:#ffffff;"><td></td><td colspan="6" style="padding:6px 8px 6px 48px;font-size:10px;color:#94a3b8;">対象案件なし</td></tr>`;
+            body += `<tr style="background:#ffffff;"><td></td><td colspan="7" style="padding:6px 8px 6px 48px;font-size:10px;color:#94a3b8;">対象案件なし</td></tr>`;
           } else {
             const sortedDeals = m.deals.slice().sort((a, b) => (b.amount || 0) - (a.amount || 0));
             body += `<tr style="background:#fafafa;border-bottom:1px solid #e2e8f0;">
               <td></td>
-              <td colspan="6" style="padding:4px 6px 4px 28px;">
+              <td colspan="7" style="padding:4px 6px 4px 28px;">
                 <div style="display:flex;gap:4px;align-items:center;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.3px;">
                   <span style="flex:1.4;min-width:0;">企業名</span>
                   <span style="width:42px;text-align:center;flex-shrink:0;">ステージ</span>
@@ -9037,7 +9101,7 @@ function _renderLandingHierarchy(col) {
               const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
               body += `<tr style="background:${rowBg};border-bottom:1px solid #f1f5f9;">
                 <td></td>
-                <td colspan="6" style="padding:4px 6px 4px 28px;">
+                <td colspan="7" style="padding:4px 6px 4px 28px;">
                   <div style="display:flex;gap:4px;align-items:center;font-size:11px;color:#475569;">
                     <span style="flex:1.4;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${_escapeHtml(d.company || '')}">${companyHtml}</span>
                     <span class="${stClass}" style="width:42px;text-align:center;font-weight:700;font-size:10px;flex-shrink:0;">${stageLabel}</span>
@@ -9065,10 +9129,12 @@ function _renderLandingHierarchy(col) {
     ${td(fmt(tot.min) + cntLine(tot.minCnt),    { fw: '700', color: '#dc2626' })}
     ${td(fmt(tot.mid) + cntLine(tot.midCnt),    { fw: '700', color: '#d97706' })}
     ${td(fmt(tot.max) + cntLine(tot.maxCnt),    { fw: '700', color: '#0284c7' })}
+    ${hzCell(_hzTot, true)}
   </tr>`;
 
   const note = `<p style="font-size:10px;color:#94a3b8;margin-top:6px;">
-    💡 各案件のセレクトボックスで <b style="color:#dc2626;">Min</b> / <b style="color:#d97706;">Mid</b> / <b style="color:#0284c7;">Max</b> / 該当なし を選択すると、メンバー・ユニット・合計のMin/Mid/Maxに自動集計されます（選択はブラウザに保存）
+    💡 各案件のセレクトボックスで <b style="color:#dc2626;">Min</b> / <b style="color:#d97706;">Mid</b> / <b style="color:#0284c7;">Max</b> / 該当なし を選択すると、メンバー・ユニット・合計のMin/Mid/Maxに自動集計されます（選択はブラウザに保存）<br>
+    🧪 <b style="color:#1d4ed8;">新方式（試験）</b>＝残り週数別の着地予想。受注済み＋今ある案件から＋これから入る見込み（過去にその人が取った“予定外の受注”の割合で配分）。現行の数字とは別に試験運用中です
   </p>`;
 
   // ============ 表示期間セレクタ（モーダル上部） ============
@@ -9319,8 +9385,13 @@ function _buildForecastErrorRows() {
     const lastDay = new Date(Number(m.split('/')[0]), Number(m.split('/')[1]), 0);
 
     // ★ その月の週次記録（forecastLog）があれば、近似ではなく実測値を使う
+    // ★ 2026-10-01 修正: 対象月はスプレッドシートが日付型にして返す（'Sat Aug 01 2026 …'）ため、
+    //   'YYYY/MM' に揃えてから比べる（以前は一致せず、実測があっても常に近似になっていた）。
+    //   また「その月の中で記録した週」が1つも無い場合（例：9月の予想を8月中にしか記録していない）は、
+    //   月末時点の比較にならないので実測を使わず近似にする。
+    const monthStart = new Date(Number(m.split('/')[0]), Number(m.split('/')[1]) - 1, 1);
     const logged = (forecastLog || [])
-      .filter(x => x.month === m && x.week)
+      .filter(x => _normMonthKey(x.month) === m && x.week)
       .map(x => {
         const wk = _normWeekKey(x.week);          // ★ Date形式で返ってきても揃える
         const p = wk.split('-').map(Number);
@@ -9329,6 +9400,7 @@ function _buildForecastErrorRows() {
       })
       .filter(p => p && !isNaN(p.date) && p.date <= lastDay)
       .sort((a, b) => a.date - b.date);
+    if (!logged.some(p => p.date >= monthStart)) logged.length = 0;
 
     const points = logged.length
       ? logged
@@ -9363,6 +9435,16 @@ function _forecastWeekKey(d) {
 //  'Mon Aug 10 2026 00:00:00 GMT+0900 ...' になることがある。
 //  そのまま比較すると「今週分は記録済み」が常に false になり、
 //  5分ごとの自動更新でも記録POSTが飛んで行が増え続けてしまう（実際に発生した）。
+// ★ 2026-10-01 追加: 対象月の正規化（'2026/08' でも 'Sat Aug 01 2026 …' でも 'YYYY/MM' に揃える）
+function _normMonthKey(v) {
+  if (!v) return '';
+  const s = String(v);
+  const m = s.match(/^(\d{4})[\/\-](\d{1,2})(?![\d])/);
+  if (m) return `${m[1]}/${String(m[2]).padStart(2, '0')}`;
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+  return s;
+}
 function _normWeekKey(v) {
   if (!v) return '';
   const s = String(v);
@@ -9373,9 +9455,11 @@ function _normWeekKey(v) {
   return s;
 }
 
+let _weeklyLoaded = false;   // ★ 2026-10-02: 週次スナップショットの取得が終わったか（新方式の学習に使うため、記録はその後）
 function _maybeRecordForecastLog() {
   try {
     if (!Array.isArray(pipeline) || pipeline.length === 0) return;
+    if (!_weeklyLoaded) return;   // 週次の取得後に _loadWeeklyLazy からもう一度呼ばれる
     const wk = _forecastWeekKey(new Date());
     if (forecastLog.some(x => _normWeekKey(x.week) === wk)) return;   // 今週分は記録済み
     const fy = getFyData();
@@ -9390,6 +9474,9 @@ function _maybeRecordForecastLog() {
         timed: members.reduce((s, x) => s + calcLandingTimed(x, pipeline, months), 0),
         won:   pipeline.filter(d => d.month === m && d.stage === 'S').reduce((s, d) => s + (d.amount || 0), 0),
         target: members.reduce((s, x) => s + getTargetFor(x, months), 0),
+        // ★ 2026-10-02 新方式（残り週数別）と季節性つき。学習データが足りない間は空
+        hz:  (() => { try { const r = _hzForecastMonth(m, {}); return r ? r.total : null; } catch (e) { return null; } })(),
+        hzS: (() => { try { const r = _hzForecastMonth(m, { season: true }); return r ? r.total : null; } catch (e) { return null; } })(),
       };
     });
     gasPost('saveForecastLog', { week: wk, entries });
@@ -9398,6 +9485,306 @@ function _maybeRecordForecastLog() {
   } catch (e) {
     console.warn('[予実ログ] 記録に失敗（表示には影響しません）:', e);
   }
+}
+
+// ============================================================
+// ★ 2026-10-02 新方式：残り週数別の着地予想（試験運用・現行と併記）
+//   予想（その月）＝ Σ 案件金額 × P[残り週数][その月との関係:ステージ]
+//                  ＋ これから入る見込み（その時点のパイプラインに無い受注の平均・残り週数別）
+//   P＝過去の各月について「月末の k 週前に、そのステージ（その月の予定／翌月以降の予定）にいた案件が、
+//      その月のうちに受注した割合（金額ベース）」。直近6か月の決着済みの月から毎回自動で学習する。
+//   前倒し（翌月以降の予定）・E（実施予定）も同じ表の確率で見込む。
+//   季節性つき（hzS）：見込み分を「去年の同じ月の受注 ÷ 学習月の去年同月の平均」で補正（2か月比べて当たる方を採用）。
+//   誤差の幅＝学習月を1か月ずつ伏せて予想したときの平均誤差（残り週数別）。
+//   現行の着地予想（calcLanding）には一切手を入れていない。
+// ============================================================
+const HZ_TRAIN_MONTHS = 6;   // 学習に使う直近の決着済みの月数
+const HZ_MAX_K = 8;          // 残り週数の上限（それより先の月は8週前の値で代用＝目安）
+const HZ_STAGES = ['S', 'A', 'B', 'C+', 'C', 'D', 'E'];
+let _hzModelCache = null;
+let _hzLast = null;          // 直近に描画した期間の新方式（サマリー帯が参照）
+
+function _hzYm(d) { return d.getFullYear() + '/' + String(d.getMonth() + 1).padStart(2, '0'); }
+function _hzShiftYm(ym, n) { const [y, m] = ym.split('/').map(Number); const t = y * 12 + (m - 1) + n; return Math.floor(t / 12) + '/' + String(t % 12 + 1).padStart(2, '0'); }
+function _hzMonthEnd(ym) { const [y, m] = ym.split('/').map(Number); return new Date(y, m, 0); }
+function _hzToday() { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+// 月末までの残り週数（1〜8）：月末の0〜7日前＝1、8〜14日前＝2 …
+function _hzKOf(ym, ref) { const days = Math.round((_hzMonthEnd(ym) - ref) / 864e5); return Math.min(HZ_MAX_K, Math.max(1, Math.ceil(days / 7))); }
+// 案件の予定月が、対象月から見てどこか（当月／1か月先／2か月先／3か月以上先）。前の月は対象外
+function _hzRelOf(dealMonth, ym) {
+  if (!dealMonth) return null;
+  if (dealMonth === ym) return 'M';
+  if (dealMonth < ym) return null;
+  const [y1, m1] = ym.split('/').map(Number), [y2, m2] = String(dealMonth).split('/').map(Number);
+  const diff = (y2 - y1) * 12 + (m2 - m1);
+  return diff === 1 ? 'M+1' : diff === 2 ? 'M+2' : 'M+3';
+}
+function _hzSnapDay(s) {
+  const id = String((s && (s.id || s.dateStr)) || '');
+  const m = id.match(/^(\d{4})\/(\d{2})\/(\d{2})/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  const d = new Date(id); if (isNaN(d)) return null;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+// 観測点：毎日のスナップショット＋週次スナップショット（古い月は週次で補う。同じ日は毎日の方を優先）
+function _hzPoints() {
+  const pts = [];
+  (Array.isArray(snapshots) ? snapshots : []).forEach(s => {
+    const d = _hzSnapDay(s); if (!d) return;
+    pts.push({ date: d, src: 'daily', deals: (s.pipeline || []).map(x => ({ id: String(x.hubspotId || ''), stage: x.stage, month: String(x.month || ''), amount: Number(x.amount) || 0 })) });
+  });
+  (Array.isArray(weeklySnapshots) ? weeklySnapshots : []).forEach(w => {
+    const d = _weeklySnapDate(w); if (!d) return;
+    pts.push({ date: d, src: 'weekly', deals: (w.deals || []).map(x => {
+      const p = _snapProductOf(x.p);
+      return { id: String(x.i || ''), stage: _snapStageOf(x.s), month: String(x.m || ''), amount: Number(x.a) || (p ? PRODUCT_ESTIMATES[p] : DEFAULT_ESTIMATE) };
+    }) });
+  });
+  pts.sort((a, b) => (a.date - b.date) || (a.src === 'daily' ? 1 : -1));
+  return pts;
+}
+// 基準日 t 以前で、6日以内に撮られた一番新しい観測点
+function _hzPick(pts, t) {
+  let best = null;
+  for (const p of pts) { if (p.date > t) break; if ((t - p.date) / 864e5 <= 6) best = p; }
+  return best;
+}
+
+function _hzBuild() {
+  const pipe = pipeline || [];
+  const truth = {};
+  [...pipe, ...(lostDeals || [])].forEach(d => { if (d.hubspotId) truth[String(d.hubspotId)] = d; });
+  const actualOf = M => pipe.filter(d => d.stage === 'S' && d.month === M).reduce((s, d) => s + (d.amount || 0), 0);
+  const pts = _hzPoints();
+  if (!pts.length) return { insufficient: true, months: [] };
+  const thisM = _hzYm(_hzToday());
+  // 学習月：今月より前で、月末の1〜4週前の観測点がある直近6か月
+  const months = [];
+  for (let i = 1; i <= 18 && months.length < HZ_TRAIN_MONTHS; i++) {
+    const M = _hzShiftYm(thisM, -i); if (M < '2025/04') break;
+    const end = _hzMonthEnd(M);
+    if ([1, 2, 3, 4].some(k => { const t = new Date(end); t.setDate(end.getDate() - 7 * k); return !!_hzPick(pts, t); })) months.push(M);
+  }
+  if (months.length < 2) return { insufficient: true, months };
+  // 学習月 × 残り週数 の観測
+  const obs = {};
+  months.forEach(M => {
+    const end = _hzMonthEnd(M), actual = actualOf(M);
+    const wins = pipe.filter(d => d.stage === 'S' && d.month === M);
+    obs[M] = {};
+    for (let k = 1; k <= HZ_MAX_K; k++) {
+      const t = new Date(end); t.setDate(end.getDate() - 7 * k);
+      const pt = _hzPick(pts, t); if (!pt) continue;
+      const cells = {}, present = new Set();
+      pt.deals.forEach(d => {
+        if (!HZ_STAGES.includes(d.stage)) return;
+        const rel = _hzRelOf(d.month, M); if (!rel) return;
+        const f = truth[d.id], won = !!(f && f.stage === 'S' && f.month === M);
+        const key = rel + ':' + d.stage, c = cells[key] = cells[key] || { amt: 0, won: 0 };
+        c.amt += d.amount; if (won) c.won += d.amount;
+        present.add(d.id);
+      });
+      // その時点のパイプラインに無かった受注＝「これから入る見込み」の実績
+      let newBiz = 0; const nbOwner = {};
+      wins.forEach(d => {
+        if (d.hubspotId && present.has(String(d.hubspotId))) return;
+        const w = d.name || '（担当者なし）';
+        newBiz += d.amount || 0; nbOwner[w] = (nbOwner[w] || 0) + (d.amount || 0);
+      });
+      obs[M][k] = { cells, newBiz, nbOwner, actual };
+    }
+  });
+  const pool = (k, exclude) => {
+    const agg = {}; let nb = 0, n = 0;
+    months.forEach(M => {
+      if (M === exclude) return; const o = obs[M][k]; if (!o) return;
+      Object.entries(o.cells).forEach(([key, c]) => { const a = agg[key] = agg[key] || { amt: 0, won: 0 }; a.amt += c.amt; a.won += c.won; });
+      nb += o.newBiz; n++;
+    });
+    if (!n) return null;
+    const P = {}; Object.entries(agg).forEach(([key, a]) => { P[key] = a.amt ? a.won / a.amt : 0; });
+    return { P, nb: nb / n, n };
+  };
+  const lyAct = M => actualOf(_hzShiftYm(M, -12));
+  const seasonFactor = (target, exclude) => {
+    const tr = months.filter(M => M !== exclude);
+    const base = tr.reduce((s, M) => s + lyAct(M), 0) / (tr.length || 1), ly = lyAct(target);
+    if (!(base > 0) || !(ly > 0)) return 1;
+    return Math.min(2, Math.max(0.5, ly / base));
+  };
+  const sumCells = (cells, tbl) => Object.entries(cells).reduce((s, [key, c]) => s + c.amt * (tbl.P[key] || 0), 0);
+  // 1か月ずつ伏せて予想 → 残り週数別の平均誤差（＝幅）
+  const mae = {}, maeS = {}, bias = {}, loo = {};
+  for (let k = 1; k <= HZ_MAX_K; k++) {
+    const e = [], eS = [];
+    months.forEach(M => {
+      const o = obs[M][k]; if (!o || !(o.actual > 0)) return;
+      const tbl = pool(k, M); if (!tbl) return;
+      const base = sumCells(o.cells, tbl), v = base + tbl.nb, vS = base + tbl.nb * seasonFactor(M, M);
+      (loo[M] = loo[M] || {})[k] = { v, vS, actual: o.actual };
+      e.push(v / o.actual - 1); eS.push(vS / o.actual - 1);
+    });
+    if (e.length) {
+      mae[k] = e.reduce((s, x) => s + Math.abs(x), 0) / e.length;
+      maeS[k] = eS.reduce((s, x) => s + Math.abs(x), 0) / eS.length;
+      bias[k] = e.reduce((s, x) => s + x, 0) / e.length;
+    }
+  }
+  const full = {}; for (let k = 1; k <= HZ_MAX_K; k++) full[k] = pool(k, null);
+  // 見込みの担当者配分：学習月で「その時点のパイプラインに無かった受注」を誰が取ったか（金額の割合）
+  const share = {}; let shareTot = 0;
+  months.forEach(M => Object.values(obs[M]).forEach(o => Object.entries(o.nbOwner).forEach(([w, v]) => { share[w] = (share[w] || 0) + v; shareTot += v; })));
+  return { months: months.slice().sort(), full, mae, maeS, bias, loo, share, shareTot, seasonFactor };
+}
+function _hzModel() {
+  const t = _hzToday();
+  const sig = [(pipeline || []).length, (lostDeals || []).length, (snapshots || []).length, (weeklySnapshots || []).length, t.getTime()].join('|');
+  if (_hzModelCache && _hzModelCache.sig === sig) return _hzModelCache.model;
+  let model = null;
+  try { model = _hzBuild(); } catch (e) { console.error('[新方式] 学習エラー:', e); }
+  _hzModelCache = { sig, model };
+  return model;
+}
+function _hzTableFor(model, k) {
+  for (let d = 0; d < HZ_MAX_K; d++) { const t = model.full[k - d] || model.full[k + d]; if (t) return t; }
+  return null;
+}
+// 1か月分の新方式の予想（担当者別の内訳つき）。過ぎた月は受注実績そのもの
+function _hzForecastMonth(ym, opt) {
+  const model = _hzModel();
+  if (!model || model.insufficient) return null;
+  const today = _hzToday(), thisM = _hzYm(today), pipe = getActivePipeline();
+  const byOwner = {};
+  const add = (w, key, v) => { const o = byOwner[w] = byOwner[w] || { won: 0, inM: 0, pull: 0, nb: 0 }; o[key] += v; };
+  let k = 0, mae = null;
+  if (ym < thisM) {
+    pipe.forEach(d => { if (d.stage === 'S' && d.month === ym) { const w = d.name || '（担当者なし）'; add(w, 'won', d.amount || 0); add(w, 'inM', d.amount || 0); } });
+  } else {
+    // ★ 残り週数は「日数 ÷ 7」の小数で持ち、前後の週の表を按分する（週の境目で予想が急に跳ねないように）
+    const days = Math.round((_hzMonthEnd(ym) - today) / 864e5);
+    const kf = Math.min(HZ_MAX_K, Math.max(1, days / 7));
+    const k1 = Math.floor(kf), k2 = Math.min(HZ_MAX_K, Math.ceil(kf)), wt = kf - k1;
+    const t1 = _hzTableFor(model, k1), t2 = _hzTableFor(model, k2) || t1; if (!t1) return null;
+    k = Math.min(HZ_MAX_K, Math.max(1, Math.ceil(kf)));
+    const prob = key => (1 - wt) * (t1.P[key] || 0) + wt * (t2.P[key] || 0);
+    pipe.forEach(d => {
+      if (!HZ_STAGES.includes(d.stage)) return;
+      const rel = _hzRelOf(d.month, ym); if (!rel) return;
+      const w = d.name || '（担当者なし）', amt = d.amount || 0;
+      if (rel === 'M' && d.stage === 'S') { add(w, 'won', amt); add(w, 'inM', amt); return; }
+      const p = prob(rel + ':' + d.stage); if (!p) return;
+      add(w, rel === 'M' ? 'inM' : 'pull', amt * p);
+    });
+    const nbBase = (1 - wt) * t1.nb + wt * t2.nb;
+    const nbTotal = nbBase * (opt && opt.season ? model.seasonFactor(ym, null) : 1);
+    if (model.shareTot > 0) Object.entries(model.share).forEach(([w, v]) => add(w, 'nb', nbTotal * v / model.shareTot));
+    else add('（担当者なし）', 'nb', nbTotal);
+    const m1 = model.mae[k1], m2 = model.mae[k2];
+    mae = (m1 != null && m2 != null) ? (1 - wt) * m1 + wt * m2 : (m1 != null ? m1 : (m2 != null ? m2 : null));
+  }
+  const tot = Object.values(byOwner).reduce((s, o) => { s.won += o.won; s.inM += o.inM; s.pull += o.pull; s.nb += o.nb; return s; }, { won: 0, inM: 0, pull: 0, nb: 0 });
+  const total = tot.inM + tot.pull + tot.nb;
+  return { ym, k, past: ym < thisM, far: k >= HZ_MAX_K, byOwner, ...tot, total, mae, band: mae != null ? total * mae : 0 };
+}
+// 期間（複数月）の合計。member を渡すとその人の分だけ
+function _hzForecastPeriod(months, opt, member) {
+  const res = (months || []).map(m => _hzForecastMonth(m, opt)).filter(Boolean);
+  if (!res.length) return null;
+  const pickO = r => member ? [r.byOwner[member] || { won: 0, inM: 0, pull: 0, nb: 0 }] : Object.values(r.byOwner);
+  let won = 0, inM = 0, pull = 0, nb = 0, band = 0;
+  res.forEach(r => {
+    let t = 0;
+    pickO(r).forEach(o => { won += o.won; inM += o.inM; pull += o.pull; nb += o.nb; t += o.inM + o.pull + o.nb; });
+    if (r.mae != null) band += t * r.mae;
+  });
+  const live = res.filter(r => !r.past);
+  return { res, won, inM, pull, nb, total: inM + pull + nb, band, kNow: live.length ? Math.min(...live.map(r => r.k)) : 0, far: live.some(r => r.far) };
+}
+
+// 着地予想カードに新方式を併記
+function _hzRenderKpi(target, months) {
+  const wrap = document.getElementById('kpi-hz-wrap'); if (!wrap) return;
+  wrap.classList.remove('hidden');
+  const model = _hzModel();
+  const amtEl = document.getElementById('kpi-hz-amount'), rateEl = document.getElementById('kpi-hz-rate');
+  const rangeEl = document.getElementById('kpi-hz-range'), stackEl = document.getElementById('kpi-hz-stack');
+  if (!model || model.insufficient) {
+    _hzLast = null;
+    amtEl.textContent = '—'; rateEl.textContent = '';
+    rangeEl.textContent = 'スナップショットが2か月分そろうと表示されます（学習データを準備中）';
+    stackEl.innerHTML = '';
+    return;
+  }
+  const r = _hzForecastPeriod(months, {}, currentSnapMember || null);
+  _hzLast = r ? { ...r, target } : null;
+  if (!r) { amtEl.textContent = '—'; rateEl.textContent = ''; rangeEl.textContent = ''; stackEl.innerHTML = ''; return; }
+  amtEl.textContent = fmt(r.total);
+  rateEl.textContent = target > 0 ? pct(r.total / target) : '';
+  const base = r.inM - r.won;   // 受注済みを除いた「今ある案件から」
+  const seg = (v, c, t) => v > 0 && r.total > 0 ? `<span title="${t} ${fmt(v)}" style="display:block;height:100%;width:${v / r.total * 100}%;background:${c};"></span>` : '';
+  stackEl.innerHTML = seg(r.won, 'var(--success)', '受注済み') + seg(base, 'var(--lb-bubble)', '今ある案件から') + seg(r.pull, '#86b6ef', '前倒し・Eから') + seg(r.nb, 'var(--lb-bench)', 'これから入る見込み');
+  const lo = Math.max(r.won, r.total - r.band), hi = r.total + r.band;
+  rangeEl.innerHTML = (r.band > 0 ? `幅 ${fmt(lo)}〜${fmt(hi)}（過去の誤差）` : '') +
+    `<br>受注済 ${fmt(r.won)}・今ある案件 ${fmt(base)}・前倒し/E ${fmt(r.pull)}・見込み ${fmt(r.nb)}` + (r.far ? '<br>※ 8週より先の月は目安' : '');
+}
+
+// 勝率設定画面：新方式が学習した確率表
+function renderHzMonitor() {
+  const body = document.getElementById('hzMonitorBody'); if (!body) return;
+  const model = _hzModel();
+  if (!model || model.insufficient) { body.innerHTML = '学習に使える月がまだ足りません（月末の1〜4週前のスナップショットが2か月分そろうと表示されます）。'; return; }
+  const P = v => v == null ? '—' : Math.round(v * 100) + '%';
+  const cellBg = v => v == null ? '' : `background:rgba(42,120,214,${Math.min(v, 1) * 0.4});`;
+  const rowsHtml = [1, 2, 3, 4, 6, 8].map(k => {
+    const t = model.full[k]; if (!t) return '';
+    const st = ['A', 'B', 'C+', 'C', 'D', 'E'].map(s => { const v = t.P['M:' + s]; return `<td style="padding:4px 6px;text-align:right;"><span style="display:inline-block;min-width:40px;border-radius:5px;padding:1px 5px;${cellBg(v)}">${P(v)}</span></td>`; }).join('');
+    const pull = ['B', 'C+', 'C'].map(s => P(t.P['M+1:' + s])).join(' / ');
+    return `<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:4px 6px;font-weight:700;">${k}週前</td>${st}<td style="padding:4px 6px;text-align:right;">${fmt(t.nb)}</td><td style="padding:4px 6px;text-align:right;color:#64748b;">${pull}</td><td style="padding:4px 6px;text-align:right;color:#64748b;">${model.mae[k] != null ? '±' + Math.round(model.mae[k] * 100) + '%' : '—'}</td></tr>`;
+  }).join('');
+  body.innerHTML = `
+    <div style="color:#64748b;margin-bottom:6px;">学習に使った月：${model.months.map(_reupYmLabel).join('・')}（毎回自動で計算し直します）</div>
+    <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <thead><tr style="color:#64748b;border-bottom:1px solid #e2e8f0;">
+        <th style="padding:4px 6px;text-align:left;">月末まで</th><th style="padding:4px 6px;text-align:right;">A</th><th style="padding:4px 6px;text-align:right;">B</th><th style="padding:4px 6px;text-align:right;">C+</th><th style="padding:4px 6px;text-align:right;">C</th><th style="padding:4px 6px;text-align:right;">D</th><th style="padding:4px 6px;text-align:right;">E</th>
+        <th style="padding:4px 6px;text-align:right;">これから入る見込み</th><th style="padding:4px 6px;text-align:right;">前倒し（翌月予定のB/C+/C）</th><th style="padding:4px 6px;text-align:right;">過去の誤差</th></tr></thead>
+      <tbody>${rowsHtml}</tbody></table></div>
+    <div style="color:#94a3b8;margin-top:6px;">ステージ欄＝その月の予定にいた案件が、その月のうちに受注した割合（金額ベース）。過去の誤差＝学習月を1か月ずつ伏せて予想したときの平均。</div>`;
+}
+
+// 予実誤差モニター：残り週数別の当たり具合（新方式は過去の検証、現行は実際に画面に出した記録がある月だけ）
+function _hzHorizonPanelHtml(errRows) {
+  const model = _hzModel();
+  if (!model || model.insufficient) return '';
+  const KS = [4, 3, 2, 1];
+  const pc = v => v == null ? '—' : '±' + Math.round(v * 100) + '%';
+  // 現行：forecast_log に「その月の中で記録した週」がある月（＝実測の行）だけ
+  const curMae = {}, curN = {};
+  (errRows || []).filter(r => r.exact && r.actual > 0).forEach(r => {
+    // 記録の週（月曜）から月末までの週数で振り分ける（記録が抜けた週があっても列がずれないように）
+    const end = _hzMonthEnd(r.month), seen = {};
+    r.points.forEach(p => {
+      const k = Math.floor((end - p.date) / 864e5 / 7);
+      if (!KS.includes(k) || seen[k]) return; seen[k] = true;
+      curMae[k] = (curMae[k] || 0) + Math.abs(p.forecast / r.actual - 1); curN[k] = (curN[k] || 0) + 1;
+    });
+  });
+  KS.forEach(k => { if (curN[k]) curMae[k] /= curN[k]; });
+  const th = 'padding:5px 8px;text-align:right;font-weight:600;color:#94a3b8;';
+  const td = (v, strong) => `<td style="padding:5px 8px;text-align:right;${strong ? 'font-weight:700;color:#1d4ed8;' : 'color:#475569;'}">${v}</td>`;
+  const best = k => Math.min(...[model.mae[k], model.maeS[k], curMae[k]].filter(v => v != null));
+  return `
+    <div style="background:#ffffff;border:1px solid #bfdbfe;border-radius:6px;padding:8px 10px;margin-bottom:12px;">
+      <div style="font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:4px;">🧪 新方式（試験運用）：月末の何週前に、どれだけ当たるか</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr><th style="${th}text-align:left;">平均誤差</th>${KS.map(k => `<th style="${th}">${k}週前</th>`).join('')}</tr></thead>
+        <tbody>
+          <tr><td style="padding:5px 8px;">新方式</td>${KS.map(k => td(pc(model.mae[k]), model.mae[k] === best(k))).join('')}</tr>
+          <tr><td style="padding:5px 8px;">新方式＋季節性（昨対同月）</td>${KS.map(k => td(pc(model.maeS[k]), model.maeS[k] === best(k))).join('')}</tr>
+          <tr><td style="padding:5px 8px;">現行（実際に画面に出した予想）</td>${KS.map(k => td(curN[k] ? pc(curMae[k]) + `<span style="font-size:11px;color:#94a3b8;">（${curN[k]}か月）</span>` : '—', curMae[k] === best(k))).join('')}</tr>
+        </tbody>
+      </table>
+      <div style="font-size:11px;color:#94a3b8;margin-top:4px;">新方式は ${model.months.map(_reupYmLabel).join('・')} を1か月ずつ伏せて予想した結果。今後は毎週、新方式の予想も記録し、実際に出した値で比べます（2か月続けて現行より当たれば切替）。</div>
+    </div>`;
 }
 
 // 予実誤差モニターの開閉
@@ -9452,19 +9839,24 @@ function _renderForecastErrorBlock(purple) {
     return `<button onclick="setForecastErrMonth('${r.month}')" style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:9999px;border:1px solid ${on ? purple : '#e2e8f0'};background:${on ? '#ede9fe' : '#ffffff'};color:${on ? purple : '#64748b'};cursor:pointer;">${_reupYmLabel(r.month)}</button>`;
   }).join('');
 
-  // 週の見出しは「月末までの何週前か」で揃える（月ごとに週数が違うため最大列に合わせる）
-  const maxPts = Math.max(...rows.map(r => r.points.length));
+  // 週の見出しは「月末までの何週前か」で揃える
+  // ★ 2026-10-02 修正: 並び順ではなく日付から週数を出す（記録の抜けた週があっても列がずれないように）
+  const kOf = (r, p) => Math.max(0, Math.floor((_hzMonthEnd(r.month) - p.date) / 864e5 / 7));
+  const maxK = Math.max(0, ...rows.map(r => Math.max(0, ...r.points.map(p => kOf(r, p)))));
+  const maxPts = maxK + 1;
   const headCells = [];
-  for (let i = maxPts; i >= 1; i--) headCells.push(i === 1 ? '月末時点' : `${i - 1}週前`);
+  for (let k = maxK; k >= 0; k--) headCells.push(k === 0 ? '月末時点' : `${k}週前`);
 
   const tableRows = rows.map(r => {
-    const pad = maxPts - r.points.length;
+    const byK = {}; r.points.forEach(p => { byK[kOf(r, p)] = p; });   // 同じ週は新しい方
+    const lastP = r.points[r.points.length - 1];
     const cells = [];
-    for (let i = 0; i < pad; i++) cells.push('<td style="text-align:right;padding:6px 8px;color:#cbd5e1;">－</td>');
-    r.points.forEach((p, i) => {
-      const isLast = i === r.points.length - 1;
+    for (let k = maxK; k >= 0; k--) {
+      const p = byK[k];
+      if (!p) { cells.push('<td style="text-align:right;padding:6px 8px;color:#cbd5e1;">－</td>'); continue; }
+      const isLast = p === lastP;
       cells.push(`<td style="text-align:right;padding:6px 8px;color:${isLast ? '#1e293b' : '#64748b'};${isLast ? 'font-weight:700;' : ''}" title="${p.dateStr} 時点">${fmtM(p.forecast)}</td>`);
-    });
+    }
     const pctColor = r.errPct === null ? '#94a3b8' : (Math.abs(r.errPct) <= 3 ? '#16a34a' : r.errPct > 0 ? '#dc2626' : '#2563eb');
     // 実測（毎週記録した値）か、週次スナップショットからの近似かを明示する
     const srcBadge = r.exact
@@ -9500,6 +9892,8 @@ function _renderForecastErrorBlock(purple) {
       </div>
     </div>
 
+    ${(() => { try { return _hzHorizonPanelHtml(rows); } catch (e) { console.error('_hzHorizonPanelHtml error:', e); return ''; } })()}
+
     <div style="overflow-x:auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:6px;">
       <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:${260 + maxPts * 80}px;">
         <thead><tr style="color:#94a3b8;border-bottom:1px solid #e2e8f0;">
@@ -9520,8 +9914,8 @@ function _renderForecastErrorBlock(purple) {
     </div>
 
     <p style="font-size:10px;color:#94a3b8;margin-top:8px;line-height:1.6;">
-      💡 各週の取引データに、その週を基準日とした勝率×時間減衰を適用して予想を再計算しています。<br>
-      ⚠ 停滞係数だけは当時の滞留回数を遡れないため除外しています。停滞係数は予想を下げる方向に働くので、実際の誤差はここに出る数字よりやや小さくなります。
+      💡 <b>実測</b>＝その週に画面が実際に出していた予想（毎週の記録）。<b>近似</b>＝記録が無い月だけ、週次スナップショットから勝率×時間減衰で再計算したもの。<br>
+      ⚠ 近似は停滞係数を含まないため、実際に画面に出していた予想より高めに出ます（2026年8月は、実測が近似より約3〜4割低い）。
     </p>
   </div>`;
 }
