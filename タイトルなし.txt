@@ -686,6 +686,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
         <a href="#uixsec-fs-summary" onclick="return uixJump(event,'uixsec-fs-summary')"><i class="ti ti-layout-dashboard"></i> サマリー・予測</a>
         <a href="#uixsec-fs-stage" onclick="return uixJump(event,'uixsec-fs-stage')"><i class="ti ti-stairs"></i> ステージ</a>
         <a href="#uixsec-fs-member" onclick="return uixJump(event,'uixsec-fs-member')"><i class="ti ti-users"></i> メンバー</a>
+        <a href="#uixsec-fs-status" onclick="return uixJump(event,'uixsec-fs-status')"><i class="ti ti-table"></i> 状況テーブル</a>
         <a href="#uixsec-fs-lost" onclick="return uixJump(event,'uixsec-fs-lost')"><i class="ti ti-chart-pie"></i> 失注分析</a>
         <a href="#uixsec-fs-cal" onclick="return uixJump(event,'uixsec-fs-cal')"><i class="ti ti-calendar"></i> 商談カレンダー</a>
         <a href="#uixsec-fs-snap" onclick="return uixJump(event,'uixsec-fs-snap')"><i class="ti ti-camera"></i> スナップショット</a>
@@ -877,6 +878,36 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
       </div>
     </div>
 
+  </div>
+
+  <!-- ★ 2026-10-10 FS 担当者別 状況テーブル（受注金額ランキングと失注分析のあいだ／横スクロールなし） -->
+  <div id="uixsec-fs-status" class="uix-sec bg-white rounded-xl shadow-sm p-5">
+    <style>
+      .fsst-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px;line-height:1.25}
+      .fsst-table col.fsst-colnm{width:112px}
+      .fsst-table th{font-size:10px;font-weight:600;color:#334155;padding:3px 2px;text-align:center;white-space:nowrap;overflow:hidden}
+      .fsst-table th.fsst-g{color:#fff;font-weight:700;padding:4px 2px}
+      .fsst-table th.fsst-nmh{background:#0284c7;color:#fff;text-align:left;padding-left:6px;vertical-align:middle}
+      .fsst-table td{padding:3px 4px;border-bottom:1px dashed #e2e8f0;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .fsst-bl{border-left:1px solid #e2e8f0}
+      .fsst-table td.fsst-nm{text-align:left;font-weight:600;color:#334155;padding-left:6px}
+      .fsst-t{color:#94a3b8}
+      .fsst-a{font-weight:700;color:#0f172a}
+      .fsst-r{font-weight:700}
+      .fsst-na{color:#cbd5e1 !important;font-weight:400}
+      .fsst-sm{font-size:9px;color:#64748b;font-weight:400;margin-left:3px}
+      .fsst-unit td{background:#f0f9ff;border-bottom:1px solid #cbd5e1}
+      .fsst-unit td.fsst-nm{color:#0369a1}
+      .fsst-tot td{background:#f1f5f9;border-top:2px solid #334155;border-bottom:none}
+      .fsst-tot td.fsst-nm{color:#0f172a;font-weight:800}
+      @media (max-width:1100px){.fsst-table{font-size:10px}.fsst-table th{font-size:9px}.fsst-table col.fsst-colnm{width:100px}.fsst-table td{padding:3px 2px}}
+    </style>
+    <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+      <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-table"></i> 担当者別 状況テーブル <span class="text-[10px] text-slate-400 font-normal cursor-help" title="目標：受注金額・受注社数＝設定値／アポ実施＝受注金額目標÷80万円÷12%／2回目商談＝アポ実施×20%／ヨミ可能性＝アポ実施×40%／見積提出＝ヨミ可能性×50%&#10;実績：受注＝ステージS（クローズ月）／ヨミ可能性＝ヨミ/未ヨミ決着日／2回目商談＝FS2回目商談実施日／アポ実施＝FS初回アポ実施日（未商談化理由「商談してない（リスケ等）」「ターゲット外」を除く）"><i class="ti ti-info-circle"></i> 算出方法</span></h3>
+      <p class="text-[10px] text-slate-400">達成率 <span style="color:#059669;font-weight:700">100%以上</span>・<span style="color:#d97706;font-weight:700">70〜99%</span>・<span style="color:#dc2626;font-weight:700">70%未満</span></p>
+    </div>
+    <div id="fsStatusTableBody"></div>
+    <p id="fsStatusTableNote" class="text-[10px] text-slate-400 mt-1"></p>
   </div>
 
   <!-- 失注詳細モーダル -->
@@ -2056,6 +2087,34 @@ const _FY2025_TARGETS_BASE = {
 const TARGETS = {};
 FY2025_MONTHS.forEach(m => TARGETS[m] = Object.fromEntries(FY2025_MEMBERS.map(n => [n, (_FY2025_TARGETS_BASE[m] || {})[n] || 0])));
 FY_MONTHS.forEach(m => TARGETS[m] = _TARGETS_BASE[m] || Object.fromEntries(MEMBERS.map(n => [n, 0])));
+
+// ★ 2026-10-10 受注社数の目標（目標.xlsx の「受注数」列。FS 担当者別 状況テーブル用）
+const FS_ORDER_COUNT_TARGETS = {
+  '2025/04': {'藤森 悠太':3,'林 日向子':4,'久保田 翔世':4,'平井 良輝':2,'梶山 勇亮':4},
+  '2025/05': {'藤森 悠太':5,'織笠 大地':4,'林 日向子':4,'久保田 翔世':4,'平井 良輝':5,'梶山 勇亮':4},
+  '2025/06': {'藤森 悠太':5,'織笠 大地':4,'林 日向子':4,'久保田 翔世':4,'平井 良輝':5,'梶山 勇亮':4},
+  '2025/07': {'藤森 悠太':5,'織笠 大地':5,'林 日向子':5,'久保田 翔世':4,'平井 良輝':5,'梶山 勇亮':5},
+  '2025/08': {'藤森 悠太':7,'織笠 大地':5,'林 日向子':5,'久保田 翔世':4,'平井 良輝':7,'梶山 勇亮':5,'深澤 陸':2},
+  '2025/09': {'藤森 悠太':7,'織笠 大地':5,'林 日向子':5,'久保田 翔世':4,'平井 良輝':7,'梶山 勇亮':5,'深澤 陸':3,'佐々木 祐太朗':2},
+  '2025/10': {'藤森 悠太':7,'林 日向子':5,'久保田 翔世':5,'平井 良輝':7,'梶山 勇亮':5,'深澤 陸':4,'佐々木 祐太朗':4},
+  '2025/11': {'藤森 悠太':7,'林 日向子':5,'久保田 翔世':5,'平井 良輝':7,'梶山 勇亮':5,'深澤 陸':4,'佐々木 祐太朗':4},
+  '2025/12': {'藤森 悠太':7,'林 日向子':6,'久保田 翔世':6,'平井 良輝':7,'梶山 勇亮':6,'深澤 陸':4,'佐々木 祐太朗':5,'廣澤 未来':1,'山口 学':2},
+  '2026/01': {'藤森 悠太':7,'林 日向子':5,'久保田 翔世':6,'平井 良輝':7,'梶山 勇亮':6,'深澤 陸':4,'廣澤 未来':3,'山口 学':3},
+  '2026/02': {'藤森 悠太':7,'林 日向子':6,'久保田 翔世':7,'平井 良輝':7,'梶山 勇亮':5,'深澤 陸':4,'廣澤 未来':3,'山口 学':5},
+  '2026/03': {'藤森 悠太':7,'林 日向子':5,'久保田 翔世':6,'平井 良輝':7,'梶山 勇亮':5,'深澤 陸':4,'廣澤 未来':3,'山口 学':5,'髙橋 柚基':2},
+  '2026/04': {'藤森 悠太':6,'林 日向子':5,'久保田 翔世':5,'平井 良輝':6,'梶山 勇亮':5,'深澤 陸':4,'廣澤 未来':3,'山口 学':5,'髙橋 柚基':2},
+  '2026/05': {'藤森 悠太':6,'林 日向子':5,'久保田 翔世':5,'平井 良輝':6,'梶山 勇亮':5,'深澤 陸':4,'廣澤 未来':4,'山口 学':5,'髙橋 柚基':3,'秋山 恵':2},
+  '2026/06': {'藤森 悠太':6,'林 日向子':5,'久保田 翔世':5,'平井 良輝':6,'梶山 勇亮':5,'深澤 陸':5,'廣澤 未来':3,'山口 学':5,'髙橋 柚基':3,'大野 杏海':2,'秋山 恵':2},
+  '2026/07': {'藤森 悠太':6,'林 日向子':5,'久保田 翔世':5,'平井 良輝':6,'梶山 勇亮':5,'深澤 陸':4,'廣澤 未来':3,'山口 学':5,'髙橋 柚基':2,'大野 杏海':2,'秋山 恵':2},
+  '2026/08': {'藤森 悠太':5,'林 日向子':5,'久保田 翔世':5,'平井 良輝':5,'梶山 勇亮':5,'深澤 陸':5,'廣澤 未来':4,'山口 学':5,'髙橋 柚基':3,'大野 杏海':3,'秋山 恵':3},
+  '2026/09': {'藤森 悠太':5,'林 日向子':5,'久保田 翔世':5,'平井 良輝':5,'梶山 勇亮':5,'深澤 陸':4,'廣澤 未来':4,'山口 学':5,'髙橋 柚基':4,'大野 杏海':4,'秋山 恵':4,'田中 俊也':2},
+  '2026/10': {'藤森 悠太':6,'林 日向子':5,'久保田 翔世':5,'平井 良輝':6,'梶山 勇亮':5,'深澤 陸':5,'山口 学':5,'大野 杏海':4,'秋山 恵':4,'田中 俊也':3},
+  '2026/11': {'藤森 悠太':7,'林 日向子':7,'久保田 翔世':7,'平井 良輝':8,'梶山 勇亮':10,'深澤 陸':6,'山口 学':7,'大野 杏海':4,'秋山 恵':5,'田中 俊也':4},
+  '2026/12': {'藤森 悠太':7,'林 日向子':7,'久保田 翔世':7,'平井 良輝':8,'梶山 勇亮':10,'深澤 陸':6,'山口 学':7,'大野 杏海':4,'秋山 恵':5,'田中 俊也':4,'大井 駿空':2},
+  '2027/01': {'藤森 悠太':6,'林 日向子':5,'久保田 翔世':5,'平井 良輝':7,'梶山 勇亮':9,'深澤 陸':5,'山口 学':5,'大野 杏海':4,'秋山 恵':4,'田中 俊也':4,'大井 駿空':3},
+  '2027/02': {'藤森 悠太':7,'林 日向子':6,'久保田 翔世':6,'平井 良輝':7,'梶山 勇亮':10,'深澤 陸':6,'山口 学':7,'大野 杏海':5,'秋山 恵':5,'田中 俊也':5,'大井 駿空':4},
+  '2027/03': {'藤森 悠太':7,'林 日向子':6,'久保田 翔世':7,'平井 良輝':7,'梶山 勇亮':9,'深澤 陸':6,'山口 学':7,'大野 杏海':4,'秋山 恵':4,'田中 俊也':4,'大井 駿空':4},
+};
 
 const JISSHI_MULT = 5, YOMI_MULT = 3;
 // ===== 着地予想 勝率設定 =====
@@ -3504,6 +3563,8 @@ function normalizeRow(row, hubspotId = null) {
   const appoint3Raw = find('FS3回目商談実施日','fs3_______') || null;
   const appoint4Raw = find('FS4回目商談実施日','fs4_______') || null;
   const appoint5Raw = find('FS5回目商談実施日','fs5_______') || null;
+  // ★ 2026-10-10 見積提出日（シートに列が追加されしだい FS 状況テーブルの実績に使う）
+  const estimateRaw = find('見積提出日','見積提出','見積日') || null;
   // リードソース・業種・再アップ・リード作成日（中項目分類＆時期判定用）
   const leadSourceRaw = String(find('リードソース_hubspot','リードソース','hubspot') || '').trim();
   const industryRaw   = String(find('業種_baseconnect','業種','industry_baseconnect') || '').trim();
@@ -3648,12 +3709,14 @@ function normalizeRow(row, hubspotId = null) {
   const appt3 = parseApptDate(appoint3Raw);
   const appt4 = parseApptDate(appoint4Raw);
   const appt5 = parseApptDate(appoint5Raw);
+  const est1  = parseApptDate(estimateRaw);
 
   return { company, companyId, name, month, closeDay, appointDate, appointMonth, appointDay,
            appt2Date: appt2.date, appt2Month: appt2.month, appt2Day: appt2.day,
            appt3Date: appt3.date, appt3Month: appt3.month, appt3Day: appt3.day,
            appt4Date: appt4.date, appt4Month: appt4.month, appt4Day: appt4.day,
            appt5Date: appt5.date, appt5Month: appt5.month, appt5Day: appt5.day,
+           estDate: est1.date, estMonth: est1.month,
            amount, stage, product, estimated, hubspotId, lostReason,
            mishoshoReason,  // ★追加: 未商談化理由（実施数フィルタ用）
            shinStatus, chuStatus, replaceNew, replaceChu, nyusaki,
@@ -4183,6 +4246,7 @@ function render() {
     lostMemberSel.innerHTML = '<option value="">全員</option>' + getFyMembers().map(m => `<option value="${m}">${m}</option>`).join('');
     lostMemberSel.value = curLost;
   }
+  try { renderFsStatusTable(); } catch (e) { console.error('renderFsStatusTable error:', e); }
   renderLostAnalysis();
 
   // === IS 関連の再描画（FSセクションでエラーが起きてもISは確実に走るよう独立try/catch） ===
@@ -7797,6 +7861,111 @@ function _lbPlay() {
   }, 350);
 }
 function _lbRenderAll() { _lbDrawYoy(); _lbDrawCrumb(); _lbDrawWarn(); _lbDraw(); _lbDrawTable(); }
+
+
+// ============================================================
+// ★ 2026-10-10 FS 担当者別 状況テーブル（個人＋チーム小計＋FS合計／横スクロールなしの1画面表示）
+//   目標：受注金額＝TARGETS／受注社数＝FS_ORDER_COUNT_TARGETS（目標.xlsx K列）
+//         アポ実施＝受注金額目標÷80万円（必要受注社数）÷12%（受注率）
+//         2回目商談＝アポ実施×20%／ヨミ可能性＝アポ実施×40%／見積提出＝ヨミ可能性×50%
+//   実績：受注金額・社数＝ステージS（クローズ月）／見積提出＝見積提出日（項目が入りしだい）
+//         ヨミ可能性＝ヨミ/未ヨミ決着日／2回目商談＝FS2回目商談実施日
+//         アポ実施＝FS初回アポ実施日（未商談化理由「商談してない（リスケ等）」「ターゲット外(エントリー数50名等)」は除く）
+//   チーム所属は月ごと（_fsUnitForMonth）。期間が複数月のときは、各月の所属チームへ振り分けて合計。
+// ============================================================
+const FSST_UNIT_PRICE = 800000;   // 受注1社あたりの金額（必要受注社数の換算）
+const FSST_WIN_RATE   = 0.12;     // アポ実施 → 受注の率
+const FSST_M2_RATE    = 0.20;     // アポ実施 → 2回目商談
+const FSST_YOMI_RATE  = 0.40;     // アポ実施 → ヨミ可能性
+const FSST_EST_RATE   = 0.50;     // ヨミ可能性 → 見積提出
+const FSST_APO_EXCLUDE = new Set(['商談してない（リスケ等）', 'ターゲット外(エントリー数50名等)']);
+const FSST_COLS = [
+  { k: 'amt',  label: '受注金額',   color: '#10b981', sub: '#d1fae5', money: true },
+  { k: 'co',   label: '受注社数',   color: '#059669', sub: '#d1fae5' },
+  { k: 'est',  label: '見積提出数', color: '#7c3aed', sub: '#ede9fe' },
+  { k: 'yomi', label: 'ヨミ可能性', color: '#0284c7', sub: '#e0f2fe' },
+  { k: 'm2',   label: '2回目商談数', color: '#0891b2', sub: '#cffafe' },
+  { k: 'apo',  label: 'アポ実施数', color: '#f59e0b', sub: '#fef3c7' },
+];
+function getOrderCountTargetFor(member, months) {
+  return (months || []).reduce((s, m) => s + ((FS_ORDER_COUNT_TARGETS[m] || {})[member] || 0), 0);
+}
+function _fsstYm(v) {
+  if (!v) return null;
+  const d = (v instanceof Date) ? v : new Date(v);
+  if (isNaN(d)) return null;
+  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+function renderFsStatusTable() {
+  const host = document.getElementById('fsStatusTableBody');
+  if (!host) return;
+  const months = getMonthsForPeriod();
+  const members = getFyMembers(months);
+  const memberSet = new Set(members);
+  const all = [...(pipeline || []), ...(lostDeals || [])].filter(d => d && memberSet.has(d.name));
+  const hasEst = all.some(d => d.estMonth);
+  const blank = () => ({ t: { amt: 0, co: 0, apo: 0, m2: 0, yomi: 0, est: 0 }, a: { amt: 0, co: 0, apo: 0, m2: 0, yomi: 0, est: 0 }, cos: new Set() });
+  const cell = {};   // unit -> member -> agg
+  const get = (u, m) => { cell[u] = cell[u] || {}; return (cell[u][m] = cell[u][m] || blank()); };
+  months.forEach(ym => {
+    members.forEach(m => {
+      const u = _fsUnitForMonth(m, ym) || 'その他';
+      const amtT = getTargetFor(m, [ym]);
+      const coT = getOrderCountTargetFor(m, [ym]);
+      const mine = all.filter(d => d.name === m);
+      const won = (pipeline || []).filter(d => d.name === m && d.stage === 'S' && d.month === ym);
+      const apo = mine.filter(d => d.appointMonth === ym && !FSST_APO_EXCLUDE.has(d.mishoshoReason)).length;
+      const m2 = mine.filter(d => d.appt2Month === ym).length;
+      const yomi = mine.filter(d => _fsstYm(d.yomiDecidedDate) === ym).length;
+      const est = mine.filter(d => d.estMonth === ym).length;
+      if (!amtT && !coT && !won.length && !apo && !m2 && !yomi && !est) return;
+      const e = get(u, m);
+      const apoT = amtT / FSST_UNIT_PRICE / FSST_WIN_RATE;
+      e.t.amt += amtT; e.t.co += coT; e.t.apo += apoT;
+      e.t.m2 += apoT * FSST_M2_RATE; e.t.yomi += apoT * FSST_YOMI_RATE; e.t.est += apoT * FSST_YOMI_RATE * FSST_EST_RATE;
+      e.a.amt += won.reduce((s, d) => s + (d.amount || 0), 0);
+      won.forEach(d => e.cos.add(d.companyId || d.company));
+      e.a.apo += apo; e.a.m2 += m2; e.a.yomi += yomi; e.a.est += est;
+    });
+  });
+  const fin = e => { e.a.co = e.cos.size; return e; };
+  const addUp = list => {
+    const r = blank();
+    list.forEach(e => { for (const k in e.t) { r.t[k] += e.t[k]; r.a[k] += e.a[k]; } });
+    return r;
+  };
+  const order = [..._fsUnitOrder(months).filter(u => cell[u]), ...Object.keys(cell).filter(u => !_fsUnitOrder(months).includes(u) && u !== 'その他'), ...(cell['その他'] ? ['その他'] : [])];
+
+  const pctColor = p => p >= 100 ? '#059669' : p >= 70 ? '#d97706' : '#dc2626';
+  const fmtV = (v, money) => money ? (v ? `${Math.round(v / 10000).toLocaleString()}万` : '0') : Math.round(v).toLocaleString();
+  const td = (e, c) => {
+    const tv = e.t[c.k], av = e.a[c.k];
+    const tgt = `<td class="fsst-t fsst-bl">${fmtV(tv, c.money)}</td>`;
+    if (c.k === 'est' && !hasEst) return tgt + '<td class="fsst-a fsst-na">—</td><td class="fsst-r fsst-na">—</td>';
+    const p = tv > 0 ? av / tv * 100 : null;
+    return tgt + `<td class="fsst-a">${fmtV(av, c.money)}</td><td class="fsst-r" style="color:${p === null ? '#94a3b8' : pctColor(p)}">${p === null ? '—' : Math.round(p) + '%'}</td>`;
+  };
+  let rows = '';
+  const allMembers = [];
+  order.forEach(u => {
+    const ms = Object.entries(cell[u]).map(([n, e]) => [n, fin(e)]).sort((a, b) => b[1].t.amt - a[1].t.amt || b[1].a.amt - a[1].a.amt);
+    ms.forEach(([n, e]) => {
+      allMembers.push(e);
+      rows += `<tr class="fsst-mem"><td class="fsst-nm">${n}</td>${FSST_COLS.map(c => td(e, c)).join('')}</tr>`;
+    });
+    const sub = addUp(ms.map(x => x[1]));
+    rows += `<tr class="fsst-unit"><td class="fsst-nm">${u === 'その他' ? 'その他' : u}<span class="fsst-sm">小計</span></td>${FSST_COLS.map(c => td(sub, c)).join('')}</tr>`;
+  });
+  const tot = addUp(allMembers);
+  rows += `<tr class="fsst-tot"><td class="fsst-nm">FS合計</td>${FSST_COLS.map(c => td(tot, c)).join('')}</tr>`;
+  const head1 = FSST_COLS.map(c => `<th colspan="3" class="fsst-g fsst-bl" style="background:${c.color}">${c.label}</th>`).join('');
+  const head2 = FSST_COLS.map(c => `<th class="fsst-bl" style="background:${c.sub}">目標</th><th style="background:${c.sub}">実績</th><th style="background:${c.sub}">達成率</th>`).join('');
+  host.innerHTML = rows
+    ? `<table class="fsst-table"><colgroup><col class="fsst-colnm">${FSST_COLS.map(() => '<col><col><col>').join('')}</colgroup><thead><tr class="fsst-h1"><th rowspan="2" class="fsst-nmh">担当者/月間</th>${head1}</tr><tr class="fsst-h2">${head2}</tr></thead><tbody>${rows}</tbody></table>`
+    : '<p class="text-xs text-slate-400 py-4 text-center">この期間の対象データがありません</p>';
+  const note = document.getElementById('fsStatusTableNote');
+  if (note) note.textContent = hasEst ? '' : '※ 見積提出数の実績は「見積提出日」の項目が入りしだい表示（それまでは目標のみ）';
+}
 
 function renderLostAnalysis() {
   if (!document.getElementById('lbChart')) return;
