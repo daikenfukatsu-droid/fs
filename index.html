@@ -3564,7 +3564,7 @@ function normalizeRow(row, hubspotId = null) {
   const appoint4Raw = find('FS4回目商談実施日','fs4_______') || null;
   const appoint5Raw = find('FS5回目商談実施日','fs5_______') || null;
   // ★ 2026-10-10 見積提出日（シートに列が追加されしだい FS 状況テーブルの実績に使う）
-  const estimateRaw = find('見積提出日','見積提出','見積日') || null;
+  const estimateRaw = find('見積もり提出日','見積提出日','見積もり提出','見積提出','quotation_submission_date') || null;
   // リードソース・業種・再アップ・リード作成日（中項目分類＆時期判定用）
   const leadSourceRaw = String(find('リードソース_hubspot','リードソース','hubspot') || '').trim();
   const industryRaw   = String(find('業種_baseconnect','業種','industry_baseconnect') || '').trim();
