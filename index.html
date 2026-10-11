@@ -903,7 +903,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
       @media (max-width:1100px){.fsst-table{font-size:10px}.fsst-table th{font-size:9px}.fsst-table col.fsst-colnm{width:100px}.fsst-table td{padding:3px 2px}}
     </style>
     <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
-      <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-table"></i> 担当者別 状況テーブル <span class="text-[10px] text-slate-400 font-normal cursor-help" title="目標：受注金額・受注社数＝設定値／アポ実施＝受注金額目標÷80万円（切り上げ＝必要受注社数）÷受注率（藤森・平井・梶山・久保田・林・山口・深澤＝11%／田中・大井・大野・秋山＝8%／その他＝12%）。各段階とも小数点以下は切り上げ／2回目商談＝アポ実施×20%／ヨミ可能性＝アポ実施×40%／見積提出＝ヨミ可能性×50%&#10;実績：受注＝ステージS（クローズ月）／ヨミ可能性＝ヨミ/未ヨミ決着日／2回目商談＝FS2回目商談実施日／アポ実施＝FS初回アポ実施日（未商談化理由「商談してない（リスケ等）」「ターゲット外」を除く）"><i class="ti ti-info-circle"></i> 算出方法</span></h3>
+      <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-table"></i> 担当者別 状況テーブル <span class="text-[10px] text-slate-400 font-normal cursor-help" title="目標：受注金額・受注社数＝設定値／アポ実施＝受注金額目標÷80万円（切り上げ＝必要受注社数）÷受注率（藤森・平井＝13%／久保田・林・梶山＝12%／山口・深澤＝10%／田中・大井・大野・秋山＝8%／その他＝12%）。各段階とも小数点以下は切り上げ／2回目商談＝アポ実施×20%／ヨミ可能性＝アポ実施×40%／見積提出＝ヨミ可能性×50%&#10;実績：受注＝ステージS（クローズ月）／ヨミ可能性＝ヨミ/未ヨミ決着日／2回目商談＝FS2回目商談実施日／アポ実施＝FS初回アポ実施日（未商談化理由「商談してない（リスケ等）」「ターゲット外」を除く）"><i class="ti ti-info-circle"></i> 算出方法</span></h3>
       <p class="text-[10px] text-slate-400">達成率 <span style="color:#059669;font-weight:700">100%以上</span>・<span style="color:#d97706;font-weight:700">70〜99%</span>・<span style="color:#dc2626;font-weight:700">70%未満</span></p>
     </div>
     <div id="fsStatusTableBody"></div>
@@ -7881,7 +7881,10 @@ const FSST_UNIT_PRICE = 800000;   // 受注1社あたりの金額（必要受注
 const FSST_WIN_RATE   = 0.12;     // アポ実施 → 受注の率（下の個別設定が無いメンバーの既定値）
 // ★ 2026-10-11 メンバー別の受注率（必要アポ実施数＝受注金額目標÷80万円÷この率）
 const FSST_WIN_RATE_BY_MEMBER = {
-  '藤森 悠太': 0.11, '平井 良輝': 0.11, '梶山 勇亮': 0.11, '久保田 翔世': 0.11, '林 日向子': 0.11, '山口 学': 0.11, '深澤 陸': 0.11,
+  // ★ 2026-10-11 改定：藤森・平井＝13%／久保田・林・梶山＝12%／山口・深澤＝10%／田中・大井・大野・秋山＝8%
+  '藤森 悠太': 0.13, '平井 良輝': 0.13,
+  '久保田 翔世': 0.12, '林 日向子': 0.12, '梶山 勇亮': 0.12,
+  '山口 学': 0.10, '深澤 陸': 0.10,
   '田中 俊也': 0.08, '大井 駿空': 0.08, '大野 杏海': 0.08, '秋山 恵': 0.08,
 };
 function _fsstWinRate(member) { return FSST_WIN_RATE_BY_MEMBER[member] || FSST_WIN_RATE; }
