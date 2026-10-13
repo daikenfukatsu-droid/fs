@@ -1220,7 +1220,6 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
         <nav class="uix-nav" id="uixNav-is">
           <a href="#uixsec-is-summary" onclick="return uixJump(event,'uixsec-is-summary')"><i class="ti ti-layout-dashboard"></i> サマリー</a>
           <a href="#uixsec-is-list" onclick="return uixJump(event,'uixsec-is-list')"><i class="ti ti-list-check"></i> 保有リスト</a>
-          <a href="#uixsec-is-trend" onclick="return uixJump(event,'uixsec-is-trend')"><i class="ti ti-trending-up"></i> 1か月推移</a>
           <a href="#uixsec-is-rank" onclick="return uixJump(event,'uixsec-is-rank')"><i class="ti ti-trophy"></i> ランキング</a>
           <a href="#uixsec-is-table" onclick="return uixJump(event,'uixsec-is-table')"><i class="ti ti-table"></i> 状況テーブル</a>
           <a href="#uixsec-is-cal" onclick="return uixJump(event,'uixsec-is-cal')"><i class="ti ti-calendar"></i> 商談カレンダー</a>
@@ -1318,12 +1317,13 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
       <button onclick="openIsListModal()"
         class="uix-btn uix-detail absolute top-3 right-3"><i class="ti ti-arrow-up-right"></i> 詳細</button>
       <div class="flex items-center justify-between mb-2 flex-wrap gap-2" style="padding-right:84px;">
-        <p class="text-xs text-slate-500"><i class="ti ti-list-check"></i> IS保有リスト ＆ フェーズ上昇</p>
+        <p class="text-xs text-slate-500"><i class="ti ti-list-check"></i> IS保有リスト</p>
         <!-- ★ 2026-09-27: この枠だけの期間（上の固定バーとは別に動く＝従来どおり）であることを明記 -->
-        <span class="uix-scope" title="上の固定バーの期間とは別に動きます"><i class="ti ti-clock"></i> この枠の期間：</span>
+        <!-- ★ 2026-10-13 期間の切替は未使用のため非表示（本人指定）。常に「本日」で表示 -->
+        <span class="uix-scope" title="上の固定バーの期間とは別に動きます" style="display:none"><i class="ti ti-clock"></i> この枠の期間：</span>
         <select onchange="setPercActivityPeriod(this.value)" id="percActPeriodSelect"
           class="text-[11px] font-semibold rounded-lg px-2 py-1 cursor-pointer"
-          style="background:#f1f5f9;border:1px solid #e2e8f0;color:#334155;outline:none;">
+          style="display:none;background:#f1f5f9;border:1px solid #e2e8f0;color:#334155;outline:none;">
           <option value="daily">デイリー（本日）</option>
           <option value="thisWeek">今週</option>
           <option value="lastWeek">先週</option>
@@ -1342,17 +1342,48 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
             <span class="text-slate-300 mx-1">/</span>
             <span style="color:#10b981;font-weight:600">新規 <span id="is-list-no">0</span></span>
           </p>
-          <p class="text-[11px] text-slate-500 ml-auto"><span id="perc-goal-period">本日</span>のフェーズ上昇 <span id="perc-goal-count" style="color:#16a34a;font-weight:700">0</span> 件</p>
+          <!-- ★ 2026-10-13 フェーズ上昇の件数は非表示（本人指定） -->
+          <p class="text-[11px] text-slate-500 ml-auto" style="display:none"><span id="perc-goal-period">本日</span>のフェーズ上昇 <span id="perc-goal-count" style="color:#16a34a;font-weight:700">0</span> 件</p>
         </div>
         <p class="text-[10px] text-slate-400 mt-1">担当者ごとの保有数を可視化（会社IDで重複統合）</p>
       </div>
+      <!-- ★ 2026-10-13 フェーズ・注力・再アップ時期のカード（クリックで企業一覧） -->
+      <style>
+        .isls-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:4px}
+        @media (max-width:900px){.isls-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+        .isls-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;text-align:left;border:1px solid #e3eaf2;border-radius:12px;padding:9px 12px 9px 14px;background:#fff;cursor:pointer;transition:transform .15s,box-shadow .15s;font:inherit}
+        .isls-card:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(12,28,46,.08)}
+        .isls-bar{position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:3px}
+        .isls-go{position:absolute;right:9px;top:9px;color:#94a3b8;font-size:13px}
+        .isls-h{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800}
+        .isls-n{font-size:21px;font-weight:800;color:#0f1f33;font-variant-numeric:tabular-nums;line-height:1.3}
+        .isls-n small{font-size:11px;color:#5b6b7f;font-weight:600;margin-left:2px}
+        .isls-s{font-size:10.5px;color:#5b6b7f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+        html.dark .isls-card{background:#13263b;border-color:#22384f}html.dark .isls-n{color:#e6eef7}
+        /* 一覧（B案の表と同じ見た目） */
+        .isjb-grp{margin-top:8px;border:1px solid #e3eaf2;border-radius:12px;overflow:hidden}
+        .isjb-gh{display:flex;align-items:center;gap:7px;padding:6px 10px;background:#f5f8fb;font-weight:800;font-size:12px;color:#0f1f33}
+        .isjb-gh .c{font-size:11px;color:#5b6b7f;font-weight:700}
+        .isjb-t{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11.5px}
+        .isjb-t th{font-size:10px;color:#5b6b7f;font-weight:600;text-align:left;padding:5px 7px;border-bottom:1px solid #e3eaf2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .isjb-t td{padding:5px 7px;border-bottom:1px solid #eef2f7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#334155;vertical-align:middle}
+        .isjb-t tr:last-child td{border-bottom:0}.isjb-t td.isjb-na{color:#cbd5e1}
+        .isjb-co{color:#0f1f33;font-weight:800;text-decoration:none}a.isjb-co:hover{color:#0284c7;text-decoration:underline}.isjb-co i{font-size:11px;color:#94a3b8;margin-left:3px}
+        .isjb-pill{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:800;border-radius:99px;padding:1px 8px;white-space:nowrap}
+        .isjb-lo{color:#5b6b7f;background:#f1f5f9}
+        html.dark .isjb-gh{background:#182d44;color:#e6eef7}html.dark .isjb-grp{border-color:#22384f}html.dark .isjb-co{color:#e6eef7}
+        html.dark .isjb-t td{color:#c9d6e5;border-color:#1e344b}html.dark .isjb-t th{border-color:#22384f;color:#9fb2c8}html.dark .isjb-lo{background:#182d44}
+      </style>
+      <div id="isListStageCards" class="isls-grid"></div>
       <!-- 3段階アコーディオン: 担当者 → 担当者名(保有数) → 商談化転換元バー -->
-      <div id="isCombinedBody"></div>
-      <p class="text-[10px] text-slate-400 mt-2">※「担当者」を開くと担当者別の保有数、担当者名を開くとその人の「フェーズ上昇（到達段階別）」バーが表示されます。バーの色をクリックでその段階に上がった企業一覧。データ収集を開始したばかりのため、数日〜数週間は数値が少なく表示されます。</p>
+      <!-- ★ 2026-10-13 未使用のため「担当者」アコーディオンを非表示（本人指定） -->
+      <div id="isCombinedBody" style="display:none"></div>
+      <p class="text-[10px] text-slate-400 mt-2" style="display:none">※「担当者」を開くと担当者別の保有数、担当者名を開くとその人の「フェーズ上昇（到達段階別）」バーが表示されます。バーの色をクリックでその段階に上がった企業一覧。データ収集を開始したばかりのため、数日〜数週間は数値が少なく表示されます。</p>
     </div>
 
     <!-- ★ 2026-08-10 追加: 担当者別 1か月推移（フェーズ上昇） -->
-    <div id="uixsec-is-trend" class="uix-sec bg-white rounded-xl shadow-sm p-4 mb-4 border-l-4" style="border-left-color:#7c3aed">
+    <!-- ★ 2026-10-13 未使用のため非表示（本人指定）。復活させるときは style の display:none を外し、renderPercMonthlyTrend の呼び出しを戻す -->
+    <div id="uixsec-is-trend" class="uix-sec bg-white rounded-xl shadow-sm p-4 mb-4 border-l-4" style="border-left-color:#7c3aed;display:none">
       <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
         <p class="text-xs text-slate-500"><i class="ti ti-trending-up"></i> 担当者別 1か月推移（フェーズ上昇） <span class="uix-scope uix-scope-fixed" title="上の固定バーの期間とは関係なく、常に直近30日を表示します"><i class="ti ti-lock"></i> 期間：直近30日（固定）</span></p>
         <span id="percTrendRangeLabel" class="text-[10px] text-slate-400"></span>
@@ -3091,6 +3122,7 @@ async function _loadDealIndexLazy(useFresh) {
     if (dealIndexAll.length > 0) {
       // 再アップ判定に依存するビューだけ再描画（重い render() は呼ばない）
       try { renderECalReup(); } catch (e) {}
+      try { renderIsListStageCards(); } catch (e) {}   // ★ 2026-10-13 再アップ時期カードも判定し直す
     }
   } catch (e) {
     console.warn('[dealIndex lazy] 取得失敗（取引名照合にフォールバック）:', e);
@@ -4526,7 +4558,130 @@ function renderIsListCard() {
   setText('is-list-total', allUnique.length);
   setText('is-list-yes',   yesUnique.length);
   setText('is-list-no',    noUnique.length);
+  try { renderIsListStageCards(); } catch (e) { console.error('renderIsListStageCards error:', e); }
 }
+
+// ============================================================
+// ★ 2026-10-13 IS保有リストのカード（日程調整待ち・比較検討・導入検討・興味関心・注力・再アップ時期）
+//   フェーズ4枚：IS保有リストのパーセプションフロー（_dedupRows で会社単位・一番進んだ段階）
+//   注力　　　：FS取引で未商談化理由が「注力」の企業（同じ会社は1社）
+//   再アップ時期：再アップ時期が入っている企業。ただし再アップに成功した企業（新取引あり＝受注・進行中・再失注で次なし）は数えない。
+//                 再アップ成功→再失注でも「次の再アップ時期」が入っていれば、その次の時期で数える。
+//   クリックで担当者ごとの企業一覧（企業名→HubSpot）。
+// ============================================================
+const IS_LIST_STAGE_CARDS = [
+  { key: '日程調整待ち', icon: 'ti-calendar-time', color: '#0d9488', text: '#0f766e', src: 'perc' },
+  { key: '比較検討',     icon: 'ti-scale',         color: '#0284c7', text: '#0369a1', src: 'perc' },
+  { key: '導入検討',     icon: 'ti-bulb',          color: '#2563eb', text: '#075985', src: 'perc' },
+  { key: '興味関心',     icon: 'ti-heart',         color: '#16a34a', text: '#15803d', src: 'perc' },
+  { key: '注力',         icon: 'ti-flame',         color: '#dc2626', text: '#b91c1c', src: 'focus' },
+  { key: '再アップ時期', icon: 'ti-refresh',       color: '#d98c4a', text: '#b8692a', src: 'reup' },
+];
+function _isListYm(v) {
+  const m = String(v || '').match(/(\d{4})[\/\-年]\s*(\d{1,2})/);
+  return m ? `${m[1]}/${String(m[2]).padStart(2, '0')}` : '';
+}
+function _isListMd(v) {
+  const m = String(v || '').match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if (!m || +m[1] < 2000) return '';
+  return `${+m[2]}/${+m[3]}`;
+}
+// 各カードの対象（企業単位の配列）を作る
+function _isListStageData() {
+  const out = {};
+  const uniq = _dedupRows([...(isListYes || []), ...(isListNo || [])]);
+  IS_LIST_STAGE_CARDS.filter(c => c.src === 'perc').forEach(c => { out[c.key] = uniq.filter(r => _percKey(r) === c.key); });
+  // 注力（FS取引・会社単位。複数あれば再アップ時期が新しい取引）
+  const coKey = d => String(d.companyId || '').trim() || _reupNormCompanyKey(d.company);
+  const fm = new Map();
+  [...(pipeline || []), ...(lostDeals || []), ...(reupDeals || [])].forEach(d => {
+    if (String(d.mishoshoReason || '').trim() !== '注力') return;
+    const k = coKey(d); if (!k) return;
+    const o = fm.get(k); if (!o || String(d.reupTiming || '') > String(o.reupTiming || '')) fm.set(k, d);
+  });
+  out['注力'] = [...fm.values()];
+  // 再アップ時期（再アップ成功は除外・再失注で次ありは次の時期で数える）
+  let rows = [];
+  try { rows = _collectReupRows(); } catch (e) { rows = []; }
+  const byCo = new Map();
+  rows.forEach(r => { const k = String(r.companyId || '').trim() || _reupNormCompanyKey(r.company); if (!k) return; (byCo.get(k) || byCo.set(k, []).get(k)).push(r); });
+  const reup = [];
+  byCo.forEach(rs => {
+    if (rs.some(r => ['won', 'active', 'success'].includes(r.judge))) return;   // 再アップ成功（受注・進行中）
+    const relost = rs.filter(r => r.judge === 'relost').sort((a, b) => _isListYm(b.judgeNext).localeCompare(_isListYm(a.judgeNext)))[0];
+    if (relost) { reup.push(Object.assign({}, relost, { _timing: _isListYm(relost.judgeNext), _relost: true })); return; }
+    if (rs.some(r => r.judge === 'relost_dead')) return;                          // 再アップ成功→再失注・次なし
+    const latest = rs.slice().sort((a, b) => _isListYm(b.reupTiming).localeCompare(_isListYm(a.reupTiming)))[0];
+    reup.push(Object.assign({}, latest, { _timing: _isListYm(latest.reupTiming) }));
+  });
+  out['再アップ時期'] = reup;
+  return out;
+}
+function renderIsListStageCards() {
+  const host = document.getElementById('isListStageCards');
+  if (!host) return;
+  let data;
+  try { data = _isListStageData(); } catch (e) { console.error('IS保有リスト カード', e); return; }
+  const ym = `${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+  host.innerHTML = IS_LIST_STAGE_CARDS.map(c => {
+    const list = data[c.key] || [];
+    let sub = '';
+    if (c.src === 'perc') sub = `リサイクル ${list.filter(r => String(r.recycle).toLowerCase() === 'true').length.toLocaleString()}`;
+    else if (c.src === 'focus') sub = '未商談化理由「注力」';
+    else sub = `今月 ${list.filter(r => r._timing === ym).length.toLocaleString()}・過ぎた ${list.filter(r => r._timing && r._timing < ym).length.toLocaleString()}`;
+    return `<button type="button" class="isls-card" onclick="openIsListStageModal('${c.key}')" title="クリックで企業一覧">
+      <span class="isls-bar" style="background:${c.color}"></span><i class="ti ti-chevron-right isls-go"></i>
+      <span class="isls-h" style="color:${c.text}"><i class="ti ${c.icon}"></i>${c.key}</span>
+      <span class="isls-n">${list.length.toLocaleString()}<small>社</small></span>
+      <span class="isls-s">${sub}</span></button>`;
+  }).join('');
+}
+function openIsListStageModal(key) {
+  const c = IS_LIST_STAGE_CARDS.find(x => x.key === key); if (!c) return;
+  const list = (_isListStageData()[key] || []);
+  const modal = document.getElementById('isKpiDetailModal'), title = document.getElementById('isKpiDetailModal-title'),
+        header = document.getElementById('isKpiDetailModal-header'), body = document.getElementById('isKpiDetailModal-body');
+  if (!modal || !body) return;
+  const esc = _escapeHtml;
+  const link = (name, cid) => cid
+    ? `<a class="isjb-co" href="https://app.hubspot.com/contacts/${HUBSPOT_PORTAL_ID}/record/0-2/${encodeURIComponent(cid)}" target="_blank" rel="noopener" title="${esc(name)}（HubSpotで開く）">${esc(name)}<i class="ti ti-external-link"></i></a>`
+    : `<span class="isjb-co" title="${esc(name)}">${esc(name)}</span>`;
+  const td = v => { const s = String(v == null ? '' : v).trim(); return s ? `<td title="${esc(s)}">${esc(s)}</td>` : '<td class="isjb-na">—</td>'; };
+  // 担当者ごとにまとめる
+  const ownerOf = c.src === 'perc' ? (r => r.owner) : c.src === 'focus' ? (d => d.recordCreator) : (r => r.isOwner);
+  const groups = {};
+  list.forEach(r => { const o = String(ownerOf(r) || '').trim() || '（担当者なし）'; (groups[o] = groups[o] || []).push(r); });
+  const names = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length || a.localeCompare(b, 'ja'));
+  let colg, head, rowOf, sortOf;
+  if (c.src === 'perc') {
+    colg = '<colgroup><col style="width:34%"><col style="width:12%"><col style="width:12%"><col style="width:12%"><col></colgroup>';
+    head = '<tr><th>企業名</th><th>前回の連絡</th><th>次回架電日</th><th>区分</th><th>状況</th></tr>';
+    const nc = r => r.nextCall || r.companyNextCall;
+    sortOf = (a, b) => { const x = _isListMd(nc(a)) ? String(nc(a)) : '9999', y = _isListMd(nc(b)) ? String(nc(b)) : '9999'; return x.localeCompare(y); };
+    rowOf = r => `<tr><td>${link(r.company, r.companyId)}</td>${td(_isListMd(r.lastContact))}${td(_isListMd(nc(r)))}<td><span class="isjb-pill isjb-lo" style="cursor:default">${String(r.recycle).toLowerCase() === 'true' ? 'リサイクル' : '新規'}</span></td>${td(r.status || r.contactStatus)}</tr>`;
+  } else {
+    colg = '<colgroup><col style="width:30%"><col style="width:12%"><col style="width:12%"><col style="width:14%"><col></colgroup>';
+    head = '<tr><th>企業名</th><th>FS担当</th><th>再アップ時期</th><th>ステージ</th><th>未商談化理由／失注理由</th></tr>';
+    const tm = r => c.src === 'reup' ? r._timing : _isListYm(r.reupTiming);
+    sortOf = (a, b) => (tm(a) || '9999').localeCompare(tm(b) || '9999');
+    rowOf = r => {
+      const stage = c.src === 'reup' ? (r._relost ? '再失注→次の再アップ' : (r.prevStage || '')) : (r.stageRaw || r.stage || '');
+      const reason = c.src === 'reup' ? [r.mishoshoReason, r.lostReason].filter(Boolean).join('／') : [r.mishoshoReason, (r.lostReason && r.lostReason !== r.mishoshoReason) ? r.lostReason : ''].filter(Boolean).join('／');
+      return `<tr><td>${link(r.company, r.companyId)}</td>${td(r.name)}${td(tm(r))}${td(stage)}${td(reason)}</tr>`;
+    };
+  }
+  const sortLabel = c.src === 'perc' ? '担当者ごと・次回架電日順' : (c.src === 'focus' ? 'IS担当ごと・再アップ時期順' : 'IS保有者ごと・再アップ時期順');
+  title.innerHTML = `<span style="color:${c.text};"><i class="ti ${c.icon}"></i> ${c.key}</span> <span style="color:#94a3b8;font-weight:400;font-size:12px;">（${list.length.toLocaleString()}社）／ ${sortLabel}</span>`;
+  header.style.background = '#f8fafc';
+  body.innerHTML = list.length === 0 ? '<p class="text-xs text-slate-400 py-4 text-center">該当する企業がありません</p>'
+    : names.map(n => {
+        const rs = groups[n].slice().sort(sortOf);
+        return `<div class="isjb-grp"><div class="isjb-gh" style="border-left:4px solid ${c.color}">${esc(n)}<span class="c">${rs.length}社</span></div><table class="isjb-t">${colg}<thead>${head}</thead><tbody>${rs.map(rowOf).join('')}</tbody></table></div>`;
+      }).join('');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
 
 // === モーダル ===
 let _isListLevel = 1;
@@ -6208,7 +6363,8 @@ function renderIsKpis() {
   renderPerceptionActivity();
 
   // ⑦ ★ 2026-08-10 追加: 担当者別 1か月推移（上部の期間切替に依存せず常に直近30日）
-  try { renderPercMonthlyTrend(); } catch (e) { console.error('renderPercMonthlyTrend error:', e); }
+  // ★ 2026-10-13 未使用のため描画を止める（セクションも非表示）
+  // try { renderPercMonthlyTrend(); } catch (e) { console.error('renderPercMonthlyTrend error:', e); }
 
   // ⑧ ★ 2026-09-27 UI/UX改善: IS サマリー帯の前期比
   try {
