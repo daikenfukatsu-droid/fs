@@ -3570,6 +3570,10 @@ function normalizeRow(row, hubspotId = null) {
   const timeTRaw      = String(find('★T','timeframe__c') || '').trim();
   const atsStatusRaw  = String(find('ATS検討状況','field81__c') || '').trim();
   const insideNoteRaw = String(find('インサイド備考','insidenote1__c') || '').trim();
+  // ★ 2026-10-13 ヨミ化見込みモデル用
+  const entNRaw = String(find('【新卒】エントリー人数') || '').trim();
+  const entCRaw = String(find('【中途】エントリー人数') || '').trim();
+  const preCampRaw = String(find('商談前キャンペーン','pre_deal_campaign') || '').trim();
   // リードソース・業種・再アップ・リード作成日（中項目分類＆時期判定用）
   const leadSourceRaw = String(find('リードソース_hubspot','リードソース','hubspot') || '').trim();
   const industryRaw   = String(find('業種_baseconnect','業種','industry_baseconnect') || '').trim();
@@ -3680,7 +3684,8 @@ function normalizeRow(row, hubspotId = null) {
              //   カレンダー等が使う appt2Month とは別名にして、既存の表示は変えない
              estDate: parseApptDate(estimateRaw).date, estMonth: parseApptDate(estimateRaw).month,
              fsstAppt2Month: parseApptDate(appoint2Raw).month,
-             targetSvc, needN: needNRaw, timeT: timeTRaw, atsStatus: atsStatusRaw, insideNote: insideNoteRaw };
+             targetSvc, needN: needNRaw, timeT: timeTRaw, atsStatus: atsStatusRaw, insideNote: insideNoteRaw,
+             entN: entNRaw, entC: entCRaw, preCampaign: preCampRaw };
   }
   let stage = null;
   if (su.startsWith('S')) stage = 'S';
@@ -3728,6 +3733,7 @@ function normalizeRow(row, hubspotId = null) {
            appt5Date: appt5.date, appt5Month: appt5.month, appt5Day: appt5.day,
            estDate: est1.date, estMonth: est1.month,
            targetSvc, needN: needNRaw, timeT: timeTRaw, atsStatus: atsStatusRaw, insideNote: insideNoteRaw,  // ★ 2026-10-13
+           entN: entNRaw, entC: entCRaw, preCampaign: preCampRaw,
            amount, stage, product, estimated, hubspotId, lostReason,
            mishoshoReason,  // ★追加: 未商談化理由（実施数フィルタ用）
            shinStatus, chuStatus, replaceNew, replaceChu, nyusaki,
@@ -6595,7 +6601,7 @@ function openIsKpiDetailModal(kpiKey) {
     // ★ 2026-10-13 リードソース別 → メンバー別の企業一覧（実施日の古い順）に置き換え
     title.innerHTML = `<span style="color:#1e293b;">🤝 アポ実施数</span> <span style="color:#94a3b8;font-weight:400;font-size:12px;">（${total}件）／ メンバー別・実施日の古い順</span>`;
     header.style.background = '#f8fafc';
-    body.innerHTML = _renderJisshiMemberList(deals);
+    body.innerHTML = _renderJisshiMemberList(deals, { months: getMonthsForPeriod(), members: null });
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     return;
@@ -12006,46 +12012,198 @@ const IS_KIND_META = {
 
 
 // ============================================================
-// ★ 2026-10-13 IS アポ実施の一覧（カード［詳細］・状況テーブルのクリック共通）
-//   メンバーごとに区切り（件数の多い順）、各メンバー内は実施日の古い順。
-//   1行：実施日｜企業名（HubSpot企業ページへ）｜検討/対象サービス｜【新卒】現状の管理方法｜【中途】現状の管理方法｜N｜T｜ATS検討状況
+// ★ 2026-10-13 IS アポ実施の一覧（B案：区分ごとの枠つきテーブル）＋ヨミ化（C到達）見込み
+//   区分：実施予定（ステージE・実施日が今日以降／実施日順）／実施済み（E以外）／
+//         リスケ可能性あり（Eのまま実施日を過ぎた）／リスケ（未商談化理由「商談してない（リスケ等）」＝件数には含めない）
+//   見込み：過去の実施済み案件で「ヨミ/未ヨミ決着日あり＝C到達」を学習したロジスティック回帰。
+//         直近3か月を伏せて検証し、実績でヨミ化80%以上を保てる点を「高」、約半分の層を「中」、それ以外を「低」。
+//         使う項目：検討/対象サービス・新卒/中途の管理方法・エントリー人数・業種・再アップ・★N・★T・ATS検討状況・
+//         リードソース・FS担当・IS担当・アポ取得→実施の日数・IS担当×ATS・インサイド備考のキーワード・同じ会社の過去C到達・商談前キャンペーン
 // ============================================================
-function _renderJisshiMemberList(deals) {
-  if (!deals || deals.length === 0) return '<p class="text-xs text-slate-400 py-4 text-center">該当案件がありません</p>';
+const YOMI_KW = {
+  '時期（○か月以内）': /(か|ヶ|カ|ケ)?月以内/, '予算': /予算/, '決裁': /決裁|決済者|稟議/, '比較': /比較|相見積|他社/,
+  'リプレイス': /リプレイス|乗り換え|切り替え|切替/, '更新': /更新|契約満了|解約/, '資料請求': /資料請求|資料DL|ダウンロード/,
+  '展示会': /展示会/, 'セミナー': /セミナー|ウェビナー/, '紹介': /紹介/, '情報収集': /情報収集/,
+  '導入意向': /導入(したい|を検討|意向|予定)/, '代表': /代表|社長|役員/, '人事責任者': /部長|責任者|マネージャ/,
+};
+const YOMI_RESCHED_RE = /商談してない|リスケ/;
+function _yomiDay(v) {
+  if (!v) return null;
+  if (v instanceof Date) return isNaN(v) ? null : new Date(v.getFullYear(), v.getMonth(), v.getDate());
+  const s = String(v).trim(); const m = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  const d = new Date(s); return isNaN(d) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+function _yomiFeatures(d, prevC) {
+  const S = v => String(v == null ? '' : v).trim() || '(空)';
+  const f = ['svc=' + S(d.targetSvc), 'entN=' + S(d.entN), 'entC=' + S(d.entC), 'ind=' + S(d.industry), 'reup=' + (d.reupload ? 'y' : 'n'),
+    'N=' + S(d.needN), 'T=' + S(d.timeT), 'ATS=' + S(d.atsStatus), 'src=' + S(d.leadSource), 'fs=' + S(d.name), 'is=' + S(d.recordCreator),
+    'IxA=' + S(d.recordCreator) + '|' + S(d.atsStatus), 'prevC=' + (prevC ? 'y' : 'n'), 'camp=' + S(d.preCampaign)];
+  [['shin', d.shinStatus], ['chu', d.chuStatus]].forEach(([p, v]) => {
+    const t = String(v || '').split(';').map(x => x.trim()).filter(Boolean); (t.length ? t : ['(空)']).forEach(x => f.push(p + '=' + x));
+  });
+  const a = _yomiDay(d.apoCreatedDate), b = _yomiDay(d.appointDate);
+  const lt = (a && b) ? Math.round((b - a) / 864e5) : null;
+  f.push('lt=' + (lt == null ? '?' : lt <= 3 ? '0-3' : lt <= 7 ? '4-7' : lt <= 14 ? '8-14' : lt <= 30 ? '15-30' : '31+'));
+  const note = String(d.insideNote || '');
+  Object.entries(YOMI_KW).forEach(([k, re]) => { if (re.test(note)) f.push('kw=' + k); });
+  return f;
+}
+// 見込みの読みやすい名前（根拠の表示用）
+function _yomiFeatLabel(k) {
+  const i = k.indexOf('='); const p = k.slice(0, i), v = k.slice(i + 1);
+  const L = { svc: '検討', entN: '新卒エントリー', entC: '中途エントリー', ind: '業種', reup: '再アップ', N: 'N', T: 'T', ATS: 'ATS', src: 'リードソース', fs: 'FS担当', is: 'IS担当', IxA: 'IS担当×ATS', prevC: '過去にC到達', camp: '商談前キャンペーン', shin: '新卒管理', chu: '中途管理', lt: 'アポ取得→実施', kw: '備考' };
+  if (p === 'prevC') return v === 'y' ? '同じ会社が過去にC到達' : '過去のC到達なし';
+  if (p === 'reup') return v === 'y' ? '再アップ案件' : '再アップでない';
+  if (p === 'lt') return 'アポ取得→実施 ' + v + '日';
+  if (p === 'kw') return '備考に「' + v + '」';
+  return (L[p] || p) + '：' + v;
+}
+let _yomiModelCache = null;
+function _yomiModel() {
+  const all = [...(pipeline || []), ...(lostDeals || [])];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const sig = all.length + '|' + (pipeline || []).length + '|' + today.getTime();
+  if (_yomiModelCache && _yomiModelCache.sig === sig) return _yomiModelCache;
+  const t0 = performance.now();
+  // 同じ会社の過去C到達（実施日より前にヨミ/未ヨミ決着日がある別の商談）
+  const byCo = {};
+  all.forEach(d => { const a = _yomiDay(d.appointDate); if (d.companyId && a) (byCo[d.companyId] = byCo[d.companyId] || []).push({ d, a, y: _yomiDay(d.yomiDecidedDate) }); });
+  const prevC = d => { const a = _yomiDay(d.appointDate); if (!d.companyId || !a) return false; return (byCo[d.companyId] || []).some(o => o.d !== d && o.a < a && o.y && o.y < a); };
+  const cut = new Date(today); cut.setDate(cut.getDate() - 21);       // 実施から3週間以上たった案件で学習
+  const hold = new Date(cut); hold.setDate(hold.getDate() - 91);      // 直近約3か月は検証用（しきい値決め）
+  const from = new Date(2025, 4, 1);
+  const rows = [];
+  all.forEach(d => {
+    const a = _yomiDay(d.appointDate);
+    if (!a || a < from || a > cut || d.stage === 'E') return;
+    const rs = String(d.mishoshoReason || '');
+    if (YOMI_RESCHED_RE.test(rs) || /ターゲット外/.test(rs)) return;
+    rows.push({ a, y: !!_yomiDay(d.yomiDecidedDate), f: _yomiFeatures(d, prevC(d)) });
+  });
+  const train = rows.filter(r => r.a < hold), test = rows.filter(r => r.a >= hold);
+  if (train.length < 500 || test.length < 100) { _yomiModelCache = { sig, ok: false, prevC }; return _yomiModelCache; }
+  // ロジスティック回帰（L2）
+  const W = new Map(); let b = 0; const n = train.length;
+  for (let e = 0; e < 60; e++) {
+    let gb = 0; const G = new Map();
+    train.forEach(r => { let z = b; r.f.forEach(k => { z += W.get(k) || 0; }); const g = 1 / (1 + Math.exp(-z)) - (r.y ? 1 : 0); gb += g; r.f.forEach(k => G.set(k, (G.get(k) || 0) + g)); });
+    b -= 0.2 * gb / n * 5;
+    G.forEach((g, k) => { const w = W.get(k) || 0; W.set(k, w - 0.2 * (g / n * 20 + 0.01 * w)); });
+  }
+  const score = f => { let z = b; f.forEach(k => { z += W.get(k) || 0; }); return 1 / (1 + Math.exp(-z)); };
+  const s = test.map(r => ({ p: score(r.f), y: r.y })).sort((x, y) => y.p - x.p);
+  let hi = null, mid = null, cy = 0;
+  s.forEach((z, i) => { cy += z.y ? 1 : 0; const pc = cy / (i + 1); if (i + 1 >= 15 && pc >= 0.8) hi = z.p; if (i + 1 >= 30 && pc >= 0.6) mid = z.p; });
+  const band = (lo, up) => { const seg = s.filter(z => z.p >= lo && (up == null || z.p < up)); return { n: seg.length, rate: seg.length ? seg.filter(z => z.y).length / seg.length : null }; };
+  _yomiModelCache = {
+    sig, ok: true, W, b, score, prevC, hi, mid,
+    check: { hi: hi != null ? band(hi) : null, mid: mid != null ? band(mid, hi) : null, lo: band(0, mid != null ? mid : hi) },
+    ms: Math.round(performance.now() - t0),
+  };
+  return _yomiModelCache;
+}
+function _yomiRank(d) {
+  const M = _yomiModel(); if (!M.ok) return null;
+  const f = _yomiFeatures(d, M.prevC(d)); const p = M.score(f);
+  const rank = (M.hi != null && p >= M.hi) ? '高' : (M.mid != null && p >= M.mid) ? '中' : '低';
+  // 根拠には「空欄」「なし」の項目は出さない（全件共通の値で意味がないため）
+  const why = f.filter(k => !/=\(空\)$|^(reup|prevC)=n$/.test(k)).map(k => [k, M.W.get(k) || 0]).filter(x => Math.abs(x[1]) >= 0.2).sort((x, y) => y[1] - x[1]);
+  return { rank, p, plus: why.filter(x => x[1] > 0).slice(0, 3).map(x => _yomiFeatLabel(x[0])), minus: why.filter(x => x[1] < 0).slice(-2).map(x => _yomiFeatLabel(x[0])) };
+}
+
+// opt: { months: [...], members: [名前...]（null＝全員） }
+function _renderJisshiMemberList(deals, opt) {
+  opt = opt || {};
   const esc = (typeof _escapeHtml === 'function') ? _escapeHtml : (s => String(s == null ? '' : s));
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}/${String(today.getMonth() + 1).padStart(2, '0')}/${String(today.getDate()).padStart(2, '0')}`;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const months = opt.months || (typeof getMonthsForPeriod === 'function' ? getMonthsForPeriod() : []);
+  const memSet = opt.members ? new Set(opt.members) : null;
+  const creator = d => (d.recordCreator || '').trim() || '（作成者なし）';
+  // リスケ（件数外）：同じ期間・同じメンバーで、未商談化理由が「商談してない（リスケ等）」
+  const resched = [...(pipeline || []), ...(lostDeals || [])].filter(d => d.appointMonth && months.includes(d.appointMonth)
+    && YOMI_RESCHED_RE.test(String(d.mishoshoReason || '')) && (!memSet || memSet.has(creator(d))));
+  if ((!deals || !deals.length) && !resched.length) return '<p class="text-xs text-slate-400 py-4 text-center">該当案件がありません</p>';
+  const catOf = d => { if (d.stage !== 'E') return 'done'; const a = _yomiDay(d.appointDate); return (a && a < today) ? 'maybe' : 'plan'; };
   const groups = {};
-  deals.forEach(d => { const k = (d.recordCreator || '').trim() || '（作成者なし）'; (groups[k] = groups[k] || []).push(d); });
-  const names = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length || a.localeCompare(b, 'ja'));
-  const cell = v => { const s = String(v == null ? '' : v).trim(); return s ? `<td title="${esc(s)}">${esc(s)}</td>` : '<td class="isjl-na">—</td>'; };
-  const md = s => { const m = String(s || '').match(/^\d{4}\/(\d{2})\/(\d{2})$/); return m ? `${Number(m[1])}/${Number(m[2])}` : '—'; };
-  const head = '<thead><tr><th>実施日</th><th>企業名</th><th>検討/対象サービス</th><th>【新卒】現状の管理方法</th><th>【中途】現状の管理方法</th><th>N</th><th>T</th><th>ATS検討状況</th></tr></thead>';
-  const cols = '<colgroup><col style="width:42px"><col style="width:19%"><col style="width:7%"><col style="width:12%"><col style="width:12%"><col style="width:15%"><col style="width:16%"><col></colgroup>';
+  const put = (d, c) => { const k = creator(d); (groups[k] = groups[k] || { plan: [], done: [], maybe: [], resc: [] })[c].push(d); };
+  (deals || []).forEach(d => put(d, catOf(d)));
+  resched.forEach(d => put(d, 'resc'));
+  const total = g => g.plan.length + g.done.length + g.maybe.length;
+  const names = Object.keys(groups).sort((a, b) => total(groups[b]) - total(groups[a]) || a.localeCompare(b, 'ja'));
+  const CATS = [
+    ['plan', '実施予定', '#2bb0d4', 'ti-calendar-time', '実施日順'],
+    ['done', '実施済み', '#3a78b5', 'ti-circle-check', ''],
+    ['maybe', 'リスケ可能性あり', '#d98c4a', 'ti-alert-triangle', 'ステージEのまま実施日を過ぎた'],
+    ['resc', 'リスケ', '#d9655c', 'ti-calendar-x', '未商談化理由「商談してない」・件数には含めない'],
+  ];
+  const md = s => { const m = String(s || '').match(/^\d{4}\/(\d{2})\/(\d{2})$/); return m ? `${+m[1]}/${+m[2]}` : '—'; };
+  const cell = v => { const s = String(v == null ? '' : v).trim(); return (!s || /未ヒアリング|不明/.test(s)) ? `<td class="isjb-na" title="${esc(s)}">—</td>` : `<td title="${esc(s)}">${esc(s)}</td>`; };
+  const pill = r => {
+    if (!r) return '<td class="isjb-na">—</td>';
+    const why = [...r.plus.map(x => '＋' + x), ...r.minus.map(x => '－' + x)].join('\n') || '目立った要因なし';
+    const cls = r.rank === '高' ? 'isjb-hi' : r.rank === '中' ? 'isjb-mid' : 'isjb-lo';
+    // 推定値そのものは目盛りがずれるため、同じ層（高・中・低）の過去の実績ヨミ化率を表示する
+    const _M = _yomiModel(); const _b = _M.check && (r.rank === '高' ? _M.check.hi : r.rank === '中' ? _M.check.mid : _M.check.lo);
+    const _rt = (_b && _b.rate != null) ? `（過去の同じ層の実績：ヨミ化 ${Math.round(_b.rate * 100)}%）` : '';
+    return `<td><span class="isjb-pill ${cls}" title="見込み ${r.rank}${_rt}\n根拠：\n${esc(why)}">${r.rank === '高' ? '<i class="ti ti-flame"></i>' : ''}見込み ${r.rank}</span></td>`;
+  };
+  const co = d => {
+    const c = esc(d.company || '?');
+    const url = d.companyId ? `https://app.hubspot.com/contacts/${HUBSPOT_PORTAL_ID}/record/0-2/${encodeURIComponent(d.companyId)}` : null;
+    return url ? `<a class="isjb-co" href="${url}" target="_blank" rel="noopener" title="${c}（HubSpotで開く）">${c}<i class="ti ti-external-link"></i></a>` : `<span class="isjb-co" title="${c}">${c}</span>`;
+  };
+  const byDate = (a, b) => String(a.appointDate || '').localeCompare(String(b.appointDate || '')) || String(a.company || '').localeCompare(String(b.company || ''), 'ja');
   const css = `<style>
-    .isjl-mem{margin-top:14px}.isjl-mem:first-child{margin-top:2px}
-    .isjl-mem h4{font-size:13px;font-weight:700;color:#1e293b;margin:0 0 4px;display:flex;align-items:center;gap:6px}
-    .isjl-cnt{font-size:11px;color:#b45309;background:#fef3c7;border-radius:999px;padding:0 8px;font-weight:700}
-    .isjl-t{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11.5px}
-    .isjl-t th{font-size:10px;color:#64748b;font-weight:600;text-align:left;padding:4px 6px;background:#f8fafc;border-bottom:1px solid #e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .isjl-t td{padding:4px 6px;border-bottom:1px dashed #e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#334155}
-    .isjl-t td.isjl-dt{color:#94a3b8;font-size:10.5px}.isjl-t td.isjl-fut{color:#cbd5e1}
-    .isjl-t td.isjl-co a{color:#0284c7;font-weight:700;text-decoration:none}.isjl-t td.isjl-co a:hover{text-decoration:underline}
-    .isjl-t td.isjl-co span{font-weight:700;color:#334155}
-    .isjl-t td.isjl-na{color:#cbd5e1}
+    .isjb-mem{margin-top:18px}.isjb-mem:first-of-type{margin-top:4px}
+    .isjb-memh{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+    .isjb-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2bb0d4,#3a78b5);color:#fff;display:grid;place-items:center;font-weight:800;flex:none}
+    .isjb-nm{font-size:14px;font-weight:800;color:#0f1f33}.isjb-tot{font-size:11px;color:#5b6b7f}
+    .isjb-sw{flex:1;min-width:220px}.isjb-stack{height:7px;border-radius:99px;overflow:hidden;display:flex;background:#f1f5f9}.isjb-stack i{display:block;height:100%}
+    .isjb-leg{display:flex;gap:10px;flex-wrap:wrap;font-size:10.5px;color:#5b6b7f;margin-top:5px}.isjb-leg b{color:#0f1f33}
+    .isjb-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:1px}
+    .isjb-ranks{display:flex;gap:5px}
+    .isjb-pill{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:800;border-radius:99px;padding:1px 8px;white-space:nowrap;cursor:help}
+    .isjb-hi{color:#fff;background:#2f9e8a}.isjb-mid{color:#b8692a;background:#fbecdd}.isjb-lo{color:#5b6b7f;background:#f1f5f9}
+    .isjb-grp{margin-top:8px;border:1px solid #e3eaf2;border-radius:12px;overflow:hidden}
+    .isjb-gh{display:flex;align-items:center;gap:7px;padding:6px 10px;background:#f5f8fb;font-weight:800;font-size:12px;color:#0f1f33}
+    .isjb-gh .c{font-size:11px;color:#5b6b7f;font-weight:700}.isjb-gh .ex{margin-left:auto;font-size:10.5px;color:#94a3b8;font-weight:500}
+    .isjb-t{width:100%;border-collapse:collapse;table-layout:fixed;font-size:11.5px}
+    .isjb-t th{font-size:10px;color:#5b6b7f;font-weight:600;text-align:left;padding:5px 7px;border-bottom:1px solid #e3eaf2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .isjb-t td{padding:5px 7px;border-bottom:1px solid #eef2f7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#334155;vertical-align:middle}
+    .isjb-t tr:last-child td{border-bottom:0}.isjb-t tr.isjb-rhi td{background:#e9f6f3}
+    .isjb-t td.isjb-d{color:#5b6b7f;font-variant-numeric:tabular-nums}.isjb-t td.isjb-na{color:#cbd5e1}
+    .isjb-co{color:#0f1f33;font-weight:800;text-decoration:none}a.isjb-co:hover{color:#0284c7;text-decoration:underline}.isjb-co i{font-size:11px;color:#94a3b8;margin-left:3px}
+    html.dark .isjb-nm,html.dark .isjb-gh,html.dark .isjb-co,html.dark .isjb-leg b{color:#e6eef7}
+    html.dark .isjb-gh{background:#182d44}html.dark .isjb-grp{border-color:#22384f}
+    html.dark .isjb-t td{color:#c9d6e5;border-color:#1e344b}html.dark .isjb-t th{border-color:#22384f;color:#9fb2c8}
+    html.dark .isjb-t tr.isjb-rhi td{background:#173a3a}html.dark .isjb-stack,html.dark .isjb-lo{background:#182d44}html.dark .isjb-mid{background:#3a2a1c}
   </style>`;
-  const body = names.map(n => {
-    const ds = groups[n].slice().sort((a, b) => String(a.appointDate || '').localeCompare(String(b.appointDate || '')) || String(a.company || '').localeCompare(String(b.company || ''), 'ja'));
-    const rows = ds.map(d => {
-      const co = esc(d.company || '?');
-      const url = d.companyId ? `https://app.hubspot.com/contacts/${HUBSPOT_PORTAL_ID}/record/0-2/${encodeURIComponent(d.companyId)}` : null;
-      const coHtml = url ? `<a href="${url}" target="_blank" rel="noopener" title="${co}（HubSpotで開く）">${co}</a>` : `<span title="${co}">${co}</span>`;
-      const fut = d.appointDate && d.appointDate > todayStr;
-      return `<tr><td class="isjl-dt${fut ? ' isjl-fut' : ''}"${fut ? ' title="実施予定"' : ''}>${md(d.appointDate)}</td><td class="isjl-co">${coHtml}</td>${cell(d.targetSvc || d.product)}${cell(d.shinStatus)}${cell(d.chuStatus)}${cell(d.needN)}${cell(d.timeT)}${cell(d.atsStatus)}</tr>`;
+  const colg = withRank => `<colgroup><col style="width:52px">${withRank ? '<col style="width:86px">' : ''}<col style="width:18%"><col style="width:7%"><col style="width:11%"><col style="width:11%"><col style="width:13%"><col style="width:14%"><col></colgroup>`;
+  const head = withRank => `<thead><tr><th>実施日</th>${withRank ? '<th title="C（ヨミ）まで行く見込み">見込み</th>' : ''}<th>企業名</th><th>検討</th><th>【新卒】管理方法</th><th>【中途】管理方法</th><th>N</th><th>T</th><th>ATS検討状況</th></tr></thead>`;
+  const body = names.map(nm => {
+    const g = groups[nm];
+    const ranks = {}; g.plan.forEach(d => { d._yr = _yomiRank(d); });
+    ['高', '中', '低'].forEach(r => { ranks[r] = g.plan.filter(d => d._yr && d._yr.rank === r).length; });
+    const all4 = total(g) + g.resc.length || 1;
+    const w = k => (g[k].length / all4 * 100).toFixed(1);
+    const hasRank = g.plan.some(d => d._yr);
+    const hdr = `<div class="isjb-memh"><div class="isjb-av">${esc(nm.slice(0, 1))}</div><div><div class="isjb-nm">${esc(nm)}</div><div class="isjb-tot">アポ実施 ${total(g)}件（済 ${g.done.length}・予定 ${g.plan.length}${g.maybe.length ? '・リスケ可能性 ' + g.maybe.length : ''}）</div></div>
+      <div class="isjb-sw"><div class="isjb-stack">${CATS.map(([k, , col]) => `<i style="width:${w(k)}%;background:${col}"></i>`).join('')}</div>
+      <div class="isjb-leg">${CATS.map(([k, lb, col]) => `<span><span class="isjb-dot" style="background:${col}"></span>${lb} <b>${g[k].length}</b></span>`).join('')}</div></div>
+      ${hasRank ? `<div class="isjb-ranks"><span class="isjb-pill isjb-hi">高 ${ranks['高']}</span><span class="isjb-pill isjb-mid">中 ${ranks['中']}</span><span class="isjb-pill isjb-lo">低 ${ranks['低']}</span></div>` : ''}</div>`;
+    const grps = CATS.filter(([k]) => g[k].length).map(([k, lb, col, ic, ex]) => {
+      const list = g[k].slice().sort(byDate); const wr = k === 'plan';
+      const rows = list.map(d => `<tr class="${wr && d._yr && d._yr.rank === '高' ? 'isjb-rhi' : ''}"><td class="isjb-d">${md(d.appointDate)}</td>${wr ? pill(d._yr) : ''}<td>${co(d)}</td>${cell(d.targetSvc || d.product)}${cell(d.shinStatus)}${cell(d.chuStatus)}${cell(d.needN)}${cell(d.timeT)}${cell(d.atsStatus)}</tr>`).join('');
+      return `<div class="isjb-grp"><div class="isjb-gh" style="border-left:4px solid ${col}"><i class="ti ${ic}" style="color:${col}"></i>${lb}<span class="c">${list.length}件</span><span class="ex">${ex}</span></div><table class="isjb-t">${colg(wr)}${head(wr)}<tbody>${rows}</tbody></table></div>`;
     }).join('');
-    return `<div class="isjl-mem"><h4>${esc(n)} <span class="isjl-cnt">${ds.length}件</span></h4><table class="isjl-t">${cols}${head}<tbody>${rows}</tbody></table></div>`;
+    return `<div class="isjb-mem">${hdr}${grps}</div>`;
   }).join('');
-  return css + body;
+  const M = _yomiModel();
+  const foot = M.ok && M.check && M.check.hi
+    ? `<p style="font-size:10.5px;color:#94a3b8;margin-top:12px">見込みの精度（直近約3か月を伏せて検証）：高＝実際のヨミ化 ${Math.round(M.check.hi.rate * 100)}%（${M.check.hi.n}件）／中 ${M.check.mid ? Math.round(M.check.mid.rate * 100) + '%' : '—'}／低 ${M.check.lo.rate != null ? Math.round(M.check.lo.rate * 100) + '%' : '—'}。見込みバッジにマウスを乗せると根拠を表示。</p>`
+    : '';
+  return css + body + foot;
 }
 
 function openIsMetricDetail(memberArg, kind, label) {
@@ -12071,7 +12229,7 @@ function openIsMetricDetail(memberArg, kind, label) {
   if (kind === 'jisshi') {
     document.getElementById('isMetricDetailTitle').textContent = `${meta.icon} ${label} - アポ実施（${deals.length}件）`;
     document.getElementById('isMetricDetailHeader').style.borderBottomColor = meta.color;
-    document.getElementById('isMetricDetailBody').innerHTML = _renderJisshiMemberList(deals);
+    document.getElementById('isMetricDetailBody').innerHTML = _renderJisshiMemberList(deals, { months, members: memberKey === '__ALL__' ? null : (Array.isArray(memberKey) ? memberKey : [memberKey]) });
     const _w = document.getElementById('isMetricDetailPastWonBtnWrap');
     if (_w) _w.classList.add('hidden');
     _pastWonContext = null;
