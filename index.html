@@ -4568,6 +4568,7 @@ function renderIsListCard() {
 //   再アップ時期：再アップ時期が入っている企業。ただし再アップに成功した企業（新取引あり＝受注・進行中・再失注で次なし）は数えない。
 //                 再アップ成功→再失注でも「次の再アップ時期」が入っていれば、その次の時期で数える。
 //   クリックで担当者ごとの企業一覧（企業名→HubSpot）。
+//   ★ どのカードも、今アポが取れて進行中（E〜S）の会社は数えない・出さない。
 // ============================================================
 const IS_LIST_STAGE_CARDS = [
   { key: '日程調整待ち', icon: 'ti-calendar-time', color: '#0d9488', text: '#0f766e', src: 'perc' },
@@ -4615,6 +4616,14 @@ function _isListStageData() {
     reup.push(Object.assign({}, latest, { _timing: _isListYm(latest.reupTiming) }));
   });
   out['再アップ時期'] = reup;
+  // ★ 2026-10-13 アポが取れて今まさに進行中（ステージE〜S）の会社は、どのカードでも数えない・一覧にも出さない（本人指定）
+  //   判定元：FSのパイプライン（E〜S）＋全セクションの取引インデックス（dealIndexAll・失注/チャーン以外のE〜S）
+  const actIds = new Set(), actNames = new Set();
+  const addAct = (cid, co) => { const i = String(cid || '').trim(); if (i) actIds.add(i); const k = _reupNormCompanyKey(co); if (k) actNames.add(k); };
+  (pipeline || []).forEach(d => { if (['E', 'D', 'C', 'C+', 'B', 'A', 'S'].includes(d.stage)) addAct(d.companyId, d.company); });
+  (dealIndexAll || []).forEach(x => { const st = String(x.stage || '').trim(); if (st && /^(E|D|C\+|C＋|C|B|A|S)/.test(st) && !/失注|チャーン/.test(st)) addAct(x.companyId, x.company); });
+  const isActive = r => { const i = String(r.companyId || '').trim(); return (i && actIds.has(i)) || actNames.has(_reupNormCompanyKey(r.company)); };
+  Object.keys(out).forEach(k => { out[k] = out[k].filter(r => !isActive(r)); });
   return out;
 }
 function renderIsListStageCards() {
@@ -4648,9 +4657,13 @@ function openIsListStageModal(key) {
     : `<span class="isjb-co" title="${esc(name)}">${esc(name)}</span>`;
   const td = v => { const s = String(v == null ? '' : v).trim(); return s ? `<td title="${esc(s)}">${esc(s)}</td>` : '<td class="isjb-na">—</td>'; };
   // 担当者ごとにまとめる
-  const ownerOf = c.src === 'perc' ? (r => r.owner) : c.src === 'focus' ? (d => d.recordCreator) : (r => r.isOwner);
+  // ★ 2026-10-13 担当者＝いま会社を保有しているIS（トスアップした人＝レコード作成者ではない）。IS保有リストの所有者で引く
+  let _isMaps = null;
+  const _holderOf = d => { if (!_isMaps) { try { _isMaps = _buildReupIsMap(); } catch (e) { _isMaps = { byId: new Map(), byName: new Map() }; } }
+    const cid = String(d.companyId || '').trim(); const hit = (cid && _isMaps.byId.get(cid)) || _reupFuzzyGet(_isMaps.byName, _reupNormCompanyKey(d.company)); return hit ? (hit.owner || '') : ''; };
+  const ownerOf = c.src === 'perc' ? (r => r.owner) : c.src === 'focus' ? (d => _holderOf(d)) : (r => r.isOwner);
   const groups = {};
-  list.forEach(r => { const o = String(ownerOf(r) || '').trim() || '（担当者なし）'; (groups[o] = groups[o] || []).push(r); });
+  list.forEach(r => { const o = String(ownerOf(r) || '').trim() || '（いまの保有者なし）'; (groups[o] = groups[o] || []).push(r); });
   const names = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length || a.localeCompare(b, 'ja'));
   let colg, head, rowOf, sortOf;
   if (c.src === 'perc') {
@@ -4670,7 +4683,7 @@ function openIsListStageModal(key) {
       return `<tr><td>${link(r.company, r.companyId)}</td>${td(r.name)}${td(tm(r))}${td(stage)}${td(reason)}</tr>`;
     };
   }
-  const sortLabel = c.src === 'perc' ? '担当者ごと・次回架電日順' : (c.src === 'focus' ? 'IS担当ごと・再アップ時期順' : 'IS保有者ごと・再アップ時期順');
+  const sortLabel = c.src === 'perc' ? '担当者ごと・次回架電日順' : 'IS保有者ごと・再アップ時期順';
   title.innerHTML = `<span style="color:${c.text};"><i class="ti ${c.icon}"></i> ${c.key}</span> <span style="color:#94a3b8;font-weight:400;font-size:12px;">（${list.length.toLocaleString()}社）／ ${sortLabel}</span>`;
   header.style.background = '#f8fafc';
   body.innerHTML = list.length === 0 ? '<p class="text-xs text-slate-400 py-4 text-center">該当する企業がありません</p>'
