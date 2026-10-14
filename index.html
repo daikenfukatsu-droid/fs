@@ -3716,6 +3716,9 @@ function normalizeRow(row, hubspotId = null) {
              //   カレンダー等が使う appt2Month とは別名にして、既存の表示は変えない
              estDate: parseApptDate(estimateRaw).date, estMonth: parseApptDate(estimateRaw).month,
              fsstAppt2Month: parseApptDate(appoint2Raw).month,
+             // ★ 2026-10-14 失注案件も2〜5回目の商談日を持つ（商談カレンダーで失注案件の2回目以降が数えられていなかった）
+             ...(() => { const o = {}; [[2, appoint2Raw], [3, appoint3Raw], [4, appoint4Raw], [5, appoint5Raw]].forEach(([n, raw]) => {
+               const p = parseApptDate(raw); o['appt' + n + 'Date'] = p.date; o['appt' + n + 'Month'] = p.month; o['appt' + n + 'Day'] = p.day; }); return o; })(),
              targetSvc, needN: needNRaw, timeT: timeTRaw, atsStatus: atsStatusRaw, insideNote: insideNoteRaw,
              entN: entNRaw, entC: entCRaw, preCampaign: preCampRaw };
   }
@@ -10711,6 +10714,11 @@ const CAL_COLORS = {
   5: { main: '#9333ea', bg: '#faf5ff', label: '5回目' },
 };
 
+// ★ 2026-10-14 商談カレンダー（FS）：実施されなかった商談（未商談化理由「商談してない（リスケ等）」）の判定
+function _isECalResched(d) {
+  const reason = String(d && d.mishoshoReason || '').trim();
+  return reason.includes('商談してない') || reason.includes('リスケ');
+}
 function renderECalendar() {
   const cal = document.getElementById('eCalendar');
   if (!cal) return;
@@ -10740,13 +10748,9 @@ function renderECalendar() {
   const calLostDeals = snapshotView ? (snapshotView.lostDeals || []) : lostDeals;
   const allDeals = [...calPipeline, ...calLostDeals]
     .filter(d => !eCalMember || d.name === eCalMember)
-    // ★ ステージEで未商談化理由が「商談してない（リスケ等）」の案件はカレンダー非表示・カウント対象外
-    .filter(d => {
-      if (d.stage !== 'E') return true;
-      const reason = String(d.mishoshoReason || '').trim();
-      if (reason.includes('商談してない') || reason.includes('リスケ')) return false;
-      return true;
-    });
+    // ★ 未商談化理由が「商談してない（リスケ等）」の案件はカレンダー非表示・カウント対象外
+    //   2026-10-14：従来はステージEだけだったが、リスケのあと失注になった案件が「1回目」に数えられていたため、ステージ問わず除外
+    .filter(d => !_isECalResched(d));
 
   // スナップショットバナー
   const snapBanner = document.getElementById('eCalSnapBanner');
@@ -10997,7 +11001,7 @@ function renderECalToday() {
   const label = document.getElementById('eCalTodayLabel');
   if (!body) return;
   const today = _ymdTodayStr();
-  const all = [...pipeline, ...lostDeals];
+  const all = [...pipeline, ...lostDeals].filter(d => !_isECalResched(d));   // ★ 2026-10-14 リスケは除外
   const map = new Map(); // name -> { c1..c5 }
   const bump = (name, kind) => {
     if (!name) return;
@@ -11047,7 +11051,7 @@ function renderECalWeekly() {
   const label = document.getElementById('eCalWeeklyLabel');
   if (!body) return;
   const { mon, sun, monStr, sunStr } = _thisWeekRange();
-  const all = [...pipeline, ...lostDeals];
+  const all = [...pipeline, ...lostDeals].filter(d => !_isECalResched(d));   // ★ 2026-10-14 リスケは除外
   const inWeek = (s) => !!s && s >= monStr && s <= sunStr;
   const map = new Map();
   const bump = (name) => { if (name) map.set(name, (map.get(name)||0) + 1); };
