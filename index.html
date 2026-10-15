@@ -796,7 +796,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
       </div>
       <div class="w-full bg-slate-100 rounded-full h-2 mt-1"><div id="kpi-sekisai-bar" class="progress-bar h-2 rounded-full" style="width:0%;background:#0284c7"></div></div>
     </div>
-    <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4 border-sky-400">
+    <div class="kpi-card fskpi-land bg-white rounded-xl shadow-sm p-4 border-l-4 border-sky-400">
       <div class="flex items-center justify-between mb-1">
         <p class="text-xs text-slate-500"><i class="ti ti-target" style="color:var(--cyan);"></i> 売上着地予想</p>
         <button onclick="openWinRatesModal()" class="text-slate-400 hover:text-sky-700 text-sm leading-none" title="勝率を設定"><i class="ti ti-settings"></i></button>
@@ -836,6 +836,36 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
       </div>
       <!-- 達成可能性バッジ -->
       <div id="kpi-achieve-badge" class="mt-2 text-center text-xs font-bold px-2 py-1 rounded-lg"></div>
+    </div>
+    <!-- ★ 2026-10-15 ファネル4指標（FS状況テーブルのFS合計と同じ値）。着地予想カードを2段にして左下に並べる -->
+    <style>@media (min-width:768px){ .fskpi-land{ grid-row:span 2; } }</style>
+    <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4" style="border-color:#f59e0b">
+      <p class="text-xs text-slate-500"><i class="ti ti-calendar-check" style="color:#f59e0b"></i> アポ実施数</p>
+      <div class="flex items-baseline gap-1 mt-1"><p id="fskpi-apo-a" class="text-2xl font-bold text-slate-800">0</p><span class="text-sm text-slate-400">/ <span id="fskpi-apo-t">0</span>件</span></div>
+      <p class="text-xs text-slate-400">実績 / 目標</p>
+      <div class="flex items-center justify-between mt-2"><span id="fskpi-apo-r" class="text-lg font-bold text-slate-400">—</span></div>
+      <div class="w-full bg-slate-100 rounded-full h-2 mt-1"><div id="fskpi-apo-bar" class="progress-bar h-2 rounded-full" style="width:0%;background:#f59e0b"></div></div>
+    </div>
+    <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4" style="border-color:#0891b2">
+      <p class="text-xs text-slate-500"><i class="ti ti-repeat" style="color:#0891b2"></i> 2回目商談</p>
+      <div class="flex items-baseline gap-1 mt-1"><p id="fskpi-m2-a" class="text-2xl font-bold text-slate-800">0</p><span class="text-sm text-slate-400">/ <span id="fskpi-m2-t">0</span>件</span></div>
+      <p class="text-xs text-slate-400">実績 / 目標</p>
+      <div class="flex items-center justify-between mt-2"><span id="fskpi-m2-r" class="text-lg font-bold text-slate-400">—</span></div>
+      <div class="w-full bg-slate-100 rounded-full h-2 mt-1"><div id="fskpi-m2-bar" class="progress-bar h-2 rounded-full" style="width:0%;background:#0891b2"></div></div>
+    </div>
+    <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4" style="border-color:#0284c7">
+      <p class="text-xs text-slate-500"><i class="ti ti-flag" style="color:#0284c7"></i> ヨミ可能性</p>
+      <div class="flex items-baseline gap-1 mt-1"><p id="fskpi-yomi-a" class="text-2xl font-bold text-slate-800">0</p><span class="text-sm text-slate-400">/ <span id="fskpi-yomi-t">0</span>件</span></div>
+      <p class="text-xs text-slate-400">実績 / 目標</p>
+      <div class="flex items-center justify-between mt-2"><span id="fskpi-yomi-r" class="text-lg font-bold text-slate-400">—</span></div>
+      <div class="w-full bg-slate-100 rounded-full h-2 mt-1"><div id="fskpi-yomi-bar" class="progress-bar h-2 rounded-full" style="width:0%;background:#0284c7"></div></div>
+    </div>
+    <div class="kpi-card bg-white rounded-xl shadow-sm p-4 border-l-4" style="border-color:#7c3aed">
+      <p class="text-xs text-slate-500"><i class="ti ti-file-invoice" style="color:#7c3aed"></i> 見積提出数</p>
+      <div class="flex items-baseline gap-1 mt-1"><p id="fskpi-est-a" class="text-2xl font-bold text-slate-800">0</p><span class="text-sm text-slate-400">/ <span id="fskpi-est-t">0</span>件</span></div>
+      <p class="text-xs text-slate-400">実績 / 目標</p>
+      <div class="flex items-center justify-between mt-2"><span id="fskpi-est-r" class="text-lg font-bold text-slate-400">—</span></div>
+      <div class="w-full bg-slate-100 rounded-full h-2 mt-1"><div id="fskpi-est-bar" class="progress-bar h-2 rounded-full" style="width:0%;background:#7c3aed"></div></div>
     </div>
   </div>
 
@@ -4298,7 +4328,9 @@ function render() {
     lostMemberSel.innerHTML = '<option value="">全員</option>' + getFyMembers().map(m => `<option value="${m}">${m}</option>`).join('');
     lostMemberSel.value = curLost;
   }
+  window._fsstLastTotal = null;
   try { renderFsStatusTable(); } catch (e) { console.error('renderFsStatusTable error:', e); }
+  try { renderFsKpiFunnelCards(); } catch (e) { console.error('renderFsKpiFunnelCards error:', e); }
   renderLostAnalysis();
 
   // === IS 関連の再描画（FSセクションでエラーが起きてもISは確実に走るよう独立try/catch） ===
@@ -8094,6 +8126,23 @@ function _fsstYm(v) {
   return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 const FSST_EXTRA = '__メンバー外__';   // FSメンバー以外の担当者（行は出さずFS合計にだけ含める）
+// ★ 2026-10-15 上部KPIのファネル4カード（アポ実施数・2回目商談・ヨミ可能性・見積提出数）＝FS状況テーブルの「FS合計」と同じ値
+function renderFsKpiFunnelCards() {
+  const T = window._fsstLastTotal;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  [['apo', 'apo'], ['m2', 'm2'], ['yomi', 'yomi'], ['est', 'est']].forEach(([id, k]) => {
+    const tv = T ? Math.round(T.t[k] || 0) : 0;
+    const noData = !T || (k === 'est' && !T.hasEst);
+    const av = noData ? null : Math.round(T.a[k] || 0);
+    set('fskpi-' + id + '-a', av == null ? '—' : av.toLocaleString());
+    set('fskpi-' + id + '-t', tv.toLocaleString());
+    const p = (av != null && tv > 0) ? av / tv * 100 : null;
+    const r = document.getElementById('fskpi-' + id + '-r');
+    if (r) { r.textContent = p == null ? '—' : Math.round(p) + '%'; r.style.color = p == null ? '#94a3b8' : p >= 100 ? '#059669' : p >= 70 ? '#d97706' : '#dc2626'; r.classList.remove('text-slate-400'); }
+    const bar = document.getElementById('fskpi-' + id + '-bar');
+    if (bar) bar.style.width = (p == null ? 0 : Math.min(100, p)) + '%';
+  });
+}
 function renderFsStatusTable() {
   const host = document.getElementById('fsStatusTableBody');
   if (!host) return;
@@ -8167,6 +8216,7 @@ function renderFsStatusTable() {
     rows += `<tr class="fsst-unit"><td class="fsst-nm">${u === 'その他' ? 'その他' : u}<span class="fsst-sm">小計</span></td>${FSST_COLS.map(c => td(sub, c)).join('')}</tr>`;
   });
   const tot = addUp([...allMembers, ...extras]);
+  window._fsstLastTotal = { t: tot.t, a: tot.a, hasEst };   // ★ 2026-10-15 上部のファネル4カード用
   rows += `<tr class="fsst-tot"><td class="fsst-nm">FS合計</td>${FSST_COLS.map(c => td(tot, c)).join('')}</tr>`;
   const head1 = FSST_COLS.map(c => `<th colspan="3" class="fsst-g fsst-bl" style="background:${c.color}">${c.label}</th>`).join('');
   const head2 = FSST_COLS.map(c => `<th class="fsst-bl" style="background:${c.sub}">目標</th><th style="background:${c.sub}">実績</th><th style="background:${c.sub}">達成率</th>`).join('');
