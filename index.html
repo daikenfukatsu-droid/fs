@@ -8128,7 +8128,11 @@ function _fsstYm(v) {
 const FSST_EXTRA = '__メンバー外__';   // FSメンバー以外の担当者（行は出さずFS合計にだけ含める）
 // ★ 2026-10-15 上部KPIのファネル4カード（アポ実施数・2回目商談・ヨミ可能性・見積提出数）＝FS状況テーブルの「FS合計」と同じ値
 function renderFsKpiFunnelCards() {
-  const T = window._fsstLastTotal;
+  // プルダウン（目標 vs 受注実績）でメンバーを選んでいれば、その人の数字にする
+  const ALL = window._fsstLastTotal;
+  const mem = (typeof currentSnapMember !== 'undefined' && currentSnapMember) ? currentSnapMember : '';
+  const T = !ALL ? null : (!mem ? ALL : Object.assign({ hasEst: ALL.hasEst },
+    (ALL.byMember && ALL.byMember[mem]) || { t: { apo: 0, m2: 0, yomi: 0, est: 0 }, a: { apo: 0, m2: 0, yomi: 0, est: 0 } }));
   const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
   [['apo', 'apo'], ['m2', 'm2'], ['yomi', 'yomi'], ['est', 'est']].forEach(([id, k]) => {
     const tv = T ? Math.round(T.t[k] || 0) : 0;
@@ -8216,7 +8220,13 @@ function renderFsStatusTable() {
     rows += `<tr class="fsst-unit"><td class="fsst-nm">${u === 'その他' ? 'その他' : u}<span class="fsst-sm">小計</span></td>${FSST_COLS.map(c => td(sub, c)).join('')}</tr>`;
   });
   const tot = addUp([...allMembers, ...extras]);
-  window._fsstLastTotal = { t: tot.t, a: tot.a, hasEst };   // ★ 2026-10-15 上部のファネル4カード用
+  // ★ 2026-10-15 上部のファネル4カード用（全体＝FS合計／メンバー別＝その人の合計。期間内に複数ユニットに所属していれば足し合わせる）
+  const byMember = {};
+  Object.entries(cell).forEach(([u, ms]) => Object.entries(ms).forEach(([n, e]) => {
+    const o = byMember[n] = byMember[n] || { t: { amt: 0, co: 0, apo: 0, m2: 0, yomi: 0, est: 0 }, a: { amt: 0, co: 0, apo: 0, m2: 0, yomi: 0, est: 0 } };
+    for (const k in e.t) { o.t[k] += e.t[k]; o.a[k] += e.a[k]; }
+  }));
+  window._fsstLastTotal = { t: tot.t, a: tot.a, hasEst, byMember };
   rows += `<tr class="fsst-tot"><td class="fsst-nm">FS合計</td>${FSST_COLS.map(c => td(tot, c)).join('')}</tr>`;
   const head1 = FSST_COLS.map(c => `<th colspan="3" class="fsst-g fsst-bl" style="background:${c.color}">${c.label}</th>`).join('');
   const head2 = FSST_COLS.map(c => `<th class="fsst-bl" style="background:${c.sub}">目標</th><th style="background:${c.sub}">実績</th><th style="background:${c.sub}">達成率</th>`).join('');
