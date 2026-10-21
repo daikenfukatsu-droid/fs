@@ -369,6 +369,21 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
   .uix-drawer-bg.uix-open{ display:block; }
   .uix-drawer-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
 
+  /* ★ 2026-10-21 ポップアップをサイドドロワー（右から開く）で出す：着地予想の歯車・2回目がまだ・実施積載 詳細・着地予想 詳細。
+     既存のモーダルの外枠に .uix-sd を付けると、中の1枚目（パネル）が右端に全高で出る。中身・計算は変えない */
+  .uix-sd{ align-items:stretch !important; justify-content:flex-end !important; background:rgba(6,42,82,.18) !important; }
+  .uix-sd:not(.hidden){ animation:uixSdFade .2s ease; }
+  .uix-sd > div{ width:var(--uix-sd-w,720px) !important; max-width:100vw !important; height:100vh; max-height:100vh !important;
+    margin:0 !important; border-radius:16px 0 0 16px !important; box-shadow:-12px 0 40px rgba(6,42,82,.18) !important;
+    animation:uixSdIn .28s cubic-bezier(.2,.8,.2,1); }
+  .uix-sd.uix-sd-out{ animation:uixSdFadeOut .2s ease forwards; }
+  .uix-sd.uix-sd-out > div{ animation:uixSdOut .2s ease forwards; }
+  @keyframes uixSdIn{ from{ transform:translateX(100%); } to{ transform:none; } }
+  @keyframes uixSdOut{ to{ transform:translateX(100%); } }
+  @keyframes uixSdFade{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes uixSdFadeOut{ to{ opacity:0; } }
+  @media (max-width:640px){ .uix-sd > div{ width:100vw !important; border-radius:0 !important; } }
+
   @media (max-width: 1024px){
     .uix-summary{ grid-template-columns:1fr 1fr; }
     .uix-summary > div{ border-bottom:1px solid var(--hair); }
@@ -962,7 +977,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
   </div>
 
   <!-- グラフ詳細モーダル -->
-  <div id="chartDetailModal" class="fixed inset-0 z-50 hidden items-center justify-center" style="background:rgba(6,42,82,0.45)">
+  <div id="chartDetailModal" class="uix-sd fixed inset-0 z-50 hidden items-center justify-center" style="background:rgba(6,42,82,0.45)">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 flex flex-col" style="max-height:85vh;">
       <div id="chartDetailModal-header" class="flex items-center justify-between px-5 py-3 flex-shrink-0">
         <span id="chartDetailModal-title" class="font-semibold text-sm"></span>
@@ -1673,7 +1688,7 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
 </div>
 
 <!-- 勝率設定モーダル -->
-<div id="winRatesModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+<div id="winRatesModal" class="uix-sd hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50" onclick="if(event.target===this)closeWinRatesModal()">
   <div class="bg-white rounded-xl shadow-xl p-6 w-auto max-w-2xl max-h-screen overflow-y-auto">
     <h3 class="font-semibold text-slate-800 mb-1"><i class="ti ti-settings"></i> 着地予想 勝率設定</h3>
     <p class="text-xs text-slate-500 mb-3">ステージ×検討サービスごとの勝率（%）を入力してください。※ 変更はブラウザに保存されます。</p>
@@ -6952,9 +6967,26 @@ function openIsKpiLevel3(kpiKey, mgmtKey) {
 function closeIsKpiDetailModal() {
   const modal = document.getElementById('isKpiDetailModal');
   if (!modal) return;
-  modal.classList.add('hidden');
-  modal.classList.remove('flex');
+  _uixSdClose(modal, () => {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    modal.classList.remove('uix-sd'); modal.style.removeProperty('--uix-sd-w');   // 次にIS側の一覧を開いたときはポップアップ
+  });
 }
+// ★ 2026-10-21 サイドドロワー（.uix-sd）を右へスライドさせてから閉じる。ドロワーでなければすぐ閉じる
+function _uixSdClose(modal, done) {
+  if (!modal.classList.contains('uix-sd') || modal.classList.contains('hidden') || modal.classList.contains('uix-sd-out')) { if (!modal.classList.contains('uix-sd-out')) done(); return; }
+  modal.classList.add('uix-sd-out');
+  setTimeout(() => { modal.classList.remove('uix-sd-out'); done(); }, 190);
+}
+// Escキーで、開いているサイドドロワーを閉じる
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  const open = id => { const m = document.getElementById(id); return m && m.classList.contains('uix-sd') && !m.classList.contains('hidden'); };
+  if (open('winRatesModal')) closeWinRatesModal();
+  if (open('chartDetailModal')) closeChartDetailModal();
+  if (open('isKpiDetailModal')) closeIsKpiDetailModal();
+});
 
 function setKpi(prefix, actual, target) {
   // 表示は整数四捨五入（小数点表示しない）
@@ -8238,6 +8270,7 @@ function openFsC2Modal() {
   const esc = _escapeHtml;
   const md = d => { if (!d) return '—'; return `${d.getMonth() + 1}/${d.getDate()}`; };
   if (fsMeetingsState === 'idle') _loadFsMeetings();
+  modal.classList.add('uix-sd'); modal.style.setProperty('--uix-sd-w', '960px');   // ★ 2026-10-21 サイドドロワーで出す（IS側の一覧はポップアップのまま）
   const J = new Map(); if (fsMeetingsState === 'ok') list.forEach(d => J.set(d, _fsAttendJudge(d)));
   const stMsg = { loading: '<span class="fsat-n">読込中…</span>', nogas: '<span class="fsat-n" title="GASの更新後に表示されます">GAS更新待ち</span>', error: '<span class="fsat-n" title="ミーティング記録を取得できませんでした">取得失敗</span>', idle: '<span class="fsat-n">読込中…</span>' };
   const mk = r => r.m === '○' ? `<span class="fsat o" title="${esc(r.who.join('・'))}">○ <small>${esc(r.who.join('・'))}</small></span>`
@@ -8724,7 +8757,8 @@ function openWinRatesModal() {
   document.getElementById('winRatesModal').classList.remove('hidden');
 }
 function closeWinRatesModal() {
-  document.getElementById('winRatesModal').classList.add('hidden');
+  const modal = document.getElementById('winRatesModal');
+  _uixSdClose(modal, () => modal.classList.add('hidden'));
 }
 function renderEMinorRates() {
   const minors = [];
@@ -9049,8 +9083,7 @@ function openChartDetailModal(type) {
 
 function closeChartDetailModal() {
   const modal = document.getElementById('chartDetailModal');
-  modal.classList.add('hidden');
-  modal.classList.remove('flex');
+  _uixSdClose(modal, () => { modal.classList.add('hidden'); modal.classList.remove('flex'); });
 }
 
 function toggleChartMemberDeals(memberName, type) {
