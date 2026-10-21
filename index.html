@@ -1411,6 +1411,10 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
         .isjb-co{color:#0f1f33;font-weight:800;text-decoration:none}a.isjb-co:hover{color:#2575f0;text-decoration:underline}.isjb-co i{font-size:11px;color:#a8b2c1;margin-left:3px}
         .isjb-pill{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:800;border-radius:99px;padding:1px 8px;white-space:nowrap}
         .isjb-lo{color:#5b6b7f;background:#eef1f6}
+        .fsat{display:inline-flex;align-items:center;gap:4px;font-weight:800;max-width:100%}.fsat small{font-weight:500;color:#7c8798;font-size:10.5px;overflow:hidden;text-overflow:ellipsis}
+        .fsat.o{color:#0a5bd3}.fsat.x{color:#dc2626}.fsat-n{color:#c3cad5;font-weight:700}
+        .fsat-sum{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;margin:2px 0 4px}.fsat-sum .k{color:#7c8798;font-weight:700}.fsat-sum .leg{margin-left:auto;font-size:10.5px;color:#7c8798}
+        html.dark .fsat.o{color:#7fb0ff}html.dark .fsat-n{color:#4f6a8a}
         html.dark .isjb-gh{background:#062a52;color:#e6eef7}html.dark .isjb-grp{border-color:#173f6b}html.dark .isjb-co{color:#e6eef7}
         html.dark .isjb-t td{color:#c9d6e5;border-color:#123b66}html.dark .isjb-t th{border-color:#173f6b;color:#9fb2c8}html.dark .isjb-lo{background:#062a52}
       </style>
@@ -8179,6 +8183,53 @@ function renderFsC2Card() {
   const b1 = document.getElementById('fskpi-cr-bar'); if (b1) b1.style.width = Math.min(100, pc || 0) + '%';
   const b2 = document.getElementById('fskpi-m2c-bar'); if (b2) b2.style.width = Math.min(100, pm || 0) + '%';
 }
+// ★ 2026-10-21 同席の判定（「2回目がまだのC到達案件」の一覧用）
+//   データ＝ddd_FS行動管理（HubSpotのミーティング記録）を GAS の ?only=meetings で後追い取得。
+//   ○＝社内参加者に、その担当の「同席者として数える人」がいる／×＝ミーティング記録はあるがいない／—＝記録なし
+//   初回＝初回実施日と同じ日のミーティング、その後＝初回の翌日〜今日（キャンセル・日程変更はGAS側で除外済み）
+const FS_ATTEND_BY_LEADERS = ['深津 大堅', '藤森 悠太', '林 日向子', '久保田 翔世', '平井 良輝', '梶山 勇亮', '織笠 大地'];
+const FS_ATTEND_RULES = {
+  // ユニットリーダーの商談：グループ長・深津・織笠
+  '林 日向子': ['藤森 悠太', '深津 大堅', '織笠 大地'], '久保田 翔世': ['藤森 悠太', '深津 大堅', '織笠 大地'],
+  '平井 良輝': ['藤森 悠太', '深津 大堅', '織笠 大地'], '梶山 勇亮': ['藤森 悠太', '深津 大堅', '織笠 大地'],
+  // グループ長の商談：深津・織笠
+  '藤森 悠太': ['深津 大堅', '織笠 大地'],
+};
+// 上記以外（大井・田中・大野・山口・深澤・秋山など）の商談：深津・藤森・各リーダー・織笠
+function _fsAttendOk(owner) { return FS_ATTEND_RULES[owner] || FS_ATTEND_BY_LEADERS; }
+let fsMeetings = null;          // { 取引ID: [{ d:'YYYY-MM-DD', att:[名前…] }] }
+let fsMeetingsState = 'idle';   // idle / loading / ok / nogas / error
+const _fsMeetNorm = s => String(s || '').replace(/惠/g, '恵').replace(/﨑/g, '崎').replace(/[邊邉]/g, '辺').replace(/\s+/g, ' ').trim();
+async function _loadFsMeetings() {
+  if (fsMeetingsState === 'loading' || fsMeetingsState === 'ok') return;
+  fsMeetingsState = 'loading';
+  try {
+    const j = await _fetchGasOnly('meetings', false, 60000, 'ミーティング記録');
+    if (!j.meetingsV1 || !j.meetingsV1.m) { fsMeetingsState = 'nogas'; }
+    else {
+      const map = {};
+      Object.entries(j.meetingsV1.m).forEach(([id, arr]) => {
+        map[String(id)] = (arr || []).map(x => ({ d: String(x[0] || ''), att: String(x[1] || '').split('/').map(_fsMeetNorm).filter(Boolean) }));
+      });
+      fsMeetings = map; fsMeetingsState = 'ok';
+    }
+  } catch (e) { console.warn('[ミーティング記録] 取得失敗:', e.message); fsMeetingsState = 'error'; }
+  // 一覧を開いたままなら描き直す
+  const body = document.getElementById('isKpiDetailModal-body'), modal = document.getElementById('isKpiDetailModal');
+  if (body && modal && !modal.classList.contains('hidden') && body.querySelector('#fsc2-root')) openFsC2Modal();
+}
+function _fsAttendJudge(d) {
+  const ymd = x => x ? `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}` : '';
+  const a1 = ymd(_yomiDay(d.appointDate)), today = ymd(new Date());
+  const ms = (fsMeetings && d.hubspotId && fsMeetings[String(d.hubspotId)]) || [];
+  const ok = new Set(_fsAttendOk(d.name));
+  const judge = arr => {
+    if (!arr.length) return { m: '—', who: [] };
+    const who = new Set(); arr.forEach(x => x.att.forEach(p => { if (p !== d.name && ok.has(p)) who.add(p); }));
+    return { m: who.size ? '○' : '×', who: [...who] };
+  };
+  return { first: judge(a1 ? ms.filter(x => x.d === a1) : []), after: judge(a1 ? ms.filter(x => x.d > a1 && x.d <= today) : []) };
+}
 function openFsC2Modal() {
   const R = _fsCReach(); const list = R.list;
   const modal = document.getElementById('isKpiDetailModal'), title = document.getElementById('isKpiDetailModal-title'),
@@ -8186,6 +8237,18 @@ function openFsC2Modal() {
   if (!modal || !body) return;
   const esc = _escapeHtml;
   const md = d => { if (!d) return '—'; return `${d.getMonth() + 1}/${d.getDate()}`; };
+  if (fsMeetingsState === 'idle') _loadFsMeetings();
+  const J = new Map(); if (fsMeetingsState === 'ok') list.forEach(d => J.set(d, _fsAttendJudge(d)));
+  const stMsg = { loading: '<span class="fsat-n">読込中…</span>', nogas: '<span class="fsat-n" title="GASの更新後に表示されます">GAS更新待ち</span>', error: '<span class="fsat-n" title="ミーティング記録を取得できませんでした">取得失敗</span>', idle: '<span class="fsat-n">読込中…</span>' };
+  const mk = r => r.m === '○' ? `<span class="fsat o" title="${esc(r.who.join('・'))}">○ <small>${esc(r.who.join('・'))}</small></span>`
+    : r.m === '×' ? '<span class="fsat x" title="ミーティング記録はあるが、同席者として数える人の参加なし">×</span>'
+    : '<span class="fsat-n" title="ミーティングの記録なし">—</span>';
+  const cell = (d, k) => fsMeetingsState === 'ok' ? mk(J.get(d)[k]) : stMsg[fsMeetingsState];
+  const cnt = (rs, k, v) => rs.filter(d => J.has(d) && J.get(d)[k].m === v).length;
+  const sumHtml = fsMeetingsState !== 'ok' ? '' :
+    `<div class="fsat-sum"><span class="k">初回同席</span><span class="fsat o">○ ${cnt(list, 'first', '○')}</span><span class="fsat x">× ${cnt(list, 'first', '×')}</span><span class="fsat-n">— ${cnt(list, 'first', '—')}</span>`
+    + `<span class="k" style="margin-left:12px">その後の同席</span><span class="fsat o">○ ${cnt(list, 'after', '○')}</span><span class="fsat x">× ${cnt(list, 'after', '×')}</span><span class="fsat-n">— ${cnt(list, 'after', '—')}</span>`
+    + `<span class="leg">○ 同席あり（名前）・× 記録はあるが同席なし・— ミーティング記録なし</span></div>`;
   const groups = {}; list.forEach(d => { const k = d.name || '（担当者なし）'; (groups[k] = groups[k] || []).push(d); });
   const names = Object.keys(groups).sort((a, b) => groups[b].length - groups[a].length || a.localeCompare(b, 'ja'));
   const link = d => d.hubspotId
@@ -8195,14 +8258,15 @@ function openFsC2Modal() {
   title.innerHTML = `<span style="color:#0b4196;"><i class="ti ti-stairs-up"></i> 2回目がまだのC到達案件</span> <span style="color:#a8b2c1;font-weight:400;font-size:12px;">（${label}・${list.length}件${R.mem ? '・' + esc(R.mem) : ''}）／ FS担当ごと・C到達日の古い順</span>`;
   header.style.background = '#f6f8fb';
   body.innerHTML = !list.length ? '<p class="text-xs text-slate-400 py-4 text-center">2回目がまだのC到達案件はありません</p>'
-    : names.map(n => {
+    : '<div id="fsc2-root"></div>' + sumHtml + names.map(n => {
         const rs = groups[n].slice().sort((a, b) => (_yomiDay(a.yomiDecidedDate) || 0) - (_yomiDay(b.yomiDecidedDate) || 0));
         const rows = rs.map(d => {
           const m2 = d.appt2Date ? `<span style="color:#0b4196;font-weight:700">${md(_yomiDay(d.appt2Date))} 予定</span>` : '<span style="color:#dc2626;font-weight:800">未設定</span>';
-          return `<tr><td>${link(d)}</td><td>${esc(d.stage)}</td><td>${md(_yomiDay(d.appointDate))}</td><td>${md(_yomiDay(d.yomiDecidedDate))}</td><td>${m2}</td></tr>`;
+          return `<tr><td>${link(d)}</td><td>${esc(d.stage)}</td><td>${md(_yomiDay(d.appointDate))}</td><td>${md(_yomiDay(d.yomiDecidedDate))}</td><td>${m2}</td><td>${cell(d, 'first')}</td><td>${cell(d, 'after')}</td></tr>`;
         }).join('');
-        return `<div class="isjb-grp"><div class="isjb-gh" style="border-left:4px solid #0a5bd3">${esc(n)}<span class="c">${rs.length}件</span></div><table class="isjb-t"><colgroup><col style="width:36%"><col style="width:10%"><col style="width:14%"><col style="width:14%"><col></colgroup>`
-          + `<thead><tr><th>企業名</th><th>ステージ</th><th>初回実施日</th><th>C到達日</th><th>2回目</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        const gm = fsMeetingsState === 'ok' ? `<span class="c" style="margin-left:auto">初回同席 ${cnt(rs, 'first', '○')} / ${rs.length}件</span>` : '';
+        return `<div class="isjb-grp"><div class="isjb-gh" style="border-left:4px solid #0a5bd3">${esc(n)}<span class="c">${rs.length}件</span>${gm}</div><table class="isjb-t"><colgroup><col style="width:29%"><col style="width:8%"><col style="width:10%"><col style="width:10%"><col style="width:11%"><col style="width:16%"><col></colgroup>`
+          + `<thead><tr><th>企業名</th><th>ステージ</th><th>初回実施日</th><th>C到達日</th><th>2回目</th><th>初回 同席</th><th>その後 同席</th></tr></thead><tbody>${rows}</tbody></table></div>`;
       }).join('');
   modal.classList.remove('hidden'); modal.classList.add('flex');
 }
