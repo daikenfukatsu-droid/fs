@@ -908,6 +908,25 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
     </div>
   </div>
 
+  <!-- ★ 2026-10-29 来期以降に着地予定の案件（今期の数字には含めない） -->
+  <div id="futureDealsCard" class="uix-sec bg-white rounded-xl shadow-sm p-5 mb-6" hidden>
+    <div class="flex flex-wrap items-baseline gap-2 mb-1">
+      <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-calendar-time"></i> 来期以降に着地予定の案件</h3>
+      <span class="text-[11px] px-2 py-0.5 rounded bg-amber-50 text-amber-700">今期の目標・受注・着地予想には含めません</span>
+    </div>
+    <p id="futureDealsSummary" class="text-xs text-slate-500 mb-3"></p>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead><tr class="text-left text-xs text-slate-500 border-b">
+          <th class="py-2 pr-2 font-medium">会社</th><th class="py-2 pr-2 font-medium">担当</th><th class="py-2 pr-2 font-medium">ステージ</th>
+          <th class="py-2 pr-2 font-medium">着地日</th><th class="py-2 pr-2 font-medium">初回商談</th><th class="py-2 pr-2 font-medium text-right">金額</th>
+        </tr></thead>
+        <tbody id="futureDealsBody"></tbody>
+      </table>
+    </div>
+    <p class="text-[10px] text-slate-400 mt-2">※ 着地日（クローズ日）が今期の最終月より後の進行中案件。会社名をクリックで HubSpot の取引を開きます。担当者の絞り込みに連動します。金額が未入力の案件は領域ごとの目安金額（仮）です。</p>
+  </div>
+
   <!-- Charts -->
   <div id="uixsec-fs-member" class="uix-sec grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
 
@@ -2704,6 +2723,10 @@ let pipeline = [];
 let lostDeals = [];
 // ★ 再アップ時期ビュー用: FY期間外クローズ等で pipeline/lostDeals に乗らないが再アップ時期が入力されている案件
 let reupDeals = [];
+// ★ 2026-10-29 追加: 着地日（クローズ日）が今期より先（来期以降）の進行中案件。
+//   pipeline には入れない（今期の目標・受注・ステージ別・着地予想に混ぜない）。
+//   「来期以降に着地予定の案件」カード・担当者別 状況テーブル（アポ実施等の行動実績）・商談カレンダーだけで使う。
+let futureDeals = [];
 let eReupPeriod = '';  // 再アップビュー 時期フィルタ
 let eReupMembers = new Set();  // 再アップビュー 担当フィルタ（カードクリック・複数選択）
 let eReupOnlyWarn = false;     // 再アップビュー ⚠戻し忘れのみ表示
@@ -3335,6 +3358,7 @@ async function fetchFromSheets(silent = false, useFresh = !silent) {
 
     // パイプライン
     reupDeals = [];  // ★ normalizeRow が FY期間外の再アップ案件を push するため先にリセット
+    futureDeals = []; // ★ 2026-10-29 normalizeRow が来期以降に着地予定の進行中案件を push するため先にリセット
     const allRows = (json.data || []).map(row => normalizeRow(row)).filter(r => r);
     pipeline  = allRows.filter(r => r.stage !== '失注');
     lostDeals = allRows.filter(r => r.stage === '失注');
@@ -3741,11 +3765,15 @@ function normalizeRow(row, hubspotId = null) {
     month = `${match[1]}/${String(match[2]).padStart(2,'0')}`;
     closeDay = match[3] ? parseInt(match[3], 10) : null;
   }
-  if (!FY_MONTHS.includes(month) && !FY2025_MONTHS.includes(month)) { _pushReup(); return null; }
+  // ★ 2026-10-29 来期以降（今期の最終月より後）に着地予定の案件は、ここでは捨てずに印を付けて先へ進め、
+  //   最後に futureDeals へ退避する（pipeline には入れない）。失注・ステージ不明は従来どおり除外。
+  const _isNextFY = !FY_MONTHS.includes(month) && !FY2025_MONTHS.includes(month) && month > FY_MONTHS[FY_MONTHS.length - 1];
+  if (!FY_MONTHS.includes(month) && !FY2025_MONTHS.includes(month) && !_isNextFY) { _pushReup(); return null; }
 
   const su = stageRaw.toUpperCase().replace(/\s/g,'');
   // 失注系（失注（〜）/ チャーン / 代理店失注）を一括で「失注扱い」に
   const _isLostLike = stageRaw.includes('失注') || stageRaw.trim() === 'チャーン';
+  if (_isNextFY && _isLostLike) { _pushReup(); return null; }
   if (_isLostLike) {
     const lostLabel = LOST_STAGE_MAP[Object.keys(LOST_STAGE_MAP).find(k => stageRaw.includes(k))] || 'その他';
     // 失注案件もproductを判定（管理方法分析で新卒/中途を切り分けるため）
@@ -3820,7 +3848,7 @@ function normalizeRow(row, hubspotId = null) {
   const appt5 = parseApptDate(appoint5Raw);
   const est1  = parseApptDate(estimateRaw);
 
-  return { company, companyId, name, month, closeDay, appointDate, appointMonth, appointDay,
+  const _deal = { company, companyId, name, month, closeDay, appointDate, appointMonth, appointDay,
            appt2Date: appt2.date, appt2Month: appt2.month, appt2Day: appt2.day,
            appt3Date: appt3.date, appt3Month: appt3.month, appt3Day: appt3.day,
            appt4Date: appt4.date, appt4Month: appt4.month, appt4Day: appt4.day,
@@ -3834,9 +3862,16 @@ function normalizeRow(row, hubspotId = null) {
            leadSource: leadSourceRaw, industry: industryRaw,
            reupload: reuploadFlag, reupTiming, reupDate, stageRaw, leadCreatedDate,
            recordCreator, yomiDecidedDate, apoCreatedDate };
+  if (_isNextFY) {
+    _pushReup();   // 従来どおり再アップ時期ビューにも載せる
+    _deal.nextFY = true;
+    futureDeals.push(_deal);
+    return null;
+  }
+  return _deal;
 }
 
-function clearData() { pipeline = []; lostDeals = []; reupDeals = []; document.getElementById('fileStatus').textContent = ''; render(); }
+function clearData() { pipeline = []; lostDeals = []; reupDeals = []; futureDeals = []; document.getElementById('fileStatus').textContent = ''; render(); }
 
 // ===== ビュー切替 =====
 function getFyData() {
@@ -3997,6 +4032,37 @@ function aggregateTotals(pipe, months) {
 }
 
 function fmt(n) { return '¥' + Math.round(n).toLocaleString(); }
+
+// ★ 2026-10-29 来期以降に着地予定の案件カード
+//   今期（FY2026）を表示中・スナップショット閲覧中でないときだけ出す。担当者の絞り込み（currentSnapMember）に連動。
+function renderFutureDeals() {
+  const card = document.getElementById('futureDealsCard');
+  if (!card) return;
+  const list = (futureDeals || []).filter(d => !currentSnapMember || d.name === currentSnapMember);
+  if (currentFY !== 'FY2026' || snapshotView || !list.length) { card.hidden = true; return; }
+  card.hidden = false;
+  const esc = (s) => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const STAGE_ORDER = { A: 0, B: 1, 'C+': 2, C: 3, D: 4, E: 5, S: 6 };
+  const closeKey = d => d.month + '/' + String(d.closeDay || 0).padStart(2, '0');
+  list.sort((a, b) => closeKey(a).localeCompare(closeKey(b)) || (STAGE_ORDER[a.stage] ?? 9) - (STAGE_ORDER[b.stage] ?? 9));
+  const total = list.reduce((s, d) => s + (d.amount || 0), 0);
+  const first = FY_MONTHS[FY_MONTHS.length - 1];
+  const [fy, fm] = first.split('/').map(Number);
+  const nextStart = fm === 12 ? `${fy + 1}/01` : `${fy}/${String(fm + 1).padStart(2, '0')}`;
+  document.getElementById('futureDealsSummary').textContent =
+    `着地日が ${nextStart} 以降の進行中の案件（${list.length}件・合計 ${fmt(total)}）`;
+  document.getElementById('futureDealsBody').innerHTML = list.map(d => {
+    const link = d.hubspotId
+      ? `<a class="text-blue-600 hover:underline" href="https://app.hubspot.com/contacts/23871469/record/0-3/${esc(d.hubspotId)}" target="_blank" rel="noopener">${esc(d.company)}</a>`
+      : esc(d.company);
+    const close = d.month + (d.closeDay ? '/' + String(d.closeDay).padStart(2, '0') : '');
+    const ap = d.appointDate || '－';   // parseApptDate の 'YYYY/MM/DD' 文字列
+    const amt = d.amount ? fmt(d.amount) + (d.estimated ? '（仮）' : '') : '－';
+    return `<tr class="border-b last:border-0"><td class="py-2 pr-2">${link}</td><td class="py-2 pr-2">${esc(d.name || '－')}</td>`
+      + `<td class="py-2 pr-2">${esc(d.stage)}</td><td class="py-2 pr-2 tabular-nums">${esc(close)}</td>`
+      + `<td class="py-2 pr-2 tabular-nums">${esc(ap)}</td><td class="py-2 pr-2 text-right tabular-nums">${esc(amt)}</td></tr>`;
+  }).join('');
+}
 function pct(n) { return (n * 100).toFixed(0) + '%'; }
 function statusOf(jRate, yRate, sRate, target) {
   if (target === 0) return { label: '対象外', cls: 'bg-slate-100 text-slate-500' };
@@ -4348,6 +4414,7 @@ function render() {
   renderDealList(activePipeline);
   renderSnapshots();
   renderECalendar();
+  try { renderFutureDeals(); } catch (e) { console.error('renderFutureDeals error:', e); }
   renderProgressChart();
 
   // 失注分析メンバーセレクト更新
@@ -8336,7 +8403,9 @@ function renderFsStatusTable() {
   // ★ 2026-10-13 FSメンバー以外の担当者（深津さん・IS担当・担当者未設定など）の案件は行には出さず、FS合計にだけ含める（目標は0）
   const NO_OWNER = '（担当者未設定）';
   const ownerOf = d => d.name || NO_OWNER;
-  const all = [...(pipeline || []), ...(lostDeals || [])].filter(Boolean);
+  // ★ 2026-10-29 来期以降に着地予定の案件（futureDeals）も含める。アポ実施・2回目・ヨミ・見積は商談した日で数える行動実績のため。
+  //   受注はステージS×クローズ月で数えるので、来期着地の案件が今期の受注に入ることはない。
+  const all = [...(pipeline || []), ...(lostDeals || []), ...(futureDeals || [])].filter(Boolean);
   const byOwner = {};
   all.forEach(d => { (byOwner[ownerOf(d)] = byOwner[ownerOf(d)] || []).push(d); });
   const owners = [...members, ...Object.keys(byOwner).filter(n => !members.includes(n))];
@@ -10987,7 +11056,9 @@ function renderECalendar() {
   //   active pipeline + lostDeals を結合（スナップショット閲覧時も同様）
   const calPipeline = getActivePipeline();
   const calLostDeals = snapshotView ? (snapshotView.lostDeals || []) : lostDeals;
-  const allDeals = [...calPipeline, ...calLostDeals]
+  // ★ 2026-10-29 来期以降に着地予定の案件の商談も表示する（スナップショット閲覧中は対象外）
+  const calFuture = snapshotView ? [] : (futureDeals || []);
+  const allDeals = [...calPipeline, ...calLostDeals, ...calFuture]
     .filter(d => !eCalMember || d.name === eCalMember)
     // ★ 未商談化理由が「商談してない（リスケ等）」の案件はカレンダー非表示・カウント対象外
     //   2026-10-14：従来はステージEだけだったが、リスケのあと失注になった案件が「1回目」に数えられていたため、ステージ問わず除外
@@ -11242,7 +11313,7 @@ function renderECalToday() {
   const label = document.getElementById('eCalTodayLabel');
   if (!body) return;
   const today = _ymdTodayStr();
-  const all = [...pipeline, ...lostDeals].filter(d => !_isECalResched(d));   // ★ 2026-10-14 リスケは除外
+  const all = [...pipeline, ...lostDeals, ...(futureDeals || [])].filter(d => !_isECalResched(d));   // ★ 2026-10-14 リスケは除外／2026-10-29 来期着地の案件も含める
   const map = new Map(); // name -> { c1..c5 }
   const bump = (name, kind) => {
     if (!name) return;
@@ -11292,7 +11363,7 @@ function renderECalWeekly() {
   const label = document.getElementById('eCalWeeklyLabel');
   if (!body) return;
   const { mon, sun, monStr, sunStr } = _thisWeekRange();
-  const all = [...pipeline, ...lostDeals].filter(d => !_isECalResched(d));   // ★ 2026-10-14 リスケは除外
+  const all = [...pipeline, ...lostDeals, ...(futureDeals || [])].filter(d => !_isECalResched(d));   // ★ 2026-10-14 リスケは除外／2026-10-29 来期着地の案件も含める
   const inWeek = (s) => !!s && s >= monStr && s <= sunStr;
   const map = new Map();
   const bump = (name) => { if (name) map.set(name, (map.get(name)||0) + 1); };
