@@ -8460,7 +8460,21 @@ function renderFsStatusTable() {
   };
   let rows = '';
   const allMembers = [];
-  order.forEach(u => {
+  if (currentMode === 'year') {
+    // ★ 2026-10-30 年間はユニット小計を出さず、メンバーごとに1行（期間中に複数ユニット・「その他」に分かれた分は足し合わせる）。目標金額の大きい順。
+    const merged = {};
+    order.forEach(u => Object.entries(cell[u]).forEach(([n, e]) => {
+      const o = merged[n] = merged[n] || blank();
+      for (const k in e.t) { o.t[k] += e.t[k]; o.a[k] += e.a[k]; }
+      e.cos.forEach(c => o.cos.add(c));   // 受注社数は会社の重複を除いて数える
+    }));
+    Object.entries(merged).map(([n, e]) => [n, fin(e)])
+      .sort((a, b) => b[1].t.amt - a[1].t.amt || b[1].a.amt - a[1].a.amt)
+      .forEach(([n, e]) => {
+        allMembers.push(e);
+        rows += `<tr class="fsst-mem"><td class="fsst-nm">${n}</td>${FSST_COLS.map(c => td(e, c)).join('')}</tr>`;
+      });
+  } else order.forEach(u => {
     const ms = Object.entries(cell[u]).map(([n, e]) => [n, fin(e)]).sort((a, b) => b[1].t.amt - a[1].t.amt || b[1].a.amt - a[1].a.amt);
     ms.forEach(([n, e]) => {
       allMembers.push(e);
@@ -8481,7 +8495,7 @@ function renderFsStatusTable() {
   const head1 = FSST_COLS.map(c => `<th colspan="3" class="fsst-g fsst-bl" style="background:${c.color}">${c.label}</th>`).join('');
   const head2 = FSST_COLS.map(c => `<th class="fsst-bl" style="background:${c.sub}">目標</th><th style="background:${c.sub}">実績</th><th style="background:${c.sub}">達成率</th>`).join('');
   host.innerHTML = rows
-    ? `<table class="fsst-table"><colgroup><col class="fsst-colnm">${FSST_COLS.map(() => '<col><col><col>').join('')}</colgroup><thead><tr class="fsst-h1"><th rowspan="2" class="fsst-nmh">担当者/月間</th>${head1}</tr><tr class="fsst-h2">${head2}</tr></thead><tbody>${rows}</tbody></table>`
+    ? `<table class="fsst-table"><colgroup><col class="fsst-colnm">${FSST_COLS.map(() => '<col><col><col>').join('')}</colgroup><thead><tr class="fsst-h1"><th rowspan="2" class="fsst-nmh">担当者/${({ quarter: '四半期', half: '半期', year: '年間' })[currentMode] || '月間'}</th>${head1}</tr><tr class="fsst-h2">${head2}</tr></thead><tbody>${rows}</tbody></table>`
     : '<p class="text-xs text-slate-400 py-4 text-center">この期間の対象データがありません</p>';
   const note = document.getElementById('fsStatusTableNote');
   if (note) note.textContent = hasEst ? '' : '※ 見積提出数の実績は「見積提出日」の項目が入りしだい表示（それまでは目標のみ）';
