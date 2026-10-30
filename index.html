@@ -12059,7 +12059,7 @@ const IS_ROW_BG = {
 
 // 詳細表示用: 期間内の対象deal一覧（再利用しやすいよう関数化）
 function _getMemberDealsForKind(member, kind, months) {
-  const allDeals = [...pipeline, ...lostDeals];
+  const allDeals = [...pipeline, ...lostDeals, ...(futureDeals || [])];   // ★ 2026-10-30 来期着地の案件も含める（アポ取得・実施・ヨミは行動した日で数えるため）
   const dateInMonths = (date) => {
     if (!(date instanceof Date) || isNaN(date)) return false;
     const ym = `${date.getFullYear()}/${String(date.getMonth()+1).padStart(2,'0')}`;
@@ -12570,7 +12570,7 @@ function _renderJisshiMemberList(deals, opt) {
   const memSet = opt.members ? new Set(opt.members) : null;
   const creator = d => (d.recordCreator || '').trim() || '（作成者なし）';
   // リスケ（件数外）：同じ期間・同じメンバーで、未商談化理由が「商談してない（リスケ等）」
-  const resched = [...(pipeline || []), ...(lostDeals || [])].filter(d => d.appointMonth && months.includes(d.appointMonth)
+  const resched = [...(pipeline || []), ...(lostDeals || []), ...(futureDeals || [])].filter(d => d.appointMonth && months.includes(d.appointMonth)
     && YOMI_RESCHED_RE.test(String(d.mishoshoReason || '')) && (!memSet || memSet.has(creator(d))));
   if ((!deals || !deals.length) && !resched.length) return '<p class="text-xs text-slate-400 py-4 text-center">該当案件がありません</p>';
   const catOf = d => { if (d.stage !== 'E') return 'done'; const a = _yomiDay(d.appointDate); return (a && a < today) ? 'maybe' : 'plan'; };
@@ -12706,7 +12706,7 @@ function openIsMetricDetail(memberArg, kind, label) {
       return Math.round((b.getTime() - a.getTime()) / 86400000);
     };
     // メンバー絞り込み（リスケ平均算出用に同じmemberKeyで全期間allDealsを参照）
-    const allDeals = [...pipeline, ...lostDeals];
+    const allDeals = [...pipeline, ...lostDeals, ...(futureDeals || [])];   // ★ 2026-10-30 来期着地の案件も含める
     let baseDeals;
     if (memberKey === '__ALL__') baseDeals = allDeals;
     else if (Array.isArray(memberKey)) {
@@ -12910,7 +12910,7 @@ function pastWonSetFilter(sub) {
 function _renderPastWonBody() {
   if (!_pastWonContext) return;
   const { memberArg, label } = _pastWonContext;
-  const allDeals = [...pipeline, ...lostDeals];
+  const allDeals = [...pipeline, ...lostDeals, ...(futureDeals || [])];   // ★ 2026-10-30 来期着地の案件も含める
   let memDeals;
   if (memberArg === '__ALL__') {
     memDeals = allDeals;
@@ -13124,7 +13124,7 @@ function reschedSetSort(key) {
 function _renderReschedBody() {
   if (!_pastWonContext) return;
   const { memberArg, label } = _pastWonContext;
-  const allDeals = [...pipeline, ...lostDeals];
+  const allDeals = [...pipeline, ...lostDeals, ...(futureDeals || [])];   // ★ 2026-10-30 来期着地の案件も含める
   // メンバー絞り込み
   let memDeals;
   if (memberArg === '__ALL__') {
