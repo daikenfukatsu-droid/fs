@@ -908,25 +908,6 @@ document.addEventListener('DOMContentLoaded',function(){var ic=document.getEleme
     </div>
   </div>
 
-  <!-- ★ 2026-10-29 来期以降に着地予定の案件（今期の数字には含めない） -->
-  <div id="futureDealsCard" class="uix-sec bg-white rounded-xl shadow-sm p-5 mb-6" hidden>
-    <div class="flex flex-wrap items-baseline gap-2 mb-1">
-      <h3 class="font-semibold text-slate-700 text-sm"><i class="ti ti-calendar-time"></i> 来期以降に着地予定の案件</h3>
-      <span class="text-[11px] px-2 py-0.5 rounded bg-amber-50 text-amber-700">今期の目標・受注・着地予想には含めません</span>
-    </div>
-    <p id="futureDealsSummary" class="text-xs text-slate-500 mb-3"></p>
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead><tr class="text-left text-xs text-slate-500 border-b">
-          <th class="py-2 pr-2 font-medium">会社</th><th class="py-2 pr-2 font-medium">担当</th><th class="py-2 pr-2 font-medium">ステージ</th>
-          <th class="py-2 pr-2 font-medium">着地日</th><th class="py-2 pr-2 font-medium">初回商談</th><th class="py-2 pr-2 font-medium text-right">金額</th>
-        </tr></thead>
-        <tbody id="futureDealsBody"></tbody>
-      </table>
-    </div>
-    <p class="text-[10px] text-slate-400 mt-2">※ 着地日（クローズ日）が今期の最終月より後の進行中案件。会社名をクリックで HubSpot の取引を開きます。担当者の絞り込みに連動します。金額が未入力の案件は領域ごとの目安金額（仮）です。</p>
-  </div>
-
   <!-- Charts -->
   <div id="uixsec-fs-member" class="uix-sec grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
 
@@ -2725,7 +2706,7 @@ let lostDeals = [];
 let reupDeals = [];
 // ★ 2026-10-29 追加: 着地日（クローズ日）が今期より先（来期以降）の進行中案件。
 //   pipeline には入れない（今期の目標・受注・ステージ別・着地予想に混ぜない）。
-//   「来期以降に着地予定の案件」カード・担当者別 状況テーブル（アポ実施等の行動実績）・商談カレンダーだけで使う。
+//   担当者別 状況テーブル（アポ実施等の行動実績）・商談カレンダーだけで使う（専用カードは 2026-10-30 に不要となり削除）。
 let futureDeals = [];
 let eReupPeriod = '';  // 再アップビュー 時期フィルタ
 let eReupMembers = new Set();  // 再アップビュー 担当フィルタ（カードクリック・複数選択）
@@ -4033,36 +4014,6 @@ function aggregateTotals(pipe, months) {
 
 function fmt(n) { return '¥' + Math.round(n).toLocaleString(); }
 
-// ★ 2026-10-29 来期以降に着地予定の案件カード
-//   今期（FY2026）を表示中・スナップショット閲覧中でないときだけ出す。担当者の絞り込み（currentSnapMember）に連動。
-function renderFutureDeals() {
-  const card = document.getElementById('futureDealsCard');
-  if (!card) return;
-  const list = (futureDeals || []).filter(d => !currentSnapMember || d.name === currentSnapMember);
-  if (currentFY !== 'FY2026' || snapshotView || !list.length) { card.hidden = true; return; }
-  card.hidden = false;
-  const esc = (s) => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  const STAGE_ORDER = { A: 0, B: 1, 'C+': 2, C: 3, D: 4, E: 5, S: 6 };
-  const closeKey = d => d.month + '/' + String(d.closeDay || 0).padStart(2, '0');
-  list.sort((a, b) => closeKey(a).localeCompare(closeKey(b)) || (STAGE_ORDER[a.stage] ?? 9) - (STAGE_ORDER[b.stage] ?? 9));
-  const total = list.reduce((s, d) => s + (d.amount || 0), 0);
-  const first = FY_MONTHS[FY_MONTHS.length - 1];
-  const [fy, fm] = first.split('/').map(Number);
-  const nextStart = fm === 12 ? `${fy + 1}/01` : `${fy}/${String(fm + 1).padStart(2, '0')}`;
-  document.getElementById('futureDealsSummary').textContent =
-    `着地日が ${nextStart} 以降の進行中の案件（${list.length}件・合計 ${fmt(total)}）`;
-  document.getElementById('futureDealsBody').innerHTML = list.map(d => {
-    const link = d.hubspotId
-      ? `<a class="text-blue-600 hover:underline" href="https://app.hubspot.com/contacts/23871469/record/0-3/${esc(d.hubspotId)}" target="_blank" rel="noopener">${esc(d.company)}</a>`
-      : esc(d.company);
-    const close = d.month + (d.closeDay ? '/' + String(d.closeDay).padStart(2, '0') : '');
-    const ap = d.appointDate || '－';   // parseApptDate の 'YYYY/MM/DD' 文字列
-    const amt = d.amount ? fmt(d.amount) + (d.estimated ? '（仮）' : '') : '－';
-    return `<tr class="border-b last:border-0"><td class="py-2 pr-2">${link}</td><td class="py-2 pr-2">${esc(d.name || '－')}</td>`
-      + `<td class="py-2 pr-2">${esc(d.stage)}</td><td class="py-2 pr-2 tabular-nums">${esc(close)}</td>`
-      + `<td class="py-2 pr-2 tabular-nums">${esc(ap)}</td><td class="py-2 pr-2 text-right tabular-nums">${esc(amt)}</td></tr>`;
-  }).join('');
-}
 function pct(n) { return (n * 100).toFixed(0) + '%'; }
 function statusOf(jRate, yRate, sRate, target) {
   if (target === 0) return { label: '対象外', cls: 'bg-slate-100 text-slate-500' };
@@ -4414,7 +4365,6 @@ function render() {
   renderDealList(activePipeline);
   renderSnapshots();
   renderECalendar();
-  try { renderFutureDeals(); } catch (e) { console.error('renderFutureDeals error:', e); }
   renderProgressChart();
 
   // 失注分析メンバーセレクト更新
